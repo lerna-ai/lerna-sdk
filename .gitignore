@@ -1,0 +1,46 @@
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
+.DS_Store
+
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Certificates
+*.pem
+
+# Android Studio
+.idea
+.gradle
+/*/local.properties
+/*/out
+/*/*/build
+build
+/*/*/production
+*.iml
+*.iws
+*.ipr
+*~
+*.swp
+
+# Other KMM secific
+captures
+.externalNativeBuild
+.cxx
+xcuserdata
