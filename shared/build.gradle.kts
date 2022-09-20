@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.android.library")
+    id("maven-publish")
 }
 
 kotlin {
@@ -21,6 +22,7 @@ kotlin {
     sourceSets {
         val ktorVersion = "2.1.3"
         val korioVersion = "3.3.1"
+        val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:multik-core:0.2.0")
@@ -33,7 +35,7 @@ kotlin {
                 implementation("io.ktor:ktor-network-tls:$ktorVersion")
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("io.github.aakira:napier:2.6.1")
                 implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
                 runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
@@ -59,6 +61,7 @@ kotlin {
                 implementation("androidx.test.ext:junit:1.1.4")
                 implementation("org.robolectric:robolectric:4.2.1")
                 implementation("org.testng:testng:7.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
             }
         }
         val iosX64Main by getting
