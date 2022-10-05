@@ -1,195 +1,145 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.service.converter.DLArrayConverter
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
+import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsApi
 import ai.lerna.multiplatform.service.dto.TrainingAccuracy
 import ai.lerna.multiplatform.service.dto.TrainingInference
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import ai.lerna.multiplatform.service.dto.TrainingWeights
 import io.github.aakira.napier.Napier
-import io.ktor.client.plugins.HttpRequestRetry
-import io.ktor.http.
-//import com.android.volley.Request
-import com.android.volley.RequestQueue
-import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.fasterxml.jackson.databind.JsonMappingException
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 
-class FederatedLearningService(host: String, _requestQueue: RequestQueue, _token: String, _uniqueId: Long) {
-    private val requestQueue = _requestQueue
-    private val token = _token
-    private var uniqueID = _uniqueId
-    private val FL_API_URL = host
-    private val mapper = JacksonConfiguration.newObjectMapper
-    private lateinit var trainingTasks: TrainingTasks
+class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
+	private val token = _token
+	private var uniqueID = _uniqueId
+	private val FL_API_URL = host
+	private val dlArrayConverter = DLArrayConverter()
 
-    var newTrainingListener: ((TrainingTasks) -> Unit)? = null
-    var submitWeightsListener: ((String) -> Unit)? = null
-    var requestWeightsListener: ((GlobalTrainingWeights) -> Unit)? = null
-    var submitAccuracyListener: ((String) -> Unit)? = null
-    var submitInferenceListener: ((String) -> Unit)? = null
-    var submitErrorListener: ((String) -> Unit)? = null
+	private lateinit var trainingTasks: TrainingTasks
 
-    fun setTrainingTaskResponse(trainingTasks: TrainingTasks) {
-        this.trainingTasks = trainingTasks
-    }
+	private val client = HttpClient() {
+		install(ContentNegotiation) {
+			json(Json {
+				prettyPrint = true
+				isLenient = true
+			})
+		}
+	}
 
-    fun isTrainingTaskReady(version: Long = 0): Boolean {
-        return this::trainingTasks.isInitialized
-                && trainingTasks.version!! > version
-    }
+	fun setTrainingTaskResponse(trainingTasks: TrainingTasks) {
+		this.trainingTasks = trainingTasks
+	}
 
-    fun getTrainingTask(version: Long = 0): TrainingTasks? {
-        if (isTrainingTaskReady(version)) {
-            return trainingTasks
-        }
-        return null
-    }
+	fun isTrainingTaskReady(version: Long = 0): Boolean {
+		return this::trainingTasks.isInitialized
+				&& trainingTasks.version!! > version
+	}
 
-    fun requestNewTraining() {
-        val stringRequest = StringRequest(
-            Request.Method.GET,
-            FL_API_URL + "training/new?token=" + token + "&deviceId=" + uniqueID,
-            { response ->
-                Napier.d("LernaFLService - requestNewTraining Response: $response for userID: $uniqueID")
-                try {
-                    trainingTasks = mapper.readValue(response, TrainingTasks::class)
-                    newTrainingListener?.invoke(trainingTasks)
-                } catch (e: JsonMappingException) {
-                    Napier.d("LernaFLService - requestNewTraining Cannot deserialize response: " + e.message)
-                    e.printStackTrace()
-                    submitErrorListener?.invoke(e.message ?: "")
-                }
-            },
-            { error ->
-                Napier.d("LernaFLService - requestNewTraining Error Request: " + error.message)
-                submitErrorListener?.invoke(error.message ?: "")
-            })
-        requestQueue.add(stringRequest)
-    }
+	fun getTrainingTask(version: Long = 0): TrainingTasks? {
+		if (isTrainingTaskReady(version)) {
+			return trainingTasks
+		}
+		return null
+	}
 
-    fun submitWeights(
-        jobId: Long,
-        version: Long,
-        datapoints: Long,
-        deviceWeights: D2Array<Double>?
-    ) {
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, FL_API_URL + "training/submitWeights?token=" + token,
-            Response.Listener { response ->
-                Napier.d("LernaFLService - submitWeights Response: $response for userID: $uniqueID and jobID: $jobId")
-                submitWeightsListener?.invoke(response)
-            },
-            Response.ErrorListener { error ->
-                Napier.d("LernaFLService - submitWeights Error Request: " + error.message)
-                submitErrorListener?.invoke(error.message ?: "")
-            }) {
-            override fun getBodyContentType(): String {
-                return "application/json; charset=utf-8"
-            }
+	suspend fun requestNewTraining(): TrainingTasks? {
+		try {
+			val response = client.get(FL_API_URL + "training/new?token=" + token + "&deviceId=" + uniqueID)
+			if (response.status != HttpStatusCode.OK) {
+				Napier.d("LernaFLService - requestNewTraining Response error: ${response.bodyAsText()}", null, "Lerna")
+				return null
+			}
+			return response.body()
+		} catch (cause: Throwable) {
+			Napier.d("LernaFLService - requestNewTraining deserialize exception: ${cause.message}", cause, "Lerna")
+			return null
+		}
+	}
 
-            override fun getBody(): ByteArray {
-                val request = TrainingWeights()
-                request.jobId = jobId
-                request.deviceId = uniqueID
-                request.version = version
-                request.datapoints = datapoints
-                request.deviceWeights = deviceWeights
-                return mapper.writeValueAsBytes(request)
-            }
-        }
-        stringRequest.retryPolicy = HttpRequestRetry(
-            30000,
-            DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
-        )
-        requestQueue.add(stringRequest)
-    }
+	suspend fun submitWeights(
+		jobId: Long,
+		version: Long,
+		datapoints: Long,
+		deviceWeights: D2Array<Double>
+	): String? {
+		val request = TrainingWeights()
+		request.jobId = jobId
+		request.deviceId = uniqueID
+		request.version = version
+		request.datapoints = datapoints
+		request.deviceWeights = dlArrayConverter.convert(deviceWeights)
+		val response = client.post(FL_API_URL + "training/submitWeights?token=" + token) {
+			contentType(ContentType.Application.Json)
+			setBody(request)
+		}
+		if (response.status != HttpStatusCode.OK) {
+			Napier.d("LernaFLService - requestNewTraining Response error: ${response.bodyAsText()}", null, "Lerna")
+			return null
+		}
+		return response.bodyAsText()
+	}
 
-    fun requestNewWeights(version: Long) {
-        val stringRequest = StringRequest(
-            Request.Method.GET,
-            FL_API_URL + "training/getNewWeights?token=" + token + "&version=" + version,
-            { response ->
-                Napier.d("LernaFLService - requestNewWeights Response: $response for userID: $uniqueID")
-                if (response == null || response == "") {
-                    Napier.d("LernaFLService - requestNewWeights empty response")
-                    requestWeightsListener?.invoke(GlobalTrainingWeights())
-                } else {
-                    try {
+	suspend fun requestNewWeights(version: Long): GlobalTrainingWeights? {
+		try {
+			val response = client.get(FL_API_URL + "training/getNewWeights?token=" + token + "&version=" + version)
+			if (response.status != HttpStatusCode.OK) {
+				Napier.d("LernaFLService - requestNewTraining Response error: ${response.bodyAsText()}", null, "Lerna")
+				return null
+			}
+			if (response.bodyAsText().isEmpty()) {
+				Napier.d("LernaFLService - requestNewTraining Response empty body", null, "Lerna")
+				return null
+			}
+			val globalTrainingWeightsApi: GlobalTrainingWeightsApi = response.body()
+			return dlArrayConverter.convert(globalTrainingWeightsApi)
+		} catch (cause: Throwable) {
+			Napier.d("LernaFLService - requestNewTraining deserialize exception: ${cause.message}", cause, "Lerna")
+			return null
+		}
+	}
 
-                        val trainingWeightsResponse =
-                            mapper.readValue(response, GlobalTrainingWeights::class)
-                        //Log.d("LernaFLService", "sending the response version: ${trainingWeightsResponse.trainingWeights}")
-                        requestWeightsListener?.invoke(trainingWeightsResponse)
-                    } catch (e: JsonMappingException) {
-                        Napier.d("LernaFLService - requestNewWeights Cannot deserialize response: " + e.message)
-                        e.printStackTrace()
-                        requestWeightsListener?.invoke(GlobalTrainingWeights())
-                    }
-                }
-            },
-            { error ->
-                Napier.d("LernaFLService - requestNewWeights Error Request: " + error.message)
-                requestWeightsListener?.invoke(GlobalTrainingWeights())
-            })
-        requestQueue.add(stringRequest)
-    }
+	suspend fun submitAccuracy(mlId: Long, version: Long, accuracy: Double): String? {
+		val request = TrainingAccuracy()
+		request.mlId = mlId
+		request.deviceId = uniqueID
+		request.version = version
+		request.accuracy = accuracy
+		val response = client.post(FL_API_URL + "training/accuracy?token=" + token) {
+			contentType(ContentType.Application.Json)
+			setBody(request)
+		}
+		if (response.status != HttpStatusCode.OK) {
+			Napier.d("LernaFLService - submitAccuracy Response error: ${response.bodyAsText()}", null, "Lerna")
+			return null
+		}
+		return response.bodyAsText()
+	}
 
-    fun submitAccuracy(mlId: Long, version: Long, accuracy: Double) {
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, FL_API_URL + "training/accuracy?token=" + token,
-            Response.Listener { response ->
-                Log.d("LernaFLService", "submitAccuracy Response: $response for userID: $uniqueID")
-                submitAccuracyListener?.invoke(response)
-            },
-            Response.ErrorListener { error ->
-                Napier.d("LernaFLService - submitAccuracy Error Request: " + error.message)
-//				submitErrorListener?.invoke(error.message ?: "")
-            }) {
-            override fun getBodyContentType(): String {
-                return "application/json; charset=utf-8"
-            }
-
-            override fun getBody(): ByteArray {
-                val request = TrainingAccuracy()
-                request.mlId = mlId
-                request.deviceId = uniqueID
-                request.version = version
-                request.accuracy = accuracy
-                return mapper.writeValueAsBytes(request)
-            }
-        }
-        requestQueue.add(stringRequest)
-    }
-
-    fun submitInference(version: Long, trainingInferenceItems: List<TrainingInferenceItem>, userIdentifier: String = "") {
-        //Log.d("LernaFLService", "submitInference for token $token")
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, FL_API_URL + "training/inference?token=" + token,
-            Response.Listener { response ->
-                //		Log.d("LernaFLService", "submitInference Response: $response for userID: $uniqueID")
-                submitInferenceListener?.invoke(response)
-            },
-            Response.ErrorListener { error ->
-                Napier.d("LernaFLService - submitInference Error Request: " + error.message)
-//				submitErrorListener?.invoke(error.message ?: "")
-            }) {
-            override fun getBodyContentType(): String {
-                return "application/json; charset=utf-8"
-            }
-
-            override fun getBody(): ByteArray {
-                val request = TrainingInference()
-                request.deviceId = uniqueID
-                request.userIdentifier = userIdentifier
-                request.version = version
-                request.trainingInference = trainingInferenceItems
-                return mapper.writeValueAsBytes(request)
-            }
-        }
-        requestQueue.add(stringRequest)
-    }
+	suspend fun submitInference(version: Long, trainingInferenceItems: List<TrainingInferenceItem>, userIdentifier: String = ""): String? {
+		val request = TrainingInference()
+		request.deviceId = uniqueID
+		request.userIdentifier = userIdentifier
+		request.version = version
+		request.trainingInference = trainingInferenceItems
+		val response = client.post(FL_API_URL + "training/inference?token=" + token) {
+			contentType(ContentType.Application.Json)
+			setBody(request)
+		}
+		if (response.status != HttpStatusCode.OK) {
+			Napier.d("LernaFLService - submitInference Response error: ${response.bodyAsText()}", null, "Lerna")
+			return null
+		}
+		return response.bodyAsText()
+	}
 }

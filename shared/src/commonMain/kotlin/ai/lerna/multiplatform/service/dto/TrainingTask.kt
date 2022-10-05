@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class TrainingTask {
+
     var jobIds: Map<String, Long>? = null
 
     var mlId: Long? = null

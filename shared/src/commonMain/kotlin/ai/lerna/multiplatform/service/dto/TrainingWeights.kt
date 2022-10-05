@@ -1,12 +1,12 @@
 package ai.lerna.multiplatform.service.dto
 
-import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
+import kotlinx.serialization.Serializable
 
-@kotlinx.serialization.Serializable
+@Serializable
 class TrainingWeights {
-    var jobId: Long = 0
-    var deviceId: Long = 0
-    var version: Long = 0
-    var datapoints: Long = 0
-    var deviceWeights: D2Array<Double>? = null
+	var jobId: Long = 0
+	var deviceId: Long = 0
+	var version: Long = 0
+	var datapoints: Long = 0
+	var deviceWeights: DoubleArray = DoubleArray(0)
 }
