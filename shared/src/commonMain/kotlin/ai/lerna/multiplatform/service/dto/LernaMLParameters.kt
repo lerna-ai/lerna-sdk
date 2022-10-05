@@ -1,5 +1,7 @@
 package ai.lerna.multiplatform.service.dto
+import kotlinx.serialization.Serializable
 
+@Serializable
 class LernaMLParameters {
     var normalization: Double? = null
 
