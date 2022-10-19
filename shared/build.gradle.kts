@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.android.library")
 }
 
@@ -13,17 +14,37 @@ kotlin {
     ).forEach {
         it.binaries.framework {
             baseName = "shared"
+            embedBitcode("disable")
         }
     }
 
     sourceSets {
-        val commonMain by getting
+        val ktorVersion = "2.1.2"
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:multik-core:0.2.0")
+                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.0")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+                implementation("io.github.aakira:napier:2.6.1")
+                runtimeOnly("io.ktor:ktor-utils:2.1.2")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val androidMain by getting
+        val androidMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+            }
+        }
         val androidTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
@@ -33,6 +54,9 @@ kotlin {
             iosX64Main.dependsOn(this)
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
+            dependencies {
+                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+            }
         }
         val iosX64Test by getting
         val iosArm64Test by getting
@@ -53,4 +77,5 @@ android {
         minSdk = 26
         targetSdk = 32
     }
+
 }
