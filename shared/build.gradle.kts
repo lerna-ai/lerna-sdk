@@ -45,7 +45,12 @@ kotlin {
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
             }
         }
-        val androidTest by getting
+        val androidTest by getting {
+            dependencies {
+                implementation("junit:junit:4.12")
+                implementation("androidx.test:core-ktx:1.4.0")
+            }
+        }
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
