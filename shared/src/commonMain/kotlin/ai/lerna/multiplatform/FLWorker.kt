@@ -21,7 +21,7 @@ class FLWorker {
 
 			val jobId = trainingTasks?.trainingTasks?.get(0)?.jobIds?.get("news") ?: 1L
 			val version = trainingTasks?.version ?: 2L
-			val data: D2Array<Double> = mk.ones<Double>(100).reshape(2, 50)
+			val data: D2Array<Float> = mk.ones<Float>(100).reshape(2, 50)
 			val submitResponse = federatedLearningService.submitWeights(jobId, version, 100L, data)
 			Napier.d(submitResponse?: "Error", null, "LernaStartFL")
 
@@ -29,7 +29,7 @@ class FLWorker {
 			val globalWeights = federatedLearningService.requestNewWeights(weightVersion)
 			Napier.d(globalWeights.toString(), null, "LernaStartFL")
 
-			val submitAccuracy = federatedLearningService.submitAccuracy(trainingTasks?.trainingTasks?.get(0)?.mlId ?: 123L, version-1, 100.0)
+			val submitAccuracy = federatedLearningService.submitAccuracy(trainingTasks?.trainingTasks?.get(0)?.mlId ?: 123L, version-1, 100.0f)
 			Napier.d(submitAccuracy?: "Error", null, "LernaStartFL")
 
 			val trainingInferenceItem = TrainingInferenceItem()

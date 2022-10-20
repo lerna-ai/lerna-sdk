@@ -3,13 +3,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class LernaMLParameters {
-    var normalization: Double? = null
+    var normalization: Float? = null
 
     var iterations = 0
 
-    var learningRate: Double? = null
+    var learningRate: Float? = null
 
     var dimensions = 0
 
-    var dataSplit: Double? = null
+    var dataSplit: Float? = null
 }

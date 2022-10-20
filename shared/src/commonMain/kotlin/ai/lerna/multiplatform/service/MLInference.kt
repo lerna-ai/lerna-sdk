@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.times
 
 class MLInference() {
     var inferHistory: MutableList<Int> = ArrayList()
-    private var thetaClass = HashMap<String, D2Array<Double>>()
+    private var thetaClass = HashMap<String, D2Array<Float>>()
 
     fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
         thetaClass.clear()
@@ -25,12 +25,12 @@ class MLInference() {
     }
 
 
-    fun predictLabels(testFeatures: D2Array<Double>): String {
+    fun predictLabels(testFeatures: D2Array<Float>): String {
 
-        var features = mk.ones<Double>(testFeatures.shape[0]).cat(testFeatures.flatten()).reshape(testFeatures.shape[1]+1, testFeatures.shape[0])
+        var features = mk.ones<Float>(testFeatures.shape[0]).cat(testFeatures.flatten()).reshape(testFeatures.shape[1]+1, testFeatures.shape[0])
         features = features.transpose()
 
-        val outputs = HashMap<String, D2Array<Double>>()
+        val outputs = HashMap<String, D2Array<Float>>()
         thetaClass.forEach { (k, v) ->
             outputs[k] = calculateOutput(features, v)
         }
@@ -38,7 +38,7 @@ class MLInference() {
 
 
             //Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
-            var max = 0.0
+            var max = 0.0f
             var value = "0.0"
             outputs.forEach { (k, _) ->
                 if (outputs[k]!!.asD2Array()[0, 0] > max) {
@@ -53,7 +53,7 @@ class MLInference() {
         return value
     }
 
-    private fun calculateOutput(X: D2Array<Double>, theta: D2Array<Double>): D2Array<Double> {
+    private fun calculateOutput(X: D2Array<Float>, theta: D2Array<Float>): D2Array<Float> {
         val z = X.dot(theta)
         return sigmoid(z)
     }
@@ -62,15 +62,15 @@ class MLInference() {
         inferHistory.clear()
     }
 
-    private fun sigmoid(Z: D2Array<Double>): D2Array<Double> {
+    private fun sigmoid(Z: D2Array<Float>): D2Array<Float> {
         //Z = (-Z)
-        var z = Z.times(-1.0)
+        var z = Z.times(-1.0f)
         //Z = e^(Z); do not create new array
         z = z.exp()
         //1 + Z
-        z = z.plus(1.0)
+        z = z.plus(1.0f)
         //1.0 / Z
-        z = 1.0.div(z)
+        z = 1.0f.div(z)
         return z
     }
 

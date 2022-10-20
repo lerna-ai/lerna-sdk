@@ -12,11 +12,11 @@ actual fun KMMContext.getInt(key: String, default: Int): Int {
     return  getSp().getInt(key, default )
 }
 
-actual fun KMMContext.getDouble(key: String, default: Double): Double {
-    return  getSp().getFloat(key, default.toFloat()).toDouble()
+actual fun KMMContext.getFloat(key: String, default: Float): Float {
+    return  getSp().getFloat(key, default.toFloat()).toFloat()
 }
 
-actual fun KMMContext.putDouble(key: String, value: Double) {
+actual fun KMMContext.putFloat(key: String, value: Float) {
     getSpEditor().putFloat(key, value.toFloat()).apply()
 }
 

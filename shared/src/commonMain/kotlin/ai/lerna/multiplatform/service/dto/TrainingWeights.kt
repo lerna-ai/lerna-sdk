@@ -8,5 +8,5 @@ class TrainingWeights {
 	var deviceId: Long = 0
 	var version: Long = 0
 	var datapoints: Long = 0
-	var deviceWeights: DoubleArray = DoubleArray(0)
+	var deviceWeights: FloatArray = FloatArray(0)
 }

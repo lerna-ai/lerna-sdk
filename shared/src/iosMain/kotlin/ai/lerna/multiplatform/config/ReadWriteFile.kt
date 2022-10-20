@@ -6,11 +6,11 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import platform.Foundation.*
 
 actual class ReadWriteFile {
-    actual fun read(path : String, filename: String) : List<DoubleArray> {
-        var list = mutableListOf<DoubleArray>()
+    actual fun read(path : String, filename: String) : List<FloatArray> {
+        var list = mutableListOf<FloatArray>()
         val string = NSString.stringWithContentsOfFile(filename, NSUTF8StringEncoding, null) ?: return list
         string.lines().forEach {row ->
-            list.add(row.split(",").map { it.toDouble() }.toDoubleArray())
+            list.add(row.split(",").map { it.toFloat() }.toFloatArray())
         }
         return list
     }

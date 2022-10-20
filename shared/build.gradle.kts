@@ -47,8 +47,10 @@ kotlin {
         }
         val androidTest by getting {
             dependencies {
-                implementation("junit:junit:4.12")
-                implementation("androidx.test:core-ktx:1.4.0")
+                implementation("junit:junit:4.13.2")
+                implementation("androidx.test:core:1.4.0")
+                implementation("androidx.test.ext:junit:1.1.3")
+                implementation("org.robolectric:robolectric:4.2.1")
             }
         }
         val iosX64Main by getting
@@ -76,11 +78,13 @@ kotlin {
 }
 
 android {
+    testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "ai.lerna.multiplatform"
     compileSdk = 32
     defaultConfig {
         minSdk = 26
-        targetSdk = 32
+        //targetSdk = 32
     }
 
 }
+
