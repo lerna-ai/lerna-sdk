@@ -16,8 +16,8 @@ class KMMPreference(private val context: KMMContext) {
         context.putBool(key, value)
     }
 
-    fun put(key: String, value: Double) {
-        context.putDouble(key, value)
+    fun put(key: String, value: Float) {
+        context.putFloat(key, value)
     }
 
     fun put(key: String, value: Array<String>) {
@@ -27,8 +27,8 @@ class KMMPreference(private val context: KMMContext) {
     fun getInt(key: String, default: Int): Int
             =  context.getInt(key, default)
 
-    fun getDouble(key: String, default: Double): Double
-            =  context.getDouble(key, default)
+    fun getFloat(key: String, default: Float): Float
+            =  context.getFloat(key, default)
 
     fun getArray(key: String) : Array<String>?
             =  context.getArray(key)

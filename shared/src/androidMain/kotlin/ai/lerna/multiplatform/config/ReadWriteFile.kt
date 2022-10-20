@@ -4,13 +4,13 @@ import java.io.File
 import java.net.URL
 
 actual class ReadWriteFile {
-    actual fun read(path : String, filename: String) : List<DoubleArray> {
+    actual fun read(path : String, filename: String) : List<FloatArray> {
         val resource: URL = javaClass.classLoader.getResource(filename)
         val file =  File(resource.toURI())
-        val list = mutableListOf<DoubleArray>()
+        val list = mutableListOf<FloatArray>()
         if(file.exists()) {
             file.forEachLine {row ->
-                list.add(row.split(",").map { it.toDouble() }.toDoubleArray())
+                list.add(row.split(",").map { it.toFloat() }.toFloatArray())
             }
         }
         return list

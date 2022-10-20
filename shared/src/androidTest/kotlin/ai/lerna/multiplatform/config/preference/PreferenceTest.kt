@@ -1,22 +1,28 @@
 package ai.lerna.multiplatform.config.preference
 
-import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.KMMPreference
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Before
-import org.junit.Test
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.Test
+import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+import kotlin.test.assertContains
 import kotlin.test.assertNull
+import kotlin.test.assertNotNull
 
-internal class PreferenceTest {
+//private val context: KMMContext = KMMContext(ApplicationProvider.getApplicationContext())
+private val preferences = KMMPreference(ApplicationProvider.getApplicationContext())
 
-	private lateinit var preferences: KMMPreference
+@RunWith(AndroidJUnit4::class)
+class PreferenceTest {
 
-	@Before
-	fun setUp() {
-		val context: KMMContext = ApplicationProvider.getApplicationContext()
-		preferences = KMMPreference(context)
-	}
+	//private lateinit var preferences: KMMPreference
+
+//	@Before
+//	fun setUp() {
+//		val context: KMMContext = ApplicationProvider.getApplicationContext()
+//		preferences = KMMPreference(context)
+//	}
 
 	@Test
 	fun notContains() {
@@ -43,7 +49,7 @@ internal class PreferenceTest {
 	@Test
 	fun testIntNotExists() {
 		// Given
-		val key = "IntValue"
+		val key = "NoIntValue"
 		// When
 		val result = preferences.getInt(key, 123)
 		// Then
@@ -65,7 +71,7 @@ internal class PreferenceTest {
 	@Test
 	fun testStringNotExists() {
 		// Given
-		val key = "StringValue"
+		val key = "NoStringValue"
 		// When
 		val result = preferences.getString(key)
 		// Then
@@ -87,7 +93,7 @@ internal class PreferenceTest {
 	@Test
 	fun testBoolNotExists() {
 		// Given
-		val key = "BoolValue"
+		val key = "NoBoolValue"
 		// When
 		val result = preferences.getBool(key, false)
 		// Then
@@ -107,31 +113,31 @@ internal class PreferenceTest {
 	}
 
 	@Test
-	fun testDoubleNotExists() {
+	fun testFloatNotExists() {
 		// Given
-		val key = "DoubleValue"
+		val key = "NoFloatValue"
 		// When
-		val result = preferences.getDouble(key, 5.6)
+		val result = preferences.getFloat(key, 5.6f)
 		// Then
-		assertEquals(result, 5.6)
+		assertEquals(result, 5.6f)
 	}
 
 	@Test
-	fun testDouble() {
+	fun testFloat() {
 		// Given
-		val key = "DoubleValue"
-		val value = 1.2
+		val key = "FloatValue"
+		val value = 1.2f
 		// When
 		preferences.put(key, value)
-		val result = preferences.getDouble(key, 5.6)
+		val result = preferences.getFloat(key, 5.6f)
 		// Then
-		assertEquals(result, 1.2)
+		assertEquals(result, 1.2f)
 	}
 
 	@Test
 	fun testArrayNotExists() {
 		// Given
-		val key = "ArrayValue"
+		val key = "NoArrayValue"
 		// When
 		val result = preferences.getArray(key)
 		// Then
@@ -147,11 +153,12 @@ internal class PreferenceTest {
 		preferences.put(key, value)
 		val result = preferences.getArray(key)
 		// Then
-		assertEquals(result?.size, 5)
-		assertEquals(result?.get(0), "alpha")
-		assertEquals(result?.get(1), "bravo")
-		assertEquals(result?.get(2), "charlie")
-		assertEquals(result?.get(3), "delta")
-		assertEquals(result?.get(4), "echo")
+		assertNotNull(result)
+		assertEquals(result.size, 5)
+		assertContains(result, "alpha")
+		assertContains(result, "bravo")
+		assertContains(result, "charlie")
+		assertContains(result, "delta")
+		assertContains(result, "echo")
 	}
 }

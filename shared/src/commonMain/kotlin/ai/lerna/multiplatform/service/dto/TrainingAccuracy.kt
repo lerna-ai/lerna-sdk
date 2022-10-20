@@ -5,5 +5,5 @@ class TrainingAccuracy {
     var mlId: Long = 0
     var deviceId: Long = 0
     var version: Long = 0
-    var accuracy: Double? = null
+    var accuracy: Float? = null
 }

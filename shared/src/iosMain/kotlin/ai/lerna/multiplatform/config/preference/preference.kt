@@ -8,15 +8,21 @@ actual fun KMMContext.putInt(key: String, value: Int) {
 }
 
 actual fun KMMContext.getInt(key: String, default: Int): Int {
-    return NSUserDefaults.standardUserDefaults.integerForKey(key).toInt()
+    return if(NSUserDefaults.standardUserDefaults.objectForKey(key) != null)
+        NSUserDefaults.standardUserDefaults.integerForKey(key).toInt()
+    else
+        default
 }
 
-actual fun KMMContext.putDouble(key: String, value: Double) {
-    NSUserDefaults.standardUserDefaults.setDouble(value, key)
+actual fun KMMContext.putFloat(key: String, value: Float) {
+    NSUserDefaults.standardUserDefaults.setFloat(value, key)
 }
 
-actual fun KMMContext.getDouble(key: String, default: Double): Double {
-    return NSUserDefaults.standardUserDefaults.doubleForKey(key)
+actual fun KMMContext.getFloat(key: String, default: Float): Float {
+    return if(NSUserDefaults.standardUserDefaults.objectForKey(key) != null)
+        NSUserDefaults.standardUserDefaults.floatForKey(key)
+    else
+        default
 }
 
 actual fun KMMContext.putString(key: String, value: String) {
@@ -28,7 +34,7 @@ actual fun KMMContext.getString(key: String): String? {
 }
 
 actual fun KMMContext.putArray(key: String, value: Array<String>) {
-    NSUserDefaults.standardUserDefaults.setObject(value, key)
+    NSUserDefaults.standardUserDefaults.setObject(value.toList(), key)
 }
 
 actual fun KMMContext.getArray(key: String): Array<String>? {

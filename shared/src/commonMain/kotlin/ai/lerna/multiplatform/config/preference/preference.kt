@@ -6,9 +6,9 @@ expect fun KMMContext.putInt(key: String, value: Int)
 
 expect fun KMMContext.getInt(key: String, default: Int): Int
 
-expect fun KMMContext.putDouble(key: String, value: Double)
+expect fun KMMContext.putFloat(key: String, value: Float)
 
-expect fun KMMContext.getDouble(key: String, default: Double): Double
+expect fun KMMContext.getFloat(key: String, default: Float): Float
 
 expect fun KMMContext.putArray(key: String, value: Array<String>)
 
