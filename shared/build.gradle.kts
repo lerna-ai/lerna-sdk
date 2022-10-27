@@ -20,6 +20,7 @@ kotlin {
 
     sourceSets {
         val ktorVersion = "2.1.2"
+        val korioVersion = "3.3.1"
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:multik-core:0.2.0")
@@ -32,6 +33,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
                 implementation("io.github.aakira:napier:2.6.1")
+                implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
                 runtimeOnly("io.ktor:ktor-utils:2.1.2")
             }
         }
@@ -46,11 +48,13 @@ kotlin {
             }
         }
         val androidTest by getting {
+            val junitVersion = "4.13.2"
             dependencies {
-                implementation("junit:junit:4.13.2")
+                implementation("junit:junit:$junitVersion")
                 implementation("androidx.test:core:1.4.0")
                 implementation("androidx.test.ext:junit:1.1.3")
                 implementation("org.robolectric:robolectric:4.2.1")
+                implementation("org.testng:testng:7.4.0")
             }
         }
         val iosX64Main by getting
