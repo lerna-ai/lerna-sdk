@@ -19,6 +19,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 class FLWorker {
 	// ToDo: Update FL Service configuration
 	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", "632523a5-bdf1-4241-8ec0-f8c8cd666050", 123L)
+	private lateinit var flWorkerInterface : FLWorkerInterface
 	private val weightsManager = WeightsManager()
 	private val fileUtil = FileUtil()
 	private var weightsVersion = -1L
@@ -29,10 +30,15 @@ class FLWorker {
 	fun setupStorage(kmmContext: KMMContext) {
 		context = kmmContext
 		storage = StorageImpl(kmmContext)
+		flWorkerInterface = FLWorkerInterface(kmmContext)
 		weightsManager.setupStorage(storage)
 	}
 
-	suspend fun startFL() = run {
+	fun startFL() {
+		flWorkerInterface.startFL(this)
+	}
+
+	suspend fun startFLSuspend() = run {
 		Napier.base(DebugAntilog())
 		//CoroutineScope(Dispatchers.Main).launch {
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
