@@ -2,22 +2,17 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import kotlinx.coroutines.runBlocking
-import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
 
 actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	actual fun startFL(flWorker: FLWorker) {
-		doInBackground {
-			runBlocking {
-				flWorker.startFLSuspend()
-			}
-		}
+		val worker = Worker.start()
+		worker.executeAfter(3000, performWorkLambda(flWorker))
 	}
 
-	private fun <T> doInBackground(block: () -> T): T {
-		val worker = Worker.start()
-		val result = worker.execute(TransferMode.SAFE, { block }, { it.invoke() }).result
-		worker.requestTermination()
-		return result
+	private fun performWorkLambda(flWorker: FLWorker): () -> Unit = {
+		runBlocking {
+			flWorker.startFLSuspend()
+		}
 	}
 }
