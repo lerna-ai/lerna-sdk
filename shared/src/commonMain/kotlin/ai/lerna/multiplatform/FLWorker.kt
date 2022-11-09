@@ -1,11 +1,14 @@
 package ai.lerna.multiplatform
 
+import MLExecution
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.FederatedLearningService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.Storage
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
+import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
+import ai.lerna.multiplatform.service.dto.MpcResponse
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import com.soywiz.korio.file.VfsOpenMode
 import com.soywiz.korio.file.std.cacheVfs
@@ -14,6 +17,7 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ones
+import org.jetbrains.kotlinx.multik.ndarray.data.D2
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class FLWorker {
@@ -22,8 +26,10 @@ class FLWorker {
 	private lateinit var flWorkerInterface : FLWorkerInterface
 	private val weightsManager = WeightsManager()
 	private val fileUtil = FileUtil()
+	private val scaling = 100000
 	private var weightsVersion = -1L
-	private var taskVersion = -1L
+	private var taskVersion = -1
+	private val uniqueID = 0L
 	private lateinit var storage: Storage
 	private lateinit var context: KMMContext
 
@@ -40,93 +46,106 @@ class FLWorker {
 
 	suspend fun startFLSuspend() = run {
 		Napier.base(DebugAntilog())
-		//CoroutineScope(Dispatchers.Main).launch {
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
 		val trainingTask = federatedLearningService.requestNewTraining() ?: return
 
 		Napier.d("Task Version: ${trainingTask.version.toString()}", null, "LernaFL")
 
-		taskVersion = trainingTask.version!!
-
+		taskVersion = trainingTask.version!!.toInt()
+		var globalWeights : GlobalTrainingWeights? = null
 		if (weightsManager.updateWeights() == "Success") {
-			val globalWeights = storage.getWeights()
+			globalWeights = storage.getWeights()
 			if (globalWeights != null) {
 				weightsVersion = globalWeights.version
 			}
-
 		}
 
-		val jobId = trainingTask.trainingTasks?.get(0)?.jobIds?.get("news") ?: 1L
-		val version = trainingTask.version ?: 2L
-		val data: D2Array<Float> = mk.ones<Float>(100).reshape(2, 50)
-		val submitResponse = federatedLearningService.submitWeights(jobId, version, 100L, data)
-		Napier.d(submitResponse ?: "Error", null, "LernaStartFL")
+		val fileSize = fileUtil.mergeFiles(storage)
 
-		val weightVersion = version - 2
-		val globalWeights = federatedLearningService.requestNewWeights(weightVersion)
-		Napier.d(globalWeights.toString(), null, "LernaStartFL")
+		if (fileSize < 500000L) {
+			Napier.d("Not enough data for training", null, "LernaFL")
+			//logUploader.uploadLogcat(uniqueID, "logcatf.txt")
+			return;
+		}
 
-		storage.putWeights(globalWeights)
+		var successes = 0
+		//For each ML task
+		val ml = MLExecution(trainingTask)
+		ml.loadData()
 
-		val weightsFromStorage = storage.getWeights()
-		val ver = storage.getInference()
-		var tr1: TrainingInferenceItem = TrainingInferenceItem()
-		tr1.ml_id = 1L
-		tr1.model = "m1"
-		tr1.prediction = "news"
-		var tr2: TrainingInferenceItem = TrainingInferenceItem()
-		tr2.ml_id = 2L
-		tr2.model = "m2"
-		tr2.prediction = "news"
-		val tri = listOf(tr1, tr2)
-		storage.putInference(tri)
-		val ver2 = storage.getInference()
-		Napier.d(ver.toString(), null, "LernaStartFL")
-		Napier.d(ver2.toString(), null, "LernaStartFL")
+		for (i in trainingTask.trainingTasks!!.indices) {
+			ml.prepareData(i)
+			ml.setWeights(globalWeights!!.trainingWeights!![i])
+			if (weightsVersion > 1) {
+				Napier.d("Computing accuracy of version $weightsVersion and task $i", null, "LernaFL")
+				federatedLearningService.submitAccuracy(globalWeights!!.trainingWeights!![i].mlId!!, weightsVersion, ml.computeAccuracy())
+			}
+			//Train locally
+			val size = ml.localML(i)
 
+			if (size == -1L) {
+				//logUploader.uploadLogcat(uniqueID, "logcat_errf.txt")
+				continue
+			}
 
-		var sensorFile = cacheVfs["sensorLog0.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
-		sensorFile.writeString("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.close()
-		sensorFile = cacheVfs["sensorLog0.csv"].open(VfsOpenMode.WRITE)
-		sensorFile.setPosition(sensorFile.size())
-		sensorFile.writeString("1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.close()
+			val newWeights: HashMap<String, D2Array<Float>> = HashMap()
+			globalWeights!!.trainingWeights!![i].weights?.forEach {
+				newWeights[it.key] = ml.thetaClass[ml.mapping(it.key)]!!
+			}
+			globalWeights!!.trainingWeights!![i].weights = newWeights.toMap()
 
+			Napier.d("Computing accuracy of local model for task $i", null, "LernaFL")
+			ml.computeAccuracy()
 
-		sensorFile = cacheVfs["sensorLog2.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
-		sensorFile.writeString("0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("1,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("3,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.writeString("4,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
-		sensorFile.close()
+			//For each prediction/job
+			globalWeights!!.trainingWeights!![i].weights!!.forEach { (key, _) ->
+				try {
+					val share = getNoise(uniqueID, key, size, i)!!.share!!.toFloat()
+					val weights = ml.addNoise(share, scaling, key)
+					val jobId = trainingTask.trainingTasks!![i].jobIds!![key]!!
+					Napier.d("Submitting noisy weights for job $jobId", null, "LernaFL")
 
-		storage.putSessionID(3)
+					val submitedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
+					if (submitedWeights != null) {
+						successes++
+						if (successes == (globalWeights!!.trainingWeights!![0].weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs
+							// Upload to AWS S3 implementation - Start
+//							val fileNameDate = LocalDateTime.now(ZoneOffset.UTC).format(dateFormatter)
+//							val temp = storage.getSuccesses()?.toList()?.sorted()
+//							val baos = ByteArrayOutputStream()
+//							temp?.forEach {
+//								val row = if (it.split(',').size > 6)
+//									it.split(',')[0] + "," + it.split(',')[1] + "," + it.split(',')[2] + "," + it.split(',')[4] + "," + it.split(',')[5] + "," + it.split(',')[6] + "\r\n"
+//								else
+//									it.split(',')[0] + "," + it.split(',')[1] + "," + it.split(',')[2] + "," + it.split(',')[4] + "\r\n"
+//								baos.write(row.toByteArray())
+//							}
+//							val mlFile = context.openFileInput("mldata.csv")
 
-		fileUtil.mergeFiles(storage)
-		val mlData = cacheVfs["mldata.csv"].readLines().toList().filter { it.isNotEmpty() }
+//							logUploader.uploadFile(uniqueID, "inference.csv", baos.toByteArray(), fileNameDate)
+//							if (fileSize > 0) {
+//								logUploader.uploadFile(uniqueID, "mldata.csv", mlFile, fileNameDate)
+//							}
+//							logUploader.uploadLogcat(uniqueID, "logcatf.txt", fileNameDate)
 
-		Napier.d("Filesize: ${mlData.size}", null, "LernaFL")
-		Napier.d("Data: ${mlData.toString()}", null, "LernaFL")
+							// Upload to AWS S3 implementation - End
+							storage.putWeights(globalWeights)
+							storage.putLastTraining(taskVersion)
+							storage.putSize(storage.getSize() + fileSize.toInt())
 
-		val submitAccuracy = federatedLearningService.submitAccuracy(trainingTask?.trainingTasks?.get(0)?.mlId ?: 123L, version - 1, 100.0f)
-		Napier.d(submitAccuracy ?: "Error", null, "LernaStartFL")
+//							FileUtils.cleanDirectory(context.filesDir)
+							Napier.d("Cleaned up directory", null, "LernaFL")
+						}
+					}
+				} catch (ex: Exception) {
+					//logUploader.uploadLogcat(uniqueID, "logcat_errf.txt")
+				}
+			}
+		}
+	}
 
-		val trainingInferenceItem = TrainingInferenceItem()
-		trainingInferenceItem.ml_id = trainingTask?.trainingTasks?.get(0)?.mlId ?: 123L
-		trainingInferenceItem.model = trainingTask?.trainingTasks?.get(0)?.mlModel ?: "Model"
-		trainingInferenceItem.prediction = "news"
-		val trainingInferenceItems: List<TrainingInferenceItem> = listOf(trainingInferenceItem)
-
-		val submitInference = federatedLearningService.submitInference(version - 1, trainingInferenceItems,"123")
-		Napier.d(submitInference ?: "Error", null, "LernaStartFL")
-		Napier.d("FL finish", null, "LernaApp")
-
-		//}
-
+	private fun getNoise(uniqueID: Long, key: String, size: Long, i: Int): MpcResponse {
+		//ToDo: Add implementation
+		return MpcResponse()
 	}
 }
