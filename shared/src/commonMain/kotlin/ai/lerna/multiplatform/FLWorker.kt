@@ -4,6 +4,7 @@ import MLExecution
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.FederatedLearningService
 import ai.lerna.multiplatform.service.FileUtil
+import ai.lerna.multiplatform.service.MpcService
 import ai.lerna.multiplatform.service.Storage
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
@@ -41,6 +42,8 @@ class FLWorker {
 	}
 
 	fun startFL() {
+
+		getNoise(uniqueID, "news", 11, 21321)
 		flWorkerInterface.startFL(this)
 	}
 
@@ -144,8 +147,34 @@ class FLWorker {
 		}
 	}
 
-	private fun getNoise(uniqueID: Long, key: String, size: Long, i: Int): MpcResponse {
-		//ToDo: Add implementation
-		return MpcResponse()
+	private fun getNoise(uniqueID: Long, prediction: String, size: Long, ml_id: Int): MpcResponse? {
+		if (!federatedLearningService.isTrainingTaskReady()) {
+			//return null
+		}
+		val id = 123 //federatedLearningService.getTrainingTask()?.trainingTasks?.get(ml_id)?.jobIds?.get(prediction)
+		val obj: MutableMap<Any?, Any?> = LinkedHashMap()
+		if (id == null) {
+			return null
+		}
+		Napier.d("Retrieving noise share from MPC...", null, "LernaFL")
+		val xml = "<Body><CompID>$id</CompID><User>$uniqueID</User></Body>"
+//		obj.put("CompID", id)
+//		obj.put("User", uniqueID)
+//		val node = JSONObject(obj)
+//		val rootObject = JSONObject()
+//		rootObject.put("Body", node)
+//		val xml = XML.toString(rootObject)
+//		val future: Future<MpcResponse> = executor.submit(Callable {
+//			val mpcService = MpcService(mpcHost)
+//			mpcService.lerna(xml, size)
+//		})
+		val result: MpcResponse = MpcService("mpc.test.lerna.ai").lerna(xml,size)
+//		try {
+//			result = future.get()
+//		} catch (ex: Exception) {
+//			Log.d("LernaFL", "MPC server error: ${ex.message}")
+//			throw ex
+//		}
+		return result
 	}
 }
