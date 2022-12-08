@@ -5,9 +5,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.network.tls.*
 import io.ktor.utils.io.*
-import io.ktor.util.*
 import kotlinx.coroutines.*
-import kotlin.system.*
 
 class MpcService(host: String) {
 	private val mpcHost = host
