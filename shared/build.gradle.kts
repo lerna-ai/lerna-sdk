@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     android()
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -19,7 +19,7 @@ kotlin {
     }
 
     sourceSets {
-        val ktorVersion = "2.1.2"
+        val ktorVersion = "2.1.3"
         val korioVersion = "3.3.1"
         val commonMain by getting {
             dependencies {
@@ -36,7 +36,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
                 implementation("io.github.aakira:napier:2.6.1")
                 implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
-                runtimeOnly("io.ktor:ktor-utils:2.1.2")
+                runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
             }
         }
         val commonTest by getting {
@@ -47,14 +47,16 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+                implementation("androidx.work:work-runtime-ktx:2.7.1")
+                implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
             }
         }
         val androidTest by getting {
             val junitVersion = "4.13.2"
             dependencies {
                 implementation("junit:junit:$junitVersion")
-                implementation("androidx.test:core:1.4.0")
-                implementation("androidx.test.ext:junit:1.1.3")
+                implementation("androidx.test:core:1.5.0")
+                implementation("androidx.test.ext:junit:1.1.4")
                 implementation("org.robolectric:robolectric:4.2.1")
                 implementation("org.testng:testng:7.4.0")
             }
@@ -89,8 +91,6 @@ android {
     compileSdk = 32
     defaultConfig {
         minSdk = 26
-        //targetSdk = 32
     }
-
 }
 

@@ -10,22 +10,15 @@ import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
-import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
-import com.soywiz.korio.file.VfsOpenMode
-import com.soywiz.korio.file.std.cacheVfs
-import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
-import org.jetbrains.kotlinx.multik.api.mk
-import org.jetbrains.kotlinx.multik.api.ones
-import org.jetbrains.kotlinx.multik.ndarray.data.D2
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
-class FLWorker {
+class FLWorker(token: String, uniqueID: Long) {
 	// ToDo: Update FL Service configuration
-	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", "632523a5-bdf1-4241-8ec0-f8c8cd666050", 123L)
-	private lateinit var flWorkerInterface : FLWorkerInterface
-	private val weightsManager = WeightsManager()
+	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", token, uniqueID)
+	private lateinit var flWorkerInterface: FLWorkerInterface
+	private val weightsManager = WeightsManager(token, uniqueID)
 	private val fileUtil = FileUtil()
 	private val scaling = 100000
 	private var weightsVersion = -1L
@@ -41,12 +34,6 @@ class FLWorker {
 		weightsManager.setupStorage(storage)
 	}
 
-	fun startFL() {
-
-		getNoise(uniqueID, "news", 11, 21321)
-		flWorkerInterface.startFL(this)
-	}
-
 	suspend fun startFLSuspend() = run {
 		Napier.base(DebugAntilog())
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
@@ -55,7 +42,7 @@ class FLWorker {
 		Napier.d("Task Version: ${trainingTask.version.toString()}", null, "LernaFL")
 
 		taskVersion = trainingTask.version!!.toInt()
-		var globalWeights : GlobalTrainingWeights? = null
+		var globalWeights: GlobalTrainingWeights? = null
 		if (weightsManager.updateWeights() == "Success") {
 			globalWeights = storage.getWeights()
 			if (globalWeights != null) {
@@ -168,7 +155,7 @@ class FLWorker {
 //			val mpcService = MpcService(mpcHost)
 //			mpcService.lerna(xml, size)
 //		})
-		val result: MpcResponse = MpcService("mpc.test.lerna.ai").lerna(xml,size)
+		val result: MpcResponse = MpcService("mpc.test.lerna.ai").lerna(xml, size)
 //		try {
 //			result = future.get()
 //		} catch (ex: Exception) {
