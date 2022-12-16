@@ -1,8 +1,10 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import io.ktor.util.date.*
 import kotlinx.coroutines.runBlocking
 import kotlin.native.concurrent.Worker
 
@@ -25,7 +27,12 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 	private fun performWorkLambda(flWorker: FLWorker): () -> Unit = {
 		runBlocking {
-			flWorker.startFLSuspend()
+			try {
+				flWorker.startFLSuspend()
+			} catch (e:Exception) {
+				Napier.e ("Lerna Worker - Failed $e")
+				LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID,"",e.stackTraceToString(), GMTDate())
+			}
 		}
 	}
 }
