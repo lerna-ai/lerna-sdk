@@ -1,13 +1,11 @@
 package ai.lerna.multiplatform.config
 
-import android.content.Context
 import java.util.UUID.randomUUID
 import kotlin.math.abs
 
-actual class userID {
+actual class UserID actual constructor() {
      actual fun getUniqueId(context: KMMContext): Int {
         val prefID = "LernaUniqueID"
-        //val context = KMMContext()
         val sharedPref = KMMPreference(context)
         val uniqueID =
             sharedPref.getInt(prefID, abs(randomUUID().toString().hashCode()))

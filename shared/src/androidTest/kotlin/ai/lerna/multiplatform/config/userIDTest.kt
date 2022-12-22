@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 class userIDTest{
     @Test
     fun testUUID(){
-        val u_id = userID().getUniqueId(ApplicationProvider.getApplicationContext())
-        assertEquals(u_id, userID().getUniqueId(ApplicationProvider.getApplicationContext()))
+        val u_id = UserID().getUniqueId(ApplicationProvider.getApplicationContext())
+        assertEquals(u_id, UserID().getUniqueId(ApplicationProvider.getApplicationContext()))
     }
 }

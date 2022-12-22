@@ -27,6 +27,10 @@ class FLWorker(token: String, uniqueID: Long) {
 	private lateinit var storage: Storage
 	private lateinit var context: KMMContext
 
+	internal companion object {
+		const val FL_WORKER_VERSION = 1    // Increment on worker changes
+	}
+
 	fun setupStorage(kmmContext: KMMContext) {
 		context = kmmContext
 		storage = StorageImpl(kmmContext)
