@@ -16,7 +16,7 @@ internal class userIDTest{
 
     @Test
     fun testUUID(){
-        val u_id = userID().getUniqueId(context)
-        assertEquals(u_id, userID().getUniqueId(context))
+        val u_id = UserID().getUniqueId(context)
+        assertEquals(u_id, UserID().getUniqueId(context))
     }
 }

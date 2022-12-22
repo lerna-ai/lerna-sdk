@@ -2,6 +2,7 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.StorageImpl
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -16,8 +17,8 @@ import java.util.concurrent.TimeUnit
 actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	private val context = _context
 	private val storage = StorageImpl(context)
-	actual fun startFL() {
 
+	actual fun startFL(token: String, uniqueID: Long) {
 		Napier.base(DebugAntilog())
 		val flConstraints = Constraints.Builder()
 			.setRequiredNetworkType(NetworkType.UNMETERED)
@@ -25,8 +26,8 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 			.build()
 
 		val inputData = Data.Builder()
-			.putString("token", "632523a5-bdf1-4241-8ec0-f8c8cd666050")
-			.putLong("ID", 123L)
+			.putString("token", token)
+			.putLong("ID", uniqueID)
 			.build()
 
 		val flWorkRequest: PeriodicWorkRequest =
@@ -36,9 +37,16 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 				.setInputData(inputData)
 				.build()
 
-		WorkManager
-			.getInstance(context)
-			.enqueueUniquePeriodicWork("LernaFLWork", ExistingPeriodicWorkPolicy.REPLACE, flWorkRequest)
-
+		if (storage.getVersion() != FLWorker.FL_WORKER_VERSION) {
+			storage.putVersion(FLWorker.FL_WORKER_VERSION)
+			WorkManager
+				.getInstance(context)
+				.enqueueUniquePeriodicWork("LernaFLWork", ExistingPeriodicWorkPolicy.REPLACE, flWorkRequest)
+			Log.d("Lerna", "LernaFLWorker replaced")
+		} else {
+			WorkManager
+				.getInstance(context)
+				.enqueueUniquePeriodicWork("LernaFLWork", ExistingPeriodicWorkPolicy.KEEP, flWorkRequest)
+		}
 	}
 }

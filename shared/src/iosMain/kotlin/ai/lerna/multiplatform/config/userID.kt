@@ -4,7 +4,7 @@ import platform.Foundation.NSUUID
 
 import kotlin.math.abs
 
-actual class userID {
+actual class UserID actual constructor() {
     actual fun getUniqueId(context:KMMContext): Int {
         val prefID = "LernaUniqueID"
         val sharedPref = KMMPreference(context)

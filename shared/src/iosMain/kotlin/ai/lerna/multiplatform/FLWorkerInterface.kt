@@ -8,7 +8,7 @@ import kotlin.native.concurrent.Worker
 
 actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	private val context = _context
-	actual fun startFL() {
+	actual fun startFL(token: String, uniqueID: Long) {
 		Napier.base(DebugAntilog())
 
 		//IF background tasks are enabled, schedule flWorker every 12 hours

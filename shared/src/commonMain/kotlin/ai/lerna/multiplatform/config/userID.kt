@@ -1,5 +1,5 @@
 package ai.lerna.multiplatform.config
 
-expect class userID {
+expect class UserID() {
     fun getUniqueId(context: KMMContext): Int
 }
