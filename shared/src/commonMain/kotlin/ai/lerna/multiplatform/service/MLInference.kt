@@ -14,7 +14,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.times
 
 
 class MLInference() {
-    var inferHistory: MutableList<Int> = ArrayList()
+    var inferHistory: MutableList<String> = ArrayList()
     private var thetaClass = HashMap<String, D2Array<Float>>()
 
     fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
@@ -25,7 +25,7 @@ class MLInference() {
     }
 
 
-    fun predictLabels(testFeatures: D2Array<Float>): String {
+    fun predictLabel(testFeatures: D2Array<Float>): String {
 
         var features = mk.ones<Float>(testFeatures.shape[0]).cat(testFeatures.flatten()).reshape(testFeatures.shape[1]+1, testFeatures.shape[0])
         features = features.transpose()
@@ -47,7 +47,7 @@ class MLInference() {
                 }
             }
             //Napier.i("chosen $i, $value")
-        inferHistory.add(value.toFloat().toInt())
+        inferHistory.add(value)
 
 
         return value

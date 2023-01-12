@@ -5,12 +5,14 @@ import ai.lerna.multiplatform.SensorInterface
 import ai.lerna.multiplatform.Sensors
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
+import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
+import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import com.soywiz.korio.file.VfsOpenMode
 import com.soywiz.korio.file.std.cacheVfs
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
-import kotlinx.coroutines.coroutineScope
+import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class LernaService(private val context: KMMContext) {
 	private val modelData: ModelData = ModelData()
@@ -19,6 +21,8 @@ class LernaService(private val context: KMMContext) {
 	private val fileUtil = FileUtil()
 	private val storageService = StorageImpl(context)
 	private val sensors: SensorInterface = Sensors(context, modelData)
+	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
+	private val identity: (String) -> String = { it }
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -140,4 +144,31 @@ class LernaService(private val context: KMMContext) {
 //			}
 //		}
 	}
+
+	private fun calcInference(dataArray: D2Array<Float>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
+		var inference: TrainingInferenceItem? = TrainingInferenceItem()
+		inference?.ml_id = weights.mlId!!
+		inference?.model = weights.mlName
+		inferenceTasks[weights.mlId!!]?.predictLabel(dataArray)
+
+
+		inference?.prediction = findMostCommonInList(inferenceTasks[weights.mlId!!]?.inferHistory)
+		if (inference?.prediction == "0" || inference?.prediction == "0.0" || storageService.getLastInference() == inference?.prediction || inference?.prediction == null || weights.mlName != storageService.getModelSelect()) { //to only compute inference of the selected model
+			inference = null
+		} else {
+			storageService.putLastInference(inference.prediction!!)
+		}
+		return inference
+	}
+
+	private fun <T>findMostCommonInList(list: MutableList<T>?) : T? {
+		return if (list != null) {
+			list
+				.groupBy { it }
+				.maxByOrNull { it.value.size }
+				?.key
+		} else null
+	}
+
+
 }
