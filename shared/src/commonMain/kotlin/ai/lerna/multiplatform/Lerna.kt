@@ -3,6 +3,7 @@ package ai.lerna.multiplatform
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.KMMPreference
 import ai.lerna.multiplatform.config.UserID
+import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import org.jetbrains.kotlinx.multik.ndarray.operations.Log
@@ -16,6 +17,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val sharedPref: KMMPreference = KMMPreference(_context)
 	private val flWorker = FLWorkerInterface(_context)
+	private val lernaService = LernaService(_context)
 
 	internal companion object {
 		const val FEATURE_SIZE_WITHOUT_EXTRA = 57 // Lerna features plus x0
@@ -90,6 +92,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	internal fun initialize() {
+		val lernaService = LernaService(_context)
 		// ToDo: Start sensor data collection service
 //		lernaServiceIntent = initLernaServiceIntent(_context)
 //		if (!isLernaServiceRunning(selectService(_foregroundServiceEnabled))) {

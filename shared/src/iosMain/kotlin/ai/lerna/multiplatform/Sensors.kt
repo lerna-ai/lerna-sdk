@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform
 
+import ai.lerna.multiplatform.config.KMMContext
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
@@ -12,8 +13,9 @@ import platform.CoreMotion.CMDeviceMotion
 import platform.CoreMotion.CMMotionManager
 import platform.Foundation.NSOperationQueue
 
-actual class Sensors : SensorInterface {
+actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) : SensorInterface {
     private var _data = Channel<SensorDataInterface?>(Channel.BUFFERED)
+    private var modelData = _modelData
 
     actual override val data: CommonFlow<SensorDataInterface?>
         get() = _data.consumeAsFlow().asCommonFlow()
@@ -59,7 +61,20 @@ actual class Sensors : SensorInterface {
 
     private fun convertAcceleration(acceleration: CValue<CMAcceleration>): AccelerometerInterface {
         acceleration.useContents {
+            modelData.setLinAcceleration(this.x, this.y, this.z)
             return AccelerometerData(this.x, this.y, this.z)
         }
+    }
+
+    actual fun getOrientation(): Float {
+        TODO("Not yet implemented")
+    }
+
+    actual fun getBrightness(): Float {
+        TODO("Not yet implemented")
+    }
+
+    actual fun isWiredHeadsetOn(): Boolean {
+        TODO("Not yet implemented")
     }
 }
