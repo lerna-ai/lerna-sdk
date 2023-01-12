@@ -2,7 +2,7 @@ package ai.lerna.multiplatform
 
 import kotlin.math.sqrt
 
-internal class ModelData {
+class ModelData {
 	private var proximity: Float = 0F
 	private var linAcceleration = arrayOf(0F, 0F, 0F)
 	private var gyroscope = arrayOf(0F, 0F, 0F)
@@ -323,7 +323,7 @@ internal class ModelData {
 		return toArray().joinToString(separator = ",") { it.toString() }
 	}
 
-	private fun toArray(): Array<Double> {
+	internal fun toArray(): Array<Double> {
 		val doubleArray: MutableList<Double> = ArrayList()
 		doubleArray.add(proximity.toDouble())
 		doubleArray.add(linAcceleration[0].toDouble())

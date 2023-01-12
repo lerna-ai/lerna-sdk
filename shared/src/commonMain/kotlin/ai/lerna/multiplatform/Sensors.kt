@@ -1,5 +1,7 @@
 package ai.lerna.multiplatform
 
+import ai.lerna.multiplatform.config.KMMContext
+
 interface AccelerometerInterface {
     val x: Double
     val y: Double
@@ -35,7 +37,7 @@ interface SensorInterface {
     fun isWiredHeadsetOn(): Boolean
 }
 
-expect class Sensors : SensorInterface {
+expect class Sensors(_context: KMMContext, _modelData: ModelData) : SensorInterface {
     override val data: CommonFlow<SensorDataInterface?>
     override val isEnabled: Boolean
     override fun start()

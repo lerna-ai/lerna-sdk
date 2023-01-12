@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform
 
+import ai.lerna.multiplatform.config.KMMContext
 import android.content.Context
 import android.content.res.Configuration
 import android.hardware.Sensor
@@ -11,10 +12,11 @@ import android.media.AudioManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import android.provider.Settings
 
-actual class Sensors constructor(_context: Context) :
+actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) :
     SensorEventListener, SensorInterface {
 
     private var context = _context
+    private var modelData = _modelData
     private var mSensorManager: SensorManager? =
         context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
 
@@ -57,11 +59,15 @@ actual class Sensors constructor(_context: Context) :
     }
 
     actual override fun getOrientation(): Float {
-        return if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 1F else 0F
+        val orientation = if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 1F else 0F
+        modelData.setOrientation(orientation)
+        return orientation
     }
 
     actual override fun getBrightness(): Float {
-        return Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+        val brightness = Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+        modelData.setBrightness(brightness)
+        return brightness
     }
 
     actual override fun isWiredHeadsetOn(): Boolean {
@@ -86,9 +92,17 @@ actual class Sensors constructor(_context: Context) :
         val values = p0!!.values.copyOf()
 
         when (p0.sensor.type) {
-            Sensor.TYPE_MAGNETIC_FIELD -> rawMagnetic = values
-            Sensor.TYPE_GRAVITY -> rawGravity = values
-            Sensor.TYPE_ACCELEROMETER -> rawAccelerometer = values
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                modelData.setMagneticField(values[0], values[1], values[2])
+                rawMagnetic = values
+            }
+            Sensor.TYPE_GRAVITY -> {
+                rawGravity = values
+            }
+            Sensor.TYPE_ACCELEROMETER -> {
+                modelData.setLinAcceleration(values[0], values[1], values[2])
+                rawAccelerometer = values
+            }
             Sensor.TYPE_ROTATION_VECTOR -> {
                 rawRotation = values
                 SensorManager.getRotationMatrixFromVector(rawRotationMatrix, values)
