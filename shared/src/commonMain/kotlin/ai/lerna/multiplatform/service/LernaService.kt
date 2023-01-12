@@ -12,9 +12,12 @@ import com.soywiz.korio.file.std.cacheVfs
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
+import org.jetbrains.kotlinx.multik.api.mk
+import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class LernaService(private val context: KMMContext) {
+	private lateinit var flService: FederatedLearningService
 	private val modelData: ModelData = ModelData()
 	private var successValue = 0
 	private var weights: GlobalTrainingWeights? = null
@@ -22,7 +25,6 @@ class LernaService(private val context: KMMContext) {
 	private val storageService = StorageImpl(context)
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
-	private val identity: (String) -> String = { it }
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -32,6 +34,7 @@ class LernaService(private val context: KMMContext) {
 		sensors.start()
 		this.weights = storageService.getWeights()
 		//ToDo: Add periodic call to runPeriodic()
+		//ToDO: initialize flService
 	}
 
 	fun stop() {
@@ -42,7 +45,7 @@ class LernaService(private val context: KMMContext) {
 		//modelData.updateData(baseContext)
 
 		if ((weights?.version ?: 0) > 0)
-			calcAndSubmitInference(modelData.toArray().toDoubleArray())
+			calcAndSubmitInference(mk.ndarray(arrayOf(modelData.toArray().map { it.toFloat() }.toFloatArray())))
 		else
 			Napier.d("No weights yet from server", null, "LernaService")
 
@@ -124,25 +127,26 @@ class LernaService(private val context: KMMContext) {
 		}
 	}
 
-	private fun calcAndSubmitInference(dataArray: DoubleArray) {
-//		val dataINDArray = Nd4j.create(dataArray)
-//		var inferenceList: List<TrainingInferenceItem?> = weights?.trainingWeights?.stream()!!
-//			.map { weightsItem -> calcInference(dataINDArray, weightsItem) }
-//			.collect(Collectors.toList())
-//		inferenceList = inferenceList.filterNotNull()
-//
-//
-//		// ToDo: for future use, currently response is empty
-////		flService.submitInferenceListener= { submitInference ->
-////			Log.d("LernaService", submitInference)
-////		}
-//		if (inferenceList.isNotEmpty()) {
-//			storageService.putInference(inferenceList)
-//			if (utils.isConnectionUnmetered(baseContext, true)) {
-//				Log.d("LernaService", "Sending ${inferenceList.size} inference(s) to the DB")
-//				flService.submitInference(weights!!.version, inferenceList, storageService.getUserIdentifier()?: "")
-//			}
+	private suspend fun calcAndSubmitInference(dataArray: D2Array<Float>) {
+
+		var inferenceList: List<TrainingInferenceItem?>? = weights?.trainingWeights?.map { it -> calcInference(dataArray, it)}
+
+
+		inferenceList = inferenceList?.filterNotNull()
+
+
+		// ToDo: for future use, currently response is empty
+//		flService.submitInferenceListener= { submitInference ->
+//			Log.d("LernaService", submitInference)
 //		}
+		if (inferenceList != null) {
+			if (inferenceList.isNotEmpty()) {
+				storageService.putInference(inferenceList)
+				Napier.d("Sending ${inferenceList.size} inference(s) to the DB", null, "LernaService")
+				flService.submitInference(weights!!.version, inferenceList, storageService.getUserIdentifier()?: "")
+
+			}
+		}
 	}
 
 	private fun calcInference(dataArray: D2Array<Float>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
