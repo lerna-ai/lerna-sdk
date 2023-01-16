@@ -1,7 +1,12 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -9,8 +14,13 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.BatteryManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import android.provider.Settings
+import io.ktor.util.date.*
+import java.util.*
 
 actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) :
     SensorEventListener, SensorInterface {
@@ -20,11 +30,14 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     private var mSensorManager: SensorManager? =
         context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
 
-    private var sAccelerometer: Sensor? =
-        mSensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    private var sAccelerometer: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private var sGravity: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
     private var sMagnetic: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     private var sRotation: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    private var sProximity: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+    private var sGyroscope: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+    private var sLinAcc: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+    private var sLight: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     private var rawAccelerometer: FloatArray? = null
     private var rawRotation: FloatArray? = null
@@ -48,6 +61,10 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         mSensorManager?.registerListener(this, sGravity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sMagnetic, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sRotation, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager?.registerListener(this, sProximity, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager?.registerListener(this, sGyroscope, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager?.registerListener(this, sLinAcc, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager?.registerListener(this, sLight, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
     actual override fun stop() {
@@ -56,21 +73,70 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         mSensorManager?.unregisterListener(this, sGravity)
         mSensorManager?.unregisterListener(this, sMagnetic)
         mSensorManager?.unregisterListener(this, sRotation)
+        mSensorManager?.unregisterListener(this, sProximity)
+        mSensorManager?.unregisterListener(this, sGyroscope)
+        mSensorManager?.unregisterListener(this, sLinAcc)
+        mSensorManager?.unregisterListener(this, sLight)
     }
 
-    actual override fun getOrientation(): Float {
-        val orientation = if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 1F else 0F
-        modelData.setOrientation(orientation)
-        return orientation
+    actual override fun updateData() {
+        modelData.setBrightness(getBrightness())
+
+        modelData.setDateTime(GMTDate().hours, GMTDate().dayOfWeek.ordinal)
+
+        modelData.setPhones(isWiredHeadsetOn())
+
+        modelData.setOrientation(getOrientation())
+
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { iFilter ->
+            context.registerReceiver(null, iFilter)
+        }
+        modelData.setBatteryChargingState(batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1)
+
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager? ?: return
+        modelData.setAudioActivity(
+            audioManager.ringerMode,
+            audioManager.getStreamVolume(AudioManager.STREAM_ALARM).toFloat(),
+            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat(),
+            audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION).toFloat(),
+            audioManager.getStreamVolume(AudioManager.STREAM_RING).toFloat(),
+            audioManager.isBluetoothScoOn,
+            audioManager.isMicrophoneMute,
+            audioManager.isMusicActive,
+            audioManager.isSpeakerphoneOn,
+            audioManager.isWiredHeadsetOn
+        )
+
+        modelData.setWifiConnected(isConnectionUnmetered(context, true))
+
+        modelData.setHistory()
     }
 
-    actual override fun getBrightness(): Float {
-        val brightness = Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-        modelData.setBrightness(brightness)
-        return brightness
+    @SuppressLint("MissingPermission")
+    private fun isConnectionUnmetered(context: Context, forceWithNotPermission: Boolean = false): Boolean {
+        if (context.checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
+            return forceWithNotPermission
+        }
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+        connectivityManager?.run {
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.run {
+                if (hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
-    actual override fun isWiredHeadsetOn(): Boolean {
+    private fun getOrientation(): Float {
+        return if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 1F else 0F
+    }
+
+    private fun getBrightness(): Float {
+        return Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+    }
+
+    private fun isWiredHeadsetOn(): Boolean {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS or AudioManager.GET_DEVICES_OUTPUTS)
         for (deviceInfo in audioDevices) {
@@ -113,6 +179,10 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
                     )[0].toDouble()
                 ) + 360).toInt() % 360).toDouble()
             }
+            Sensor.TYPE_PROXIMITY -> modelData.setProximity(values[0])
+            Sensor.TYPE_GYROSCOPE -> modelData.setGyroscope(values[0], values[1], values[2])
+            Sensor.TYPE_LINEAR_ACCELERATION -> modelData.setLinAcceleration(values[0], values[1], values[2])
+            Sensor.TYPE_LIGHT -> modelData.setLight(values[0])
         }
 
         if (rawMagnetic != null && rawGravity != null && rawAccelerometer != null && rawRotation != null) {

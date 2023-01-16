@@ -10,7 +10,6 @@ import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
-import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
@@ -39,7 +38,6 @@ class FLWorker(token: String, uniqueID: Long) {
 	}
 
 	suspend fun startFLSuspend() = run {
-		Napier.base(DebugAntilog())
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
 		val trainingTask = federatedLearningService.requestNewTraining() ?: return
 

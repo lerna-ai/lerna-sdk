@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import io.ktor.util.date.*
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
@@ -61,20 +62,14 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
 
     private fun convertAcceleration(acceleration: CValue<CMAcceleration>): AccelerometerInterface {
         acceleration.useContents {
-            modelData.setLinAcceleration(this.x, this.y, this.z)
+            modelData.setLinAcceleration(this.x.toFloat(), this.y.toFloat(), this.z.toFloat())
             return AccelerometerData(this.x, this.y, this.z)
         }
     }
 
-    actual fun getOrientation(): Float {
-        TODO("Not yet implemented")
-    }
+    actual override fun updateData() {
+        modelData.setDateTime(GMTDate().hours, GMTDate().dayOfWeek.ordinal)
 
-    actual fun getBrightness(): Float {
-        TODO("Not yet implemented")
-    }
-
-    actual fun isWiredHeadsetOn(): Boolean {
-        TODO("Not yet implemented")
+        modelData.setHistory()
     }
 }

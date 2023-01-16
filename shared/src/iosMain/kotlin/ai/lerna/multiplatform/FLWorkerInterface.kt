@@ -18,14 +18,14 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 		////////////////////////////////////////////////////////////////////
 		// Example of flWorker running on iOS //////////////////////////////
-		val flWorker = FLWorker("632523a5-bdf1-4241-8ec0-f8c8cd666050", 123L)
+		val flWorker = FLWorker(token, uniqueID)
 		flWorker.setupStorage(context)
 		val worker = Worker.start()
-		worker.executeAfter(3000, performWorkLambda(flWorker))
+		worker.executeAfter(3000, performWorkLambda(token, uniqueID, flWorker))
 		////////////////////////////////////////////////////////////////////
 	}
 
-	private fun performWorkLambda(flWorker: FLWorker): () -> Unit = {
+	private fun performWorkLambda(token: String, uniqueID: Long, flWorker: FLWorker): () -> Unit = {
 		runBlocking {
 			try {
 				flWorker.startFLSuspend()

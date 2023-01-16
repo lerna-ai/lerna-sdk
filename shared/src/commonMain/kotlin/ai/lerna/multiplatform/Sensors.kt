@@ -32,9 +32,7 @@ interface SensorInterface {
     val isEnabled: Boolean
     fun start()
     fun stop()
-    fun getOrientation(): Float
-    fun getBrightness(): Float
-    fun isWiredHeadsetOn(): Boolean
+    fun updateData()
 }
 
 expect class Sensors(_context: KMMContext, _modelData: ModelData) : SensorInterface {
@@ -42,7 +40,5 @@ expect class Sensors(_context: KMMContext, _modelData: ModelData) : SensorInterf
     override val isEnabled: Boolean
     override fun start()
     override fun stop()
-    override fun getOrientation(): Float
-    override fun getBrightness(): Float
-    override fun isWiredHeadsetOn(): Boolean
+    override fun updateData()
 }
