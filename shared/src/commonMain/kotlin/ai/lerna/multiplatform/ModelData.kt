@@ -178,23 +178,6 @@ class ModelData {
 		wifiConnected = if (isConnectionUnmetered) 1F else 0F
 	}
 
-//	internal fun updateData(context: Context) {
-//
-//		//setPhones(isWiredHeadsetOn(context))
-//
-//		//setOrientation(context)
-//
-//		//setBatteryChargingState(context)
-//
-//		//setAudioActivity(context)
-//
-//		//setWifiConnected(context)
-//
-//		// setBluetooth(context) -- removed
-//
-//		//setHistory()
-//	}
-
 	internal fun resetSensorHistory() {
 		linAccelerationHistoryX.clear()
 		linAccelerationHistoryY.clear()
@@ -236,8 +219,8 @@ class ModelData {
 			}
 		}
 
-		if (dayOfWeek == 7 || // Calendar.SATURDAY
-			dayOfWeek == 1    // Calendar.SUNDAY
+		if (dayOfWeek == 5 || // SATURDAY
+			dayOfWeek == 6    // SUNDAY
 		) {
 			weekend = 1F
 			weekday = 0F

@@ -6,7 +6,8 @@ import ai.lerna.multiplatform.config.UserID
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
-import org.jetbrains.kotlinx.multik.ndarray.operations.Log
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
 
 class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val _context = context
@@ -25,6 +26,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	init {
+		Napier.base(DebugAntilog())
+		Napier.d("Initialize library", null, "Lerna")
 	}
 
 	fun start() {
@@ -36,6 +39,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	fun stop() {
+		lernaService.stop()
 //		if (_foregroundServiceEnabled) {
 //			val broadcastIntent = Intent(_context, ServiceRestarter::class.java)
 //			broadcastIntent.action = "restartLernaService"
@@ -93,6 +97,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 
 	internal fun initialize() {
 		val lernaService = LernaService(_context)
+		lernaService.start()
 		// ToDo: Start sensor data collection service
 //		lernaServiceIntent = initLernaServiceIntent(_context)
 //		if (!isLernaServiceRunning(selectService(_foregroundServiceEnabled))) {

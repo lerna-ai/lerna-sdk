@@ -15,6 +15,10 @@ import io.ktor.util.date.*
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class LernaService(private val context: KMMContext) {
 	private lateinit var flService: FederatedLearningService
@@ -25,6 +29,7 @@ class LernaService(private val context: KMMContext) {
 	private val storageService = StorageImpl(context)
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
+	private var runPeriodicFlag = false
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -33,24 +38,37 @@ class LernaService(private val context: KMMContext) {
 	fun start() {
 		sensors.start()
 		this.weights = storageService.getWeights()
+		runPeriodicFlag = true
+		Napier.d("Start Periodic", null, "LernaService")
 		//ToDo: Add periodic call to runPeriodic()
 		//ToDO: initialize flService
+//		CoroutineScope(Dispatchers.Default).launch {
+//			PeriodicRunner().run(context, runPeriodic)
+//		}
+		CoroutineScope(Dispatchers.Default).launch {
+			while(runPeriodicFlag) {
+				delay(2000)
+				runPeriodic()
+			}
+		}
 	}
 
 	fun stop() {
-
+		Napier.d("Stop Periodic", null, "LernaService")
+		runPeriodicFlag = false
 	}
 
 	suspend fun runPeriodic() {
-		//modelData.updateData(baseContext)
+		sensors.updateData()
 
 		if ((weights?.version ?: 0) > 0)
 			calcAndSubmitInference(mk.ndarray(arrayOf(modelData.toArray().map { it.toFloat() }.toFloatArray())))
 		else
 			Napier.d("No weights yet from server", null, "LernaService")
 
-		val time = GMTDate()
-		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
+		val time = GMTDate().toCustomDate()
+		//commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
+		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
 		if (successValue != 0) {
 			updateFileLastSession(storageService.getSessionID(), successValue)
 			sessionEnd(successValue)
@@ -174,5 +192,12 @@ class LernaService(private val context: KMMContext) {
 		} else null
 	}
 
+	private fun GMTDate.toCustomDate(): String = buildString {
+		append(year.padZero(4))
+		append("-${(month.ordinal + 1).padZero(2)}")
+		append("-${dayOfMonth.padZero(2)}")
+		append("_${hours.padZero(2)}.${minutes.padZero(2)}.${seconds.padZero(2)}")
+	}
 
+	private fun Int.padZero(length: Int): String = toString().padStart(length, '0')
 }
