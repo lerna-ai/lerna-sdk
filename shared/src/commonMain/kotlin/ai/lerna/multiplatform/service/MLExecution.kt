@@ -9,7 +9,7 @@ interface IMLExecution {
     fun loadData()
     fun prepareData(ml_id: Int)
     fun localML(ml_id: Int): Long
-    fun addNoise(share: Double, scaling: Int, prediction: String): D2Array<Double>?
+    fun addNoise(share: Float, scaling: Int, prediction: String): D2Array<Float>?
     fun setWeights(trainingWeights: GlobalTrainingWeightsItem)
-    fun computeAccuracy(): Double
+    fun computeAccuracy(): Float
 }

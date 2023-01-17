@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 class GlobalTrainingWeightsItemApi {
 	var weights // (prediction(lenra_job), weights(lerna_job))
-			: Map<String, DoubleArray>? = null
+			: Map<String, FloatArray>? = null
 	var mlId // database lerna_job.ml_id
 			: Long? = null
 	var mlName // database lerna_ml.model
 			: String? = null
-	var accuracy: Double? = null
+	var accuracy: Float? = null
 }

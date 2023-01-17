@@ -8,8 +8,8 @@ class MpcResponse {
     var compId: Long? = null
 
 
-    var share: Double? = null
+    var share: Float? = null
 
 
-    var epsilon: Double? = null
+    var epsilon: Float? = null
 }

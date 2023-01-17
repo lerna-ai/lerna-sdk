@@ -10,12 +10,12 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import org.jetbrains.kotlinx.multik.ndarray.operations.toMutableList
 
 class DLArrayConverter {
-	fun convert(array: DoubleArray): D2Array<Double> {
+	fun convert(array: FloatArray): D2Array<Float> {
 		return mk.ndarray(array).reshape(array.size, 1)
 	}
 
-	fun convert(d2Array: D2Array<Double>): DoubleArray {
-		return d2Array.toMutableList().toDoubleArray()
+	fun convert(d2Array: D2Array<Float>): FloatArray {
+		return d2Array.toMutableList().toFloatArray()
 	}
 
 	fun convert(globalTrainingWeightsApi: GlobalTrainingWeightsApi): GlobalTrainingWeights {
