@@ -71,7 +71,7 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		jobId: Long,
 		version: Long,
 		datapoints: Long,
-		deviceWeights: D2Array<Double>
+		deviceWeights: D2Array<Float>
 	): String? {
 		val request = TrainingWeights()
 		request.jobId = jobId
@@ -109,7 +109,7 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		}
 	}
 
-	suspend fun submitAccuracy(mlId: Long, version: Long, accuracy: Double): String? {
+	suspend fun submitAccuracy(mlId: Long, version: Long, accuracy: Float): String? {
 		val request = TrainingAccuracy()
 		request.mlId = mlId
 		request.deviceId = uniqueID
