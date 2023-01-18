@@ -35,6 +35,10 @@ class LernaService(private val context: KMMContext) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
 	}
 
+	internal fun initCustomFeatureSize(size: Int) {
+		modelData.setupCustomFeatureSize(size)
+	}
+
 	fun start() {
 		sensors.start()
 		this.weights = storageService.getWeights()
@@ -56,6 +60,10 @@ class LernaService(private val context: KMMContext) {
 	fun stop() {
 		Napier.d("Stop Periodic", null, "LernaService")
 		runPeriodicFlag = false
+	}
+
+	internal fun updateFeatures(values: FloatArray) {
+		modelData.updateCustomFeatures(values)
 	}
 
 	suspend fun runPeriodic() {
