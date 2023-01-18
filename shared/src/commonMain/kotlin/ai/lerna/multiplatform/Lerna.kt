@@ -40,14 +40,6 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 
 	fun stop() {
 		lernaService.stop()
-//		if (_foregroundServiceEnabled) {
-//			val broadcastIntent = Intent(_context, ServiceRestarter::class.java)
-//			broadcastIntent.action = "restartLernaService"
-//			_context.sendBroadcast(broadcastIntent)
-//		}
-//		else {
-//			_context.sendBroadcast(Intent(ACTION_APP_STOP))
-//		}
 	}
 
 	fun setUserIdentifier(userID: String) {
@@ -75,9 +67,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 		if (values.size != _customFeaturesSize) {
 			throw IllegalArgumentException("Incorrect feature size")
 		}
-//		val updateIntent = Intent(ACTION_UPDATE_FEATURE)
-//		updateIntent.putExtra("payload", values);
-//		_context.sendBroadcast(updateIntent)
+		lernaService.updateFeatures(values)
 	}
 
 	private fun checkWeightSize(): Boolean {
@@ -96,7 +86,9 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	internal fun initialize() {
-		val lernaService = LernaService(_context)
+		if (_customFeaturesSize > 0) {
+			lernaService.initCustomFeatureSize(_customFeaturesSize)
+		}
 		lernaService.start()
 		// ToDo: Start sensor data collection service
 //		lernaServiceIntent = initLernaServiceIntent(_context)
