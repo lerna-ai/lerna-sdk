@@ -50,14 +50,13 @@ class FileUtil {
 	}
 
 	suspend fun commitToFile(sessionID: Int, record: String) {
-		val sensorFile = cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.WRITE)
+		val sensorFile = try {
+			cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.WRITE)
+		} catch (e: FileNotFoundException) {
+			cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+		}
 		sensorFile.setPosition(sensorFile.size())
 		sensorFile.writeString(record)
-		sensorFile.close()
-	}
-
-	suspend fun switchFile(sessionID: Int) {
-		val sensorFile = cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		sensorFile.close()
 	}
 }
