@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform.service
 
 import ai.lerna.multiplatform.ModelData
+import ai.lerna.multiplatform.PeriodicRunner
 import ai.lerna.multiplatform.SensorInterface
 import ai.lerna.multiplatform.Sensors
 import ai.lerna.multiplatform.config.KMMContext
@@ -15,10 +16,6 @@ import io.ktor.util.date.*
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class LernaService(private val context: KMMContext) {
 	private lateinit var flService: FederatedLearningService
@@ -29,7 +26,7 @@ class LernaService(private val context: KMMContext) {
 	private val storageService = StorageImpl(context)
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
-	private var runPeriodicFlag = false
+	private val periodicRunner = PeriodicRunner()
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -39,34 +36,28 @@ class LernaService(private val context: KMMContext) {
 		modelData.setupCustomFeatureSize(size)
 	}
 
-	fun start() {
+	internal fun start() {
 		sensors.start()
 		this.weights = storageService.getWeights()
-		runPeriodicFlag = true
 		Napier.d("Start Periodic", null, "LernaService")
-		//ToDo: Add periodic call to runPeriodic()
 		//ToDO: initialize flService
-//		CoroutineScope(Dispatchers.Default).launch {
-//			PeriodicRunner().run(context, runPeriodic)
-//		}
-		CoroutineScope(Dispatchers.Default).launch {
-			while(runPeriodicFlag) {
-				delay(2000)
-				runPeriodic()
-			}
-		}
+		periodicRunner.run(context, ::runPeriodic)
 	}
 
-	fun stop() {
+	internal fun stop() {
 		Napier.d("Stop Periodic", null, "LernaService")
-		runPeriodicFlag = false
+		periodicRunner.stop()
 	}
 
 	internal fun updateFeatures(values: FloatArray) {
 		modelData.updateCustomFeatures(values)
 	}
 
-	suspend fun runPeriodic() {
+	internal fun captureEvent(eventNumber: Int) {
+		successValue = eventNumber
+	}
+
+	private suspend fun runPeriodic() {
 		sensors.updateData()
 
 		if ((weights?.version ?: 0) > 0)
@@ -75,7 +66,7 @@ class LernaService(private val context: KMMContext) {
 			Napier.d("No weights yet from server", null, "LernaService")
 
 		val time = GMTDate().toCustomDate()
-		//commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
+		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
 		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
 		if (successValue != 0) {
 			updateFileLastSession(storageService.getSessionID(), successValue)
@@ -89,7 +80,6 @@ class LernaService(private val context: KMMContext) {
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
 		storageService.putSessionID(sessionId)
-		fileUtil.switchFile(sessionId)
 		modelData.resetSensorHistory()
 
 //		weights?.trainingWeights?.forEach {
@@ -155,7 +145,7 @@ class LernaService(private val context: KMMContext) {
 
 	private suspend fun calcAndSubmitInference(dataArray: D2Array<Float>) {
 
-		var inferenceList: List<TrainingInferenceItem?>? = weights?.trainingWeights?.map { it -> calcInference(dataArray, it)}
+		var inferenceList: List<TrainingInferenceItem?>? = weights?.trainingWeights?.map { it -> calcInference(dataArray, it) }
 
 
 		inferenceList = inferenceList?.filterNotNull()
@@ -169,7 +159,7 @@ class LernaService(private val context: KMMContext) {
 			if (inferenceList.isNotEmpty()) {
 				storageService.putInference(inferenceList)
 				Napier.d("Sending ${inferenceList.size} inference(s) to the DB", null, "LernaService")
-				flService.submitInference(weights!!.version, inferenceList, storageService.getUserIdentifier()?: "")
+				flService.submitInference(weights!!.version, inferenceList, storageService.getUserIdentifier() ?: "")
 
 			}
 		}
@@ -191,7 +181,7 @@ class LernaService(private val context: KMMContext) {
 		return inference
 	}
 
-	private fun <T>findMostCommonInList(list: MutableList<T>?) : T? {
+	private fun <T> findMostCommonInList(list: MutableList<T>?): T? {
 		return if (list != null) {
 			list
 				.groupBy { it }
