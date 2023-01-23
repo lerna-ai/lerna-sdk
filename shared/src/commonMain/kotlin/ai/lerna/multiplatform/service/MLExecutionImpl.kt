@@ -24,7 +24,6 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
 
 
     override fun loadData() {
-        Napier.base(DebugAntilog())
         next = getData()
     }
 
