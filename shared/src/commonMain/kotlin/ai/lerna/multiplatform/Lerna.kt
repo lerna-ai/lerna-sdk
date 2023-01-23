@@ -8,6 +8,7 @@ import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.runBlocking
 
 class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val _context = context
@@ -28,6 +29,10 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	init {
 		Napier.base(DebugAntilog())
 		Napier.d("Initialize library", null, "Lerna")
+		weightsManager.setupStorage(storageService)
+		runBlocking {
+			weightsManager.updateWeights()
+		}
 	}
 
 	fun start() {
@@ -52,15 +57,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 
 	fun captureEvent(eventNumber: Int) {
 		validateEventNumber(eventNumber)
-//		lernaServiceIntent = initLernaServiceIntent(_context)
-//		lernaServiceIntent?.putExtra("successValue", eventNumber)
-//		if (_foregroundServiceEnabled) {
-//			val x = _context.startForegroundService(lernaServiceIntent)
-//			Log.d("Lerna", "LernaService restarted to capture event $x")
-//		} else {
-//			val x = _context.startService(lernaServiceIntent)
-//			Log.d("Lerna", "LernaForegroundService restarted to capture event $x")
-//		}
+		lernaService.captureEvent(eventNumber)
 	}
 
 	fun updateFeature(values: FloatArray) {
@@ -77,30 +74,18 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 		if (featuresSize - _customFeaturesSize == FEATURE_SIZE_WITHOUT_EXTRA) {
 			sharedPref.put("enableBluetoothFeatures", false)
 			return true
-		}
-		else if (featuresSize - _customFeaturesSize == FEATURE_SIZE_WITH_EXTRA) {
+		} else if (featuresSize - _customFeaturesSize == FEATURE_SIZE_WITH_EXTRA) {
 			sharedPref.put("enableBluetoothFeatures", true)
 			return true // checkSelfPermission(_context, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED
 		}
 		return false
 	}
 
-	internal fun initialize() {
+	private fun initialize() {
 		if (_customFeaturesSize > 0) {
 			lernaService.initCustomFeatureSize(_customFeaturesSize)
 		}
 		lernaService.start()
-		// ToDo: Start sensor data collection service
-//		lernaServiceIntent = initLernaServiceIntent(_context)
-//		if (!isLernaServiceRunning(selectService(_foregroundServiceEnabled))) {
-//			if (_foregroundServiceEnabled) {
-//				_context.startForegroundService(lernaServiceIntent)
-//				Log.d("Lerna", "LernaForegroundService started")
-//			} else {
-//				_context.startService(lernaServiceIntent)
-//				Log.d("Lerna", "LernaService started")
-//			}
-//		}
 	}
 
 	private fun validateEventNumber(eventNumber: Int) {

@@ -19,7 +19,6 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	private val storage = StorageImpl(context)
 
 	actual fun startFL(token: String, uniqueID: Long) {
-		Napier.base(DebugAntilog())
 		val flConstraints = Constraints.Builder()
 			.setRequiredNetworkType(NetworkType.UNMETERED)
 			//.setRequiresDeviceIdle(true)
