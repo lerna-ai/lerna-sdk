@@ -1,8 +1,7 @@
-import ai.lerna.multiplatform.config.ReadWriteFile
 import ai.lerna.multiplatform.service.IMLExecution
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
-import io.github.aakira.napier.DebugAntilog
+import com.soywiz.korio.file.std.cacheVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.math.exp
@@ -22,18 +21,13 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     private lateinit var next: List<FloatArray>
 
 
-
-    override fun loadData() {
+    override suspend fun loadData() {
         next = getData()
     }
 
     override fun prepareData(ml_id: Int) {
-        val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * next.size.toFloat()).toInt()
-        val list = mutableListOf<Float>()
-        for(row in next){
-            if (row[0] !in list) { list.add(row[0]) }
-        }
-
+        val list = next.map { it[0] }.distinct()
+        val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * list.size.toFloat()).toInt()
         val sessions = list.asSequence().shuffled().take(samples).toList()
 
         val trainData = mutableListOf<FloatArray>()
@@ -47,7 +41,6 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
                 testData.add(next[i])
             }
         }
-
         val train = mk.ndarray(trainData.toTypedArray())
         val test = mk.ndarray(testData.toTypedArray())
 
@@ -212,9 +205,13 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         return newTheta
     }
 
-    private fun getData(): List<FloatArray>{
-        val a = ReadWriteFile()
-        val mlData = a.read("", "mldata.csv")
+    private suspend fun getData(): List<FloatArray>{
+        val mlData = cacheVfs["mldata.csv"].readLines().toList()
+            .filter { it.isNotEmpty() }
+            .map { line -> line.split(",")
+                .filter { !it.contains("_") }
+                .map { it.toFloat() }
+                .toFloatArray() }
         return mlData
     }
 
