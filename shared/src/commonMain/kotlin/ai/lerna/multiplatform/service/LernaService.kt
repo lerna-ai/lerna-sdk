@@ -47,6 +47,7 @@ class LernaService(private val context: KMMContext) {
 	internal fun stop() {
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
+		sessionEnd(0)
 	}
 
 	internal fun updateFeatures(values: FloatArray) {
@@ -75,7 +76,7 @@ class LernaService(private val context: KMMContext) {
 		successValue = 0 // Use success for only one session after event
 	}
 
-	private suspend fun sessionEnd(successValue: Int) {
+	private fun sessionEnd(successValue: Int) {
 		var sessionId = storageService.getSessionID()
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++

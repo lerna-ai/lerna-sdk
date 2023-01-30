@@ -2,7 +2,6 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
-import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
 import kotlinx.coroutines.runBlocking
