@@ -1,15 +1,9 @@
 package ai.lerna.multiplatform.service.dto
 
 
-
+@kotlinx.serialization.Serializable
 class MpcResponse {
-
-
-    var compId: Long? = null
-
-
-    var share: Float? = null
-
-
-    var epsilon: Float? = null
+	var CompID: Long? = null
+	var Share: Float? = null
+	var Epsilon: Float? = null
 }

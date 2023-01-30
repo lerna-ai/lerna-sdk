@@ -10,11 +10,14 @@ import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
+import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
 import io.github.aakira.napier.Napier
+import io.ktor.util.date.*
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
-class FLWorker(token: String, uniqueID: Long) {
+class FLWorker(_token: String, uniqueID: Long) {
 	// ToDo: Update FL Service configuration
+	private val token = _token
 	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", token, uniqueID)
 	private lateinit var flWorkerInterface: FLWorkerInterface
 	private val weightsManager = WeightsManager(token, uniqueID)
@@ -92,9 +95,9 @@ class FLWorker(token: String, uniqueID: Long) {
 			//For each prediction/job
 			globalWeights!!.trainingWeights!![i].weights!!.forEach { (key, _) ->
 				try {
-					val share = getNoise(uniqueID, key, size, i)!!.share!!.toFloat()
-					val weights = ml.addNoise(share, scaling, key)
 					val jobId = trainingTask.trainingTasks!![i].jobIds!![key]!!
+					val share = getNoise(uniqueID, size, jobId)!!.Share!!.toFloat()
+					val weights = ml.addNoise(share, scaling, key)
 					Napier.d("Submitting noisy weights for job $jobId", null, "LernaFL")
 
 					val submitedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
@@ -130,40 +133,24 @@ class FLWorker(token: String, uniqueID: Long) {
 						}
 					}
 				} catch (ex: Exception) {
-					//logUploader.uploadLogcat(uniqueID, "logcat_errf.txt")
+					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, "", ex.stackTraceToString(), GMTDate())
 				}
 			}
 		}
 	}
 
-	private fun getNoise(uniqueID: Long, prediction: String, size: Long, ml_id: Int): MpcResponse? {
-		if (!federatedLearningService.isTrainingTaskReady()) {
-			//return null
-		}
-		val id = 123 //federatedLearningService.getTrainingTask()?.trainingTasks?.get(ml_id)?.jobIds?.get(prediction)
-		val obj: MutableMap<Any?, Any?> = LinkedHashMap()
-		if (id == null) {
+	private suspend fun getNoise(
+		uniqueID: Long,
+		size: Long,
+		job_id: Long?
+	): MpcResponse? {
+		//if (!federatedLearningService.isTrainingTaskReady()) {
+		//	return null
+		//}
+		if (job_id == null) {
 			return null
 		}
 		Napier.d("Retrieving noise share from MPC...", null, "LernaFL")
-		val xml = "<Body><CompID>$id</CompID><User>$uniqueID</User></Body>"
-//		obj.put("CompID", id)
-//		obj.put("User", uniqueID)
-//		val node = JSONObject(obj)
-//		val rootObject = JSONObject()
-//		rootObject.put("Body", node)
-//		val xml = XML.toString(rootObject)
-//		val future: Future<MpcResponse> = executor.submit(Callable {
-//			val mpcService = MpcService(mpcHost)
-//			mpcService.lerna(xml, size)
-//		})
-		val result: MpcResponse = MpcService("mpc.test.lerna.ai").lerna(xml, size)
-//		try {
-//			result = future.get()
-//		} catch (ex: Exception) {
-//			Log.d("LernaFL", "MPC server error: ${ex.message}")
-//			throw ex
-//		}
-		return result
+		return MpcService("https://api.dev.lerna.ai:3443/", token).lerna(job_id, uniqueID, size)
 	}
 }
