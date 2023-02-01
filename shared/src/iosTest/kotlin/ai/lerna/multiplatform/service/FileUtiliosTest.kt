@@ -20,6 +20,7 @@ internal class FileUtiliosTest {
 	fun mergeFiles() {
 		runBlocking {
 			fileUtilTest.mergeFiles(storage)
+			fileUtilTest.mergeFilesTruncated(storage)
 		}
 	}
 }

@@ -45,6 +45,30 @@ internal class FileUtilTest {
 		assertEquals("2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0", mlData[7])
 		assertEquals("3,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0", mlData[8])
 		assertEquals("4,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0", mlData[9])
+		cacheVfs["mldata.csv"].delete()
 
+	}
+
+	suspend fun mergeFilesTruncated(storage: Storage) {
+		// Given
+		var sensorFile = cacheVfs["sensorLog0.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+		sensorFile.writeString("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
+		sensorFile.writeString("1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
+		sensorFile.writeString("2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
+		sensorFile.close()
+		sensorFile = cacheVfs["sensorLog0.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+		sensorFile.writeString("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
+		sensorFile.writeString("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0\n")
+		sensorFile.close()
+
+		storage.putSessionID(3)
+		// When
+		fileUtil.mergeFiles(storage)
+		// Then
+		val mlData = cacheVfs["mldata.csv"].readLines().toList().filter { it.isNotEmpty() }
+		assertEquals(2, mlData.size)
+		assertEquals("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0", mlData[0])
+		assertEquals("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0", mlData[1])
+		cacheVfs["mldata.csv"].delete()
 	}
 }
