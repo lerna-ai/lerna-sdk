@@ -17,12 +17,8 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefTraining = "LernaLastTraining"
 	private val prefSize = "LernaSize"
 	private val prefInference = "LernaInference"
-	private val prefSuccesses = "LernaSuccesses"
-	private val prefSuccessRate = "LernaSuccessRate"
-	private val prefLastApp = "LernaLastApp"
 	private val prefModelSelect = "LernaModelSelect"
 	private val prefLastInference = "LernaLastInference"
-	private val prefTotalInferences = "LernaTotalInferences"
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
@@ -66,39 +62,6 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putSize(fileSize: Int) {
 		sharedPref.put(prefSize, fileSize)
-	}
-
-	override fun getSuccessRate(): Float {
-		if (!sharedPref.contains(prefSuccessRate)) {
-			return 0.0F
-		}
-		return sharedPref.getFloat(prefSuccessRate, 0.0F)
-	}
-
-	override fun putSuccessRate(successRate: Float) {
-		sharedPref.put(prefSuccessRate, successRate)
-	}
-
-	override fun getTotalInferences(): Float {
-		if (!sharedPref.contains(prefTotalInferences)) {
-			return 0.0F
-		}
-		return sharedPref.getFloat(prefTotalInferences, 0.0F)
-	}
-
-	override fun putTotalInferences(totalInferences: Float) {
-		sharedPref.put(prefTotalInferences, totalInferences)
-	}
-
-	override fun getLastApp(): String? {
-		if (!sharedPref.contains(prefLastApp)) {
-			return ""
-		}
-		return sharedPref.getString(prefLastApp)
-	}
-
-	override fun putLastApp(lastApp: String) {
-		sharedPref.put(prefLastApp, lastApp)
 	}
 
 	override fun getModelSelect(): String? {
@@ -154,18 +117,6 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putInference(inference: List<TrainingInferenceItem>) {
 		sharedPref.put(prefInference, inference.map { Json.encodeToString(it) }.toTypedArray())
-	}
-
-	override fun getSuccesses(): MutableSet<String>? {
-		if (!sharedPref.contains(prefSuccesses)) {
-			return null
-		}
-		return sharedPref.getArray(prefSuccesses)?.toMutableSet()
-	}
-
-	override fun putSuccesses(successes: MutableSet<String>?) {
-
-		sharedPref.put(prefSuccesses, successes?.toTypedArray() as Array<String>)
 	}
 
 	override fun getUserIdentifier(): String? {
