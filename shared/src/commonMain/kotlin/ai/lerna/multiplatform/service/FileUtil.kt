@@ -26,7 +26,7 @@ class FileUtil {
 				cacheVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 			}
 			osw.setPosition(osw.size())
-			for (i in 0 until storage.getSessionID()) {
+			for (i in 0 .. storage.getSessionID()) {
 				try {
 					val sensorFile = cacheVfs["sensorLog$i.csv"]
 					//ToDo: Should be optimized to avoid convert all items to list

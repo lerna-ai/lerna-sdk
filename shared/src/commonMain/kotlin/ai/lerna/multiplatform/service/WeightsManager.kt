@@ -39,8 +39,6 @@ class WeightsManager(token: String, uniqueID: Long) {
 				}
 				Napier.d("Selected model for inferences: ${storage.getModelSelect()}", null, "LernaWeights")
 				storage.putWeights(trainingWeights)
-				storage.putTotalInferences(0.0F)
-				storage.putSuccessRate(0.0F)
 				//ml.setWeights(trainingWeights.trainingWeights!![0])
 				weightsVersion = trainingWeights.version
 			} else {
