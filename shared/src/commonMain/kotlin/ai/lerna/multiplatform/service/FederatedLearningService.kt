@@ -3,6 +3,7 @@ package ai.lerna.multiplatform.service
 import ai.lerna.multiplatform.service.converter.DLArrayConverter
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsApi
+import ai.lerna.multiplatform.service.dto.Success
 import ai.lerna.multiplatform.service.dto.TrainingAccuracy
 import ai.lerna.multiplatform.service.dto.TrainingInference
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
@@ -138,6 +139,24 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		}
 		if (response.status != HttpStatusCode.OK) {
 			Napier.d("LernaFLService - submitInference Response error: ${response.bodyAsText()}", null, "Lerna")
+			return null
+		}
+		return response.bodyAsText()
+	}
+
+	suspend fun submitSuccess(version: Long, mlId: Long, prediction: String, success: String): String? {
+		val request = Success()
+		request.ml_id = mlId
+		request.version = version
+		request.deviceId = uniqueID
+		request.prediction = prediction
+		request.success = success
+		val response = client.post(FL_API_URL + "training/success?token=" + token) {
+			contentType(ContentType.Application.Json)
+			setBody(request)
+		}
+		if (response.status != HttpStatusCode.OK) {
+			Napier.d("LernaFLService - submitSuccess Response error: ${response.bodyAsText()}", null, "Lerna")
 			return null
 		}
 		return response.bodyAsText()

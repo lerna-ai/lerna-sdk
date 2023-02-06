@@ -75,6 +75,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
 		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
 		if (successValue != 0) {
+			val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
+			flService.submitSuccess(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
 			updateFileLastSession(storageService.getSessionID(), successValue)
 			sessionEnd()
 		}
