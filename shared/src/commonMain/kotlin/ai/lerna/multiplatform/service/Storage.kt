@@ -25,22 +25,6 @@ interface Storage {
 
 	fun putInference(inference: List<TrainingInferenceItem>)
 
-	fun getSuccesses(): MutableSet<String>?
-
-	fun putSuccesses(successes: MutableSet<String>?)
-
-	fun getSuccessRate(): Float
-
-	fun putSuccessRate(successRate: Float)
-
-	fun getTotalInferences(): Float
-
-	fun putTotalInferences(totalInferences: Float)
-
-	fun getLastApp(): String?
-
-	fun putLastApp(lastApp: String)
-
 	fun getModelSelect(): String?
 
 	fun putModelSelect(model: String)

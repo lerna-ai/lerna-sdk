@@ -17,8 +17,8 @@ import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
-class LernaService(private val context: KMMContext) {
-	private lateinit var flService: FederatedLearningService
+class LernaService(private val context: KMMContext, _token: String, uniqueID: Long) {
+	private var flService: FederatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", _token, uniqueID)
 	private val modelData: ModelData = ModelData()
 	private var successValue = 0
 	private var weights: GlobalTrainingWeights? = null
@@ -39,6 +39,11 @@ class LernaService(private val context: KMMContext) {
 	internal fun start() {
 		sensors.start()
 		this.weights = storageService.getWeights()
+		weights?.trainingWeights?.forEach {
+			val inferenceTask = MLInference()
+			inferenceTask.setWeights(it)
+			inferenceTasks[it.mlId!!] = inferenceTask
+		}
 		Napier.d("Start Periodic", null, "LernaService")
 		//ToDO: initialize flService
 		periodicRunner.run(context, ::runPeriodic)
@@ -47,7 +52,7 @@ class LernaService(private val context: KMMContext) {
 	internal fun stop() {
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
-		sessionEnd(0)
+		sessionEnd()
 	}
 
 	internal fun updateFeatures(values: FloatArray) {
@@ -71,58 +76,21 @@ class LernaService(private val context: KMMContext) {
 		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
 		if (successValue != 0) {
 			updateFileLastSession(storageService.getSessionID(), successValue)
-			sessionEnd(successValue)
+			sessionEnd()
 		}
 		successValue = 0 // Use success for only one session after event
 	}
 
-	private fun sessionEnd(successValue: Int) {
+	private fun sessionEnd() {
 		var sessionId = storageService.getSessionID()
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
 		storageService.putSessionID(sessionId)
 		modelData.resetSensorHistory()
 
-//		weights?.trainingWeights?.forEach {
-//			val maxVal = inferenceTasks[it.mlId!!]?.inferHistory?.stream()
-//				?.collect(Collectors.groupingBy(identity, Collectors.counting()))
-//				?.entries?.stream()?.max { o1, o2 -> o1.value.compareTo(o2.value) }
-//				?.map { value -> value.key }?.orElse(null)
-//
-//			if (successValue != 0 && it.mlName == storageService.getModelSelect()) { //in order to use only 1 ml task
-//				if (maxVal != null) {
-//					if (storageService.getSuccesses() != null) {
-//						storageService.putTotalInferences(storageService.getTotalInferences() + 1.0F)
-//						val temp = storageService.getSuccesses()!!.toList().sorted().takeLast(199).toMutableSet()
-//						if (maxVal == successValue)
-//							storageService.putSuccessRate(storageService.getSuccessRate() + 1.0F)
-//						val successRate = 100.0 * storageService.getSuccessRate() / storageService.getTotalInferences()
-//						val time = LocalDateTime.now()
-//						val app = storageService.getLastApp()
-//						if (app?.split('.')!!.size > 1)
-//							temp.add("$time,$maxVal,$successValue,${app.split('.')[app.split('.').size - 2]}.${app.split('.')[app.split('.').size - 1]},$successRate,${it.mlName},${weights?.version}")
-//						else
-//							temp.add("$time,$maxVal,$successValue,$app,$successRate,${it.mlName},${weights?.version}")
-//						storageService.putSuccesses(temp)
-//					} else {
-//						storageService.putTotalInferences(1.0F)
-//						storageService.putSuccessRate(0.0F)
-//						if (maxVal == successValue)
-//							storageService.putSuccessRate(1.0F)
-//						val successRate = 100.0 * storageService.getSuccessRate()
-//						val time = LocalDateTime.now()
-//						val temp: MutableSet<String> = mutableSetOf()
-//						val app = storageService.getLastApp()
-//						if (app?.split('.')!!.size > 1)
-//							temp.add("$time,$maxVal,$successValue,${app.split('.')[app.split('.').size - 2]}.${app.split('.')[app.split('.').size - 1]},$successRate,${it.mlName},${weights?.version}")
-//						else
-//							temp.add("$time,$maxVal,$successValue,$app,$successRate,${it.mlName},${weights?.version}")
-//						storageService.putSuccesses(temp)
-//					}
-//				}
-//			}
-//			inferenceTasks[it.mlId!!]?.clearHistory()
-//		}
+		weights?.trainingWeights?.forEach {
+			inferenceTasks[it.mlId!!]?.clearHistory()
+		}
 	}
 
 	internal suspend fun updateFileLastSession(sessionID: Int, successValue: Int) {
