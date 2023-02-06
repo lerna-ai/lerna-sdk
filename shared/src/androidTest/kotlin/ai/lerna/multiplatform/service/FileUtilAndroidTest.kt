@@ -9,7 +9,6 @@ import kotlin.test.Test
 
 @RunWith(AndroidJUnit4::class)
 internal class FileUtilAndroidTest {
-	private val fileUtil: FileUtil = FileUtil()
 	private val fileUtilTest: FileUtilTest = FileUtilTest()
 	private val storage: Storage = StorageImpl(ApplicationProvider.getApplicationContext())
 
@@ -18,6 +17,7 @@ internal class FileUtilAndroidTest {
 		runBlocking {
 			withAndroidContext(ApplicationProvider.getApplicationContext()) {
 				fileUtilTest.mergeFiles(storage)
+				fileUtilTest.mergeFilesTruncated(storage)
 			}
 		}
 

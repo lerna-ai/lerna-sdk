@@ -39,7 +39,7 @@ internal class ModelDataTest {
 		modelData.setGyroscope(5F,6F,7F)
 		modelData.setMagneticField(8F,9F,10F)
 		modelData.setBrightness(11F)
-		modelData.setDateTime(9, 5)
+		modelData.setDateTime(9, 3)
 		modelData.setPhones(true)
 		modelData.setOrientation(12F)
 		modelData.setBatteryChargingState(2)

@@ -20,7 +20,12 @@ class FileUtil {
 	suspend fun mergeFiles(storage: Storage): Long {
 		var fileSize = 0L
 		try {
-			val osw = cacheVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+			val osw = try {
+				cacheVfs["mldata.csv"].open(VfsOpenMode.WRITE)
+			} catch (e: FileNotFoundException) {
+				cacheVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+			}
+			osw.setPosition(osw.size())
 			for (i in 0 until storage.getSessionID()) {
 				try {
 					val sensorFile = cacheVfs["sensorLog$i.csv"]
@@ -40,7 +45,6 @@ class FileUtil {
 				}
 			}
 			fileSize = osw.size() ?: 0
-			storage.putSessionID(0)
 			Napier.d("Filesize: $fileSize", null, "LernaFL")
 			osw.close()
 		} catch (e: Exception) {

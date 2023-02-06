@@ -63,6 +63,7 @@ class FLWorker(_token: String, uniqueID: Long) {
 			return;
 		}
 
+		storage.putSessionID(0)
 		var successes = 0
 		//For each ML task
 		val ml = MLExecution(trainingTask)
