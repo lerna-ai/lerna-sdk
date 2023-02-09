@@ -13,11 +13,12 @@ import com.soywiz.korio.file.std.cacheVfs
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
-class LernaService(private val context: KMMContext, _token: String, uniqueID: Long) {
+class LernaService(private val context: KMMContext, _token: String, uniqueID: Long, _autoInference: Boolean) {
 	private var flService: FederatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", _token, uniqueID)
 	private val modelData: ModelData = ModelData()
 	private var successValue = 0
@@ -27,6 +28,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
+	private var autoInference = _autoInference
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -63,18 +65,30 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		successValue = eventNumber
 	}
 
+	internal fun triggerInference() {
+		if ((weights?.version ?: 0) > 0) {
+			runBlocking {
+				calcAndSubmitInference(mk.ndarray(arrayOf(modelData.toArray().map { it.toFloat() }.toFloatArray())))
+			}
+		} else {
+			Napier.d("No weights yet from server", null, "LernaService")
+		}
+	}
+
 	private suspend fun runPeriodic() {
 		sensors.updateData()
 
-		if ((weights?.version ?: 0) > 0)
-			calcAndSubmitInference(mk.ndarray(arrayOf(modelData.toArray().map { it.toFloat() }.toFloatArray())))
-		else
-			Napier.d("No weights yet from server", null, "LernaService")
+		if (autoInference) {
+			triggerInference()
+		}
 
 		val time = GMTDate().toCustomDate()
 		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
 		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
 		if (successValue != 0) {
+			if (!autoInference) {
+				triggerInference()
+			}
 			val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
 			flService.submitSuccess(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
 			updateFileLastSession(storageService.getSessionID(), successValue)
@@ -144,7 +158,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 
 		inference?.prediction = findMostCommonInList(inferenceTasks[weights.mlId!!]?.inferHistory)
-		if (inference?.prediction == "0" || inference?.prediction == "0.0" || storageService.getLastInference() == inference?.prediction || inference?.prediction == null || weights.mlName != storageService.getModelSelect()) { //to only compute inference of the selected model
+		if (inference?.prediction == "0"
+			|| inference?.prediction == "0.0"
+			|| storageService.getLastInference() == inference?.prediction
+			|| inference?.prediction == null
+			|| weights.mlName != storageService.getModelSelect()
+		) { //to only compute inference of the selected model
 			inference = null
 		} else {
 			storageService.putLastInference(inference.prediction!!)

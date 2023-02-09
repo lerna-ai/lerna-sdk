@@ -10,7 +10,7 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
+class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, autoInference: Boolean = true) {
 	private val _context = context
 	private val _customFeaturesSize = customFeaturesSize
 	private var _token = token
@@ -19,7 +19,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val sharedPref: KMMPreference = KMMPreference(_context)
 	private val flWorker = FLWorkerInterface(_context)
-	private val lernaService = LernaService(_context, _token, uniqueID)
+	private val lernaService = LernaService(_context, _token, uniqueID, autoInference)
 
 	internal companion object {
 		const val FEATURE_SIZE_WITHOUT_EXTRA = 57 // Lerna features plus x0
@@ -65,6 +65,10 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 			throw IllegalArgumentException("Incorrect feature size")
 		}
 		lernaService.updateFeatures(values)
+	}
+
+	fun triggerInference() {
+		lernaService.triggerInference()
 	}
 
 	private fun checkWeightSize(): Boolean {
