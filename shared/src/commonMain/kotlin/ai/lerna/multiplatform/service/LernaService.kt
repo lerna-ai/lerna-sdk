@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.ModelData
 import ai.lerna.multiplatform.PeriodicRunner
 import ai.lerna.multiplatform.SensorInterface
@@ -19,7 +20,7 @@ import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long, _autoInference: Boolean) {
-	private var flService: FederatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", _token, uniqueID)
+	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
 	private val modelData: ModelData = ModelData()
 	private var successValue = 0
 	private var weights: GlobalTrainingWeights? = null

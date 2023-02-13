@@ -1,9 +1,10 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.LernaConfig
 import io.github.aakira.napier.Napier
 
 class WeightsManager(token: String, uniqueID: Long) {
-	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", token, uniqueID)
+	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private var weightsVersion = 0L
 	private lateinit var storage: Storage
 	// ToDo: Implement log uploader
