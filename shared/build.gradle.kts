@@ -1,8 +1,11 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.android.library")
     id("maven-publish")
+    id("com.codingfeline.buildkonfig") version "0.13.3"
 }
 
 kotlin {
@@ -97,3 +100,19 @@ android {
     }
 }
 
+buildkonfig {
+    packageName = "ai.lerna.multiplatform"
+    objectName = "LernaConfig"
+    // exposeObjectWithName = "YourAwesomePublicConfig"
+
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
+        buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:7357/api/v2/")
+        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/debug/")
+    }
+    defaultConfigs("release") {
+        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
+        buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:8080/api/v2/")
+        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/")
+    }
+}

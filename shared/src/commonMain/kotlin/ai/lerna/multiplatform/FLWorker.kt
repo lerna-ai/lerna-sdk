@@ -18,7 +18,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 class FLWorker(_token: String, uniqueID: Long) {
 	// ToDo: Update FL Service configuration
 	private val token = _token
-	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", token, uniqueID)
+	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private lateinit var flWorkerInterface: FLWorkerInterface
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val fileUtil = FileUtil()
@@ -152,6 +152,6 @@ class FLWorker(_token: String, uniqueID: Long) {
 			return null
 		}
 		Napier.d("Retrieving noise share from MPC...", null, "LernaFL")
-		return MpcService("https://api.dev.lerna.ai:3443/", token).lerna(job_id, uniqueID, size)
+		return MpcService(LernaConfig.MPC_SERVER, token).lerna(job_id, uniqueID, size)
 	}
 }
