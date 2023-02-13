@@ -1,7 +1,6 @@
 import ai.lerna.multiplatform.service.IMLExecution
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
-import com.soywiz.korio.file.VfsOpenMode
 import com.soywiz.korio.file.std.cacheVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot

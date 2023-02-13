@@ -98,6 +98,15 @@ android {
     defaultConfig {
         minSdk = 26
     }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
+        }
+    }
 }
 
 buildkonfig {
@@ -108,11 +117,11 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
         buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:7357/api/v2/")
-        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/debug/")
+        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/debug/")
     }
     defaultConfigs("release") {
         buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
         buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:8080/api/v2/")
-        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/")
+        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/")
     }
 }

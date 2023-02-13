@@ -44,7 +44,7 @@ class FileUtil {
 					continue
 				}
 			}
-			fileSize = osw.size() ?: 0
+			fileSize = osw.size()
 			Napier.d("Filesize: $fileSize", null, "LernaFL")
 			osw.close()
 		} catch (e: Exception) {

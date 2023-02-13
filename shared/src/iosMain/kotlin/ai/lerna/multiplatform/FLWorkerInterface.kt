@@ -7,8 +7,9 @@ import io.ktor.util.date.*
 import kotlinx.coroutines.runBlocking
 import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTask
-import kotlin.native.concurrent.Worker
 import platform.BackgroundTasks.BGTaskScheduler
+import platform.Foundation.NSDate
+import platform.Foundation.dateWithTimeIntervalSinceNow
 
 actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
@@ -18,7 +19,6 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 	private val context = _context
 	private lateinit var flWorker : FLWorker
-	private val worker = Worker.start()
 	private var token = ""
 	private var uniqueID = -1L
 
@@ -49,10 +49,10 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 		bgTaskRequest.requiresExternalPower = true
 		bgTaskRequest.requiresNetworkConnectivity = true
-		//earliestBeginDate = NSDate.dateWithTimeIntervalSinceNow(
-		//secs = (60 * 60 * 12).toDouble()
+		bgTaskRequest.earliestBeginDate = NSDate.dateWithTimeIntervalSinceNow(
+		secs = (60 * 60 * 12).toDouble()
 		//	secs = (15).toDouble() // minimize for 15 seconds for test
-		//)
+		)
 
 		try {
 			BGTaskScheduler.sharedScheduler.submitTaskRequest(bgTaskRequest, error = null)

@@ -34,7 +34,7 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putWeights(trainingWeights: GlobalTrainingWeights?) {
 		if (trainingWeights == null) {
-			sharedPref.put(prefWeightsID, null as String)
+			sharedPref.put(prefWeightsID, "")
 			return
 		}
 		val weightsApi = dlArrayConverter.convert(trainingWeights)

@@ -70,8 +70,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 
 	private fun checkWeightSize(): Boolean {
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights ?: return false
-		val firstKey = weights.keys.first() ?: return false
-		val featuresSize = weights[firstKey.toString()]?.size ?: return false
+		val firstKey = weights.keys.first()
+		val featuresSize = weights[firstKey]?.size ?: return false
 		return (featuresSize - _customFeaturesSize == FEATURE_SIZE)
 	}
 
