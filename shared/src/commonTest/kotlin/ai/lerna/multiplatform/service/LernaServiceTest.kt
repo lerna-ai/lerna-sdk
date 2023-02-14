@@ -7,7 +7,7 @@ import com.soywiz.korio.stream.writeString
 import kotlin.test.assertEquals
 
 internal class LernaServiceTest(kmmContext: KMMContext) {
-	private val lernaService: LernaService = LernaService(kmmContext, "", 123L)
+	private val lernaService: LernaService = LernaService(kmmContext, "", 123L, true)
 
 	suspend fun updateFileLastSession() {
 		// Given
