@@ -18,7 +18,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 class FLWorker(_token: String, uniqueID: Long) {
 	// ToDo: Update FL Service configuration
 	private val token = _token
-	private val federatedLearningService = FederatedLearningService("https://api.dev.lerna.ai:7357/api/v2/", token, uniqueID)
+	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private lateinit var flWorkerInterface: FLWorkerInterface
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val fileUtil = FileUtil()
@@ -60,7 +60,7 @@ class FLWorker(_token: String, uniqueID: Long) {
 		if (fileSize < 500000L) {
 			Napier.d("Not enough data for training", null, "LernaFL")
 			//logUploader.uploadLogcat(uniqueID, "logcatf.txt")
-			return;
+			return
 		}
 
 		storage.putSessionID(0)
@@ -74,7 +74,7 @@ class FLWorker(_token: String, uniqueID: Long) {
 			ml.setWeights(globalWeights!!.trainingWeights!![i])
 			if (weightsVersion > 1) {
 				Napier.d("Computing accuracy of version $weightsVersion and task $i", null, "LernaFL")
-				federatedLearningService.submitAccuracy(globalWeights!!.trainingWeights!![i].mlId!!, weightsVersion, ml.computeAccuracy())
+				federatedLearningService.submitAccuracy(globalWeights.trainingWeights!![i].mlId!!, weightsVersion, ml.computeAccuracy())
 			}
 			//Train locally
 			val size = ml.localML(i)
@@ -85,16 +85,16 @@ class FLWorker(_token: String, uniqueID: Long) {
 			}
 
 			val newWeights: HashMap<String, D2Array<Float>> = HashMap()
-			globalWeights!!.trainingWeights!![i].weights?.forEach {
+			globalWeights.trainingWeights!![i].weights?.forEach {
 				newWeights[it.key] = ml.thetaClass[ml.mapping(it.key)]!!
 			}
-			globalWeights!!.trainingWeights!![i].weights = newWeights.toMap()
+			globalWeights.trainingWeights!![i].weights = newWeights.toMap()
 
 			Napier.d("Computing accuracy of local model for task $i", null, "LernaFL")
 			ml.computeAccuracy()
 
 			//For each prediction/job
-			globalWeights!!.trainingWeights!![i].weights!!.forEach { (key, _) ->
+			globalWeights.trainingWeights!![i].weights!!.forEach { (key, _) ->
 				try {
 					val jobId = trainingTask.trainingTasks!![i].jobIds!![key]!!
 					val share = getNoise(uniqueID, size, jobId)!!.Share!!.toFloat()
@@ -104,7 +104,7 @@ class FLWorker(_token: String, uniqueID: Long) {
 					val submitedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
 					if (submitedWeights != null) {
 						successes++
-						if (successes == (globalWeights!!.trainingWeights!![0].weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs
+						if (successes == (globalWeights.trainingWeights!![0].weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs
 							// Upload to AWS S3 implementation - Start
 //							val fileNameDate = LocalDateTime.now(ZoneOffset.UTC).format(dateFormatter)
 //							val temp = storage.getSuccesses()?.toList()?.sorted()
@@ -152,6 +152,6 @@ class FLWorker(_token: String, uniqueID: Long) {
 			return null
 		}
 		Napier.d("Retrieving noise share from MPC...", null, "LernaFL")
-		return MpcService("https://api.dev.lerna.ai:3443/", token).lerna(job_id, uniqueID, size)
+		return MpcService(LernaConfig.MPC_SERVER, token).lerna(job_id, uniqueID, size)
 	}
 }

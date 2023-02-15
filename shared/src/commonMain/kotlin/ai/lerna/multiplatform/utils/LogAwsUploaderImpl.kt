@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.utils
 
+import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.service.dto.LogData
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
@@ -31,6 +32,7 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         try {
             CoroutineScope(Dispatchers.Default).launch {
                 val request = LogData()
+                request.path = LernaConfig.UPLOAD_PREFIX
                 request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + fileNameDate.toCustomDate() + "_" + fileNameSuffix + ".txt"
                 request.token = token
                 request.data = fileContent
