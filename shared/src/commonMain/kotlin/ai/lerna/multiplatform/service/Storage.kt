@@ -41,4 +41,8 @@ interface Storage {
 
 	fun putUserIdentifier(deviceToken: String)
 
+	fun getUploadDataEnabled(): Boolean
+
+	fun putUploadDataEnabled(enabled: Boolean)
+
 }

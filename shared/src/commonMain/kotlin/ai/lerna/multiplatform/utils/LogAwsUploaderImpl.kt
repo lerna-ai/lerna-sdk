@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform.utils
 
 import ai.lerna.multiplatform.LernaConfig
+import ai.lerna.multiplatform.getPlatform
 import ai.lerna.multiplatform.service.dto.LogData
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
@@ -33,7 +34,7 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
             CoroutineScope(Dispatchers.Default).launch {
                 val request = LogData()
                 request.path = LernaConfig.UPLOAD_PREFIX
-                request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + fileNameDate.toCustomDate() + "_" + fileNameSuffix + ".txt"
+                request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + fileNameDate.toCustomDate() + "_" + getPlatform().name + "_" + fileNameSuffix
                 request.token = token
                 request.data = fileContent
                 val response = client.post("https://path/to/upload/file") {
@@ -53,7 +54,7 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         append(year.padZero(4))
         append("-${(month.ordinal + 1).padZero(2)}")
         append("-${dayOfMonth.padZero(2)}")
-        append("_${hours.padZero(2)}.${minutes.padZero(2)}.${seconds.padZero(2)} ")
+        append("_${hours.padZero(2)}.${minutes.padZero(2)}.${seconds.padZero(2)}")
     }
 
     private fun Int.padZero(length: Int): String = toString().padStart(length, '0')
