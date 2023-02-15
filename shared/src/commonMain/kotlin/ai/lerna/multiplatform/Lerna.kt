@@ -1,7 +1,6 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
-import ai.lerna.multiplatform.config.KMMPreference
 import ai.lerna.multiplatform.config.UserID
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
@@ -17,13 +16,11 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	private val uniqueID = UserID().getUniqueId(_context).toLong()
 	private val storageService = StorageImpl(_context)
 	private val weightsManager = WeightsManager(token, uniqueID)
-	private val sharedPref: KMMPreference = KMMPreference(_context)
 	private val flWorker = FLWorkerInterface(_context)
 	private val lernaService = LernaService(_context, _token, uniqueID, autoInference)
 
 	internal companion object {
-		const val FEATURE_SIZE_WITHOUT_EXTRA = 57 // Lerna features plus x0
-		const val FEATURE_SIZE_WITH_EXTRA = 68    // Lerna features with bluetooth features plus x0
+		const val FEATURE_SIZE = 57 // Lerna features plus x0
 	}
 
 	init {
@@ -73,16 +70,9 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 
 	private fun checkWeightSize(): Boolean {
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights ?: return false
-		val firstKey = weights.keys.first() ?: return false
-		val featuresSize = weights[firstKey.toString()]?.size ?: return false
-		if (featuresSize - _customFeaturesSize == FEATURE_SIZE_WITHOUT_EXTRA) {
-			sharedPref.put("enableBluetoothFeatures", false)
-			return true
-		} else if (featuresSize - _customFeaturesSize == FEATURE_SIZE_WITH_EXTRA) {
-			sharedPref.put("enableBluetoothFeatures", true)
-			return true // checkSelfPermission(_context, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED
-		}
-		return false
+		val firstKey = weights.keys.first()
+		val featuresSize = weights[firstKey]?.size ?: return false
+		return (featuresSize - _customFeaturesSize == FEATURE_SIZE)
 	}
 
 	private fun initialize() {
