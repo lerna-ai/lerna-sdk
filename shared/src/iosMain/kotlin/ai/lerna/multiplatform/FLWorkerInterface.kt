@@ -18,7 +18,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	private val taskIdentifier = "ai.lerna.kmm.fl"
 
 	private val context = _context
-	private lateinit var flWorker : FLWorker
+	private lateinit var flWorker: FLWorker
 	private var token = ""
 	private var uniqueID = -1L
 
@@ -50,8 +50,8 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 		bgTaskRequest.requiresExternalPower = true
 		bgTaskRequest.requiresNetworkConnectivity = true
 		bgTaskRequest.earliestBeginDate = NSDate.dateWithTimeIntervalSinceNow(
-		secs = (60 * 60 * 12).toDouble()
-		//	secs = (15).toDouble() // minimize for 15 seconds for test
+			secs = (60 * 60 * 12).toDouble()
+			//	secs = (15).toDouble() // minimize for 15 seconds for test
 		)
 
 		try {
@@ -60,7 +60,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 			printScheduledTasks()
 		} catch (e: Exception) {
 			Napier.e("=== Scheduler setup failed ===", throwable = e)
-			LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "", e.stackTraceToString(), GMTDate())
+			LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_scheduler.txt", e.stackTraceToString(), GMTDate())
 			runWorker(null)
 		}
 	}
@@ -75,7 +75,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 				scheduleRefreshTask()
 			} catch (e: Exception) {
 				Napier.d("=== Worker task failed ===")
-				LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "", e.stackTraceToString(), GMTDate())
+				LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString(), GMTDate())
 				bgTask?.setTaskCompletedWithSuccess(false)
 				scheduleRefreshTask()
 			}
