@@ -3,7 +3,7 @@ package ai.lerna.multiplatform
 import kotlin.math.sqrt
 
 class ModelData {
-	private var proximity: Float = 0F
+	//private var proximity: Float = 0F
 	private var linAcceleration = arrayOf(0F, 0F, 0F)
 	private var gyroscope = arrayOf(0F, 0F, 0F)
 	private var magneticField = arrayOf(0F, 0F, 0F)
@@ -13,7 +13,6 @@ class ModelData {
 	private var linAccelerationStd = arrayOf(0F, 0F, 0F)
 	private var gyroscopeStd = arrayOf(0F, 0F, 0F)
 	private var magneticFieldStd = arrayOf(0F, 0F, 0F)
-	private var brightness: Float = 0F
 	private var morning: Float = 0F
 	private var afternoon: Float = 0F
 	private var evening: Float = 0F
@@ -31,18 +30,9 @@ class ModelData {
 	private var magneticFieldHistoryY: MutableList<Float> = ArrayList()
 	private var magneticFieldHistoryZ: MutableList<Float> = ArrayList()
 	private var orientation: Float = 0F
-	private var batteryPluggedAC: Float = 0F
-	private var batteryPluggedUSB: Float = 0F
-	private var batteryPluggedWireless: Float = 0F
-	private var audioRingerModeSilent: Float = 0F
-	private var audioRingerModeVibrate: Float = 0F
-	private var audioRingerModeNormal: Float = 0F
-	private var audioAlarmVolume: Float = 0F
-	private var audioMusicVolume: Float = 0F
-	private var audioNotificationVolume: Float = 0F
-	private var audioRingVolume: Float = 0F
+	private var batteryPlugged: Float = 0F
+	private var audioVolume: Float = 0F
 	private var audioBtScoOn: Float = 0F
-	private var audioMicMute: Float = 0F
 	private var audioMusicActive: Float = 0F
 	private var audioSpeakerOn: Float = 0F
 	private var audioHeadsetOn: Float = 0F
@@ -66,9 +56,9 @@ class ModelData {
 		customFeaturesArray = customFeatures
 	}
 
-	internal fun setProximity(proximity: Float) {
-		this.proximity = proximity
-	}
+//	internal fun setProximity(proximity: Float) {
+//		this.proximity = proximity
+//	}
 
 	internal fun setLinAcceleration(accX: Float, accY: Float, accZ: Float) {
 		linAcceleration[0] = accX
@@ -93,10 +83,6 @@ class ModelData {
 		ambientLight = light
 	}
 
-	internal fun setBrightness(_brightness: Float) {
-		brightness = _brightness
-	}
-
 	internal fun setPhones(headphones: Boolean) {
 		wiredPhones = if (headphones)
 			1F
@@ -109,66 +95,25 @@ class ModelData {
 	}
 
 	internal fun setBatteryChargingState(chargingState: Int) {
-		when (chargingState) {
-			1 -> { // BATTERY_PLUGGED_AC
-				batteryPluggedAC = 1F
-				batteryPluggedUSB = 0F
-				batteryPluggedWireless = 0F
-			}
-			2 -> { // BATTERY_PLUGGED_USB
-				batteryPluggedAC = 0F
-				batteryPluggedUSB = 1F
-				batteryPluggedWireless = 0F
-			}
-			4 -> { // BATTERY_PLUGGED_WIRELESS
-				batteryPluggedAC = 0F
-				batteryPluggedUSB = 0F
-				batteryPluggedWireless = 1F
+		batteryPlugged = when (chargingState) {
+			1, 2, 4 -> { // BATTERY_PLUGGED_AC, BATTERY_PLUGGED_USB, BATTERY_PLUGGED_WIRELESS
+				1F
 			}
 			else -> {
-				batteryPluggedAC = 0F
-				batteryPluggedUSB = 0F
-				batteryPluggedWireless = 0F
+				0F
 			}
 		}
 	}
 
 	internal fun setAudioActivity(
-		ringerMode: Int,
-		alarmVolume: Float,
-		musicVolume: Float,
-		notificationVolume: Float,
-		ringVolume: Float,
+		volume: Float,
 		isBtScoOn: Boolean,
-		isMicMute: Boolean,
 		isMusicActive: Boolean,
 		isSpeakerOn: Boolean,
 		isHeadsetOn: Boolean
 	) {
-		when (ringerMode) {
-			0 -> { // RINGER_MODE_SILENT
-				audioRingerModeSilent = 1F
-				audioRingerModeVibrate = 0F
-				audioRingerModeNormal = 0F
-			}
-			1 -> { // RINGER_MODE_VIBRATE
-				audioRingerModeSilent = 0F
-				audioRingerModeVibrate = 1F
-				audioRingerModeNormal = 0F
-			}
-			2 -> { // RINGER_MODE_NORMAL
-				audioRingerModeSilent = 0F
-				audioRingerModeVibrate = 0F
-				audioRingerModeNormal = 1F
-			}
-		}
-
-		audioAlarmVolume = alarmVolume
-		audioMusicVolume = musicVolume
-		audioNotificationVolume = notificationVolume
-		audioRingVolume = ringVolume
+		audioVolume = volume
 		audioBtScoOn = if (isBtScoOn) 1F else 0F
-		audioMicMute = if (isMicMute) 1F else 0F
 		audioMusicActive = if (isMusicActive) 1F else 0F
 		audioSpeakerOn = if (isSpeakerOn) 1F else 0F
 		audioHeadsetOn = if (isHeadsetOn) 1F else 0F
@@ -308,7 +253,7 @@ class ModelData {
 
 	internal fun toArray(): Array<Double> {
 		val doubleArray: MutableList<Double> = ArrayList()
-		doubleArray.add(proximity.toDouble())
+		//doubleArray.add(proximity.toDouble())
 		doubleArray.add(linAcceleration[0].toDouble())
 		doubleArray.add(linAcceleration[1].toDouble())
 		doubleArray.add(linAcceleration[2].toDouble())
@@ -336,7 +281,6 @@ class ModelData {
 		doubleArray.add(magneticFieldStd[0].toDouble())
 		doubleArray.add(magneticFieldStd[1].toDouble())
 		doubleArray.add(magneticFieldStd[2].toDouble())
-		doubleArray.add(brightness.toDouble())
 		doubleArray.add(morning.toDouble())
 		doubleArray.add(afternoon.toDouble())
 		doubleArray.add(evening.toDouble())
@@ -345,18 +289,9 @@ class ModelData {
 		doubleArray.add(weekend.toDouble())
 		doubleArray.add(wiredPhones.toDouble())
 		doubleArray.add(orientation.toDouble())
-		doubleArray.add(batteryPluggedAC.toDouble())
-		doubleArray.add(batteryPluggedUSB.toDouble())
-		doubleArray.add(batteryPluggedWireless.toDouble())
-		doubleArray.add(audioRingerModeSilent.toDouble())
-		doubleArray.add(audioRingerModeVibrate.toDouble())
-		doubleArray.add(audioRingerModeNormal.toDouble())
-		doubleArray.add(audioAlarmVolume.toDouble())
-		doubleArray.add(audioMusicVolume.toDouble())
-		doubleArray.add(audioNotificationVolume.toDouble())
-		doubleArray.add(audioRingVolume.toDouble())
+		doubleArray.add(batteryPlugged.toDouble())
+		doubleArray.add(audioVolume.toDouble())
 		doubleArray.add(audioBtScoOn.toDouble())
-		doubleArray.add(audioMicMute.toDouble())
 		doubleArray.add(audioMusicActive.toDouble())
 		doubleArray.add(audioSpeakerOn.toDouble())
 		doubleArray.add(audioHeadsetOn.toDouble())
