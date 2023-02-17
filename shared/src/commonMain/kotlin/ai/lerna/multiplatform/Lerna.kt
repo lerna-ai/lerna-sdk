@@ -20,7 +20,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	private val lernaService = LernaService(_context, _token, uniqueID, autoInference)
 
 	internal companion object {
-		const val FEATURE_SIZE = 57 // Lerna features plus x0
+		const val FEATURE_SIZE = 45 // Lerna features plus x0
 	}
 
 	init {
