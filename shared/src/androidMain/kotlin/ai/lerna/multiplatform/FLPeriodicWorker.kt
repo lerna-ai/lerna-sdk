@@ -30,7 +30,9 @@ class FLPeriodicWorker(_context: Context, workerParams: WorkerParameters) :
 					completer.set(Result.success())
 				} catch (e: Exception) {
 					Napier.e("Lerna Worker - Failed $e")
-					LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "", e.stackTraceToString(), GMTDate())
+					withAndroidContext(context) {
+						LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString(), GMTDate())
+					}
 					completer.set(Result.failure())
 				}
 			}
