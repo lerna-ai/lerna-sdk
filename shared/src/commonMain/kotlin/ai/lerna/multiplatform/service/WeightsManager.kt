@@ -7,8 +7,6 @@ class WeightsManager(token: String, uniqueID: Long) {
 	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private var weightsVersion = 0L
 	private lateinit var storage: Storage
-	// ToDo: Implement log uploader
-	//private val logUploader: LogUploader = LogAwsUploaderImpl(context)
 
 	var updateWeightsListener: ((String) -> Unit)? = null
 
@@ -46,11 +44,9 @@ class WeightsManager(token: String, uniqueID: Long) {
 				Napier.d("Weights are up to date. Current version: $weightsVersion", null, "LernaWeights")
 			}
 
-			//logUploader.uploadLogcat(uniqueID, "logcatw.txt")
 			return "Success"
 
 		} catch (ex: Exception) {
-			//logUploader.uploadLogcat(uniqueID, "logcat_errw.txt")
 			return "Failed"
 		}
 	}

@@ -68,6 +68,10 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		lernaService.triggerInference()
 	}
 
+	fun enableUserDataUpload(enable: Boolean) {
+		storageService.putUploadDataEnabled(enable)
+	}
+
 	private fun checkWeightSize(): Boolean {
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights ?: return false
 		val firstKey = weights.keys.first()

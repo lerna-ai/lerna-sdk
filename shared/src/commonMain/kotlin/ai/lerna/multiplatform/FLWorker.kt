@@ -11,13 +11,14 @@ import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
+import com.soywiz.korio.file.std.cacheVfs
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
-class FLWorker(_token: String, uniqueID: Long) {
-	// ToDo: Update FL Service configuration
+class FLWorker(_token: String, _uniqueID: Long) {
 	private val token = _token
+	private val uniqueID = _uniqueID
 	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private lateinit var flWorkerInterface: FLWorkerInterface
 	private val weightsManager = WeightsManager(token, uniqueID)
@@ -25,7 +26,6 @@ class FLWorker(_token: String, uniqueID: Long) {
 	private val scaling = 100000
 	private var weightsVersion = -1L
 	private var taskVersion = -1
-	private val uniqueID = 0L
 	private lateinit var storage: Storage
 	private lateinit var context: KMMContext
 
@@ -67,6 +67,14 @@ class FLWorker(_token: String, uniqueID: Long) {
 		var successes = 0
 		//For each ML task
 		val ml = MLExecution(trainingTask)
+		if (storage.getUploadDataEnabled()) {
+			LogAwsUploaderImpl(token, FL_WORKER_VERSION)
+				.uploadFile(
+					uniqueID,
+					"mldata.csv",
+					cacheVfs["mldata.csv"].readString(),
+					GMTDate())
+		}
 		ml.loadData()
 
 		for (i in trainingTask.trainingTasks!!.indices) {
@@ -134,7 +142,7 @@ class FLWorker(_token: String, uniqueID: Long) {
 						}
 					}
 				} catch (ex: Exception) {
-					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, "", ex.stackTraceToString(), GMTDate())
+					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, "error_fl.txt", ex.stackTraceToString(), GMTDate())
 				}
 			}
 		}
