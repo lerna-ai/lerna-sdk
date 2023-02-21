@@ -34,7 +34,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     private var sGravity: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
     private var sMagnetic: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     private var sRotation: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-    private var sProximity: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+    //private var sProximity: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_PROXIMITY)
     private var sGyroscope: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private var sLinAcc: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
     private var sLight: Sensor? = mSensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
@@ -61,7 +61,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         mSensorManager?.registerListener(this, sGravity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sMagnetic, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sRotation, SensorManager.SENSOR_DELAY_NORMAL)
-        mSensorManager?.registerListener(this, sProximity, SensorManager.SENSOR_DELAY_NORMAL)
+        //mSensorManager?.registerListener(this, sProximity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sGyroscope, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sLinAcc, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager?.registerListener(this, sLight, SensorManager.SENSOR_DELAY_NORMAL)
@@ -73,15 +73,13 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         mSensorManager?.unregisterListener(this, sGravity)
         mSensorManager?.unregisterListener(this, sMagnetic)
         mSensorManager?.unregisterListener(this, sRotation)
-        mSensorManager?.unregisterListener(this, sProximity)
+        //mSensorManager?.unregisterListener(this, sProximity)
         mSensorManager?.unregisterListener(this, sGyroscope)
         mSensorManager?.unregisterListener(this, sLinAcc)
         mSensorManager?.unregisterListener(this, sLight)
     }
 
     actual override fun updateData() {
-        modelData.setBrightness(getBrightness())
-
         modelData.setDateTime(GMTDate().hours, GMTDate().dayOfWeek.ordinal)
 
         modelData.setPhones(isWiredHeadsetOn())
@@ -95,13 +93,8 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
 
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager? ?: return
         modelData.setAudioActivity(
-            audioManager.ringerMode,
-            audioManager.getStreamVolume(AudioManager.STREAM_ALARM).toFloat(),
             audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat(),
-            audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION).toFloat(),
-            audioManager.getStreamVolume(AudioManager.STREAM_RING).toFloat(),
             audioManager.isBluetoothScoOn,
-            audioManager.isMicrophoneMute,
             audioManager.isMusicActive,
             audioManager.isSpeakerphoneOn,
             audioManager.isWiredHeadsetOn
@@ -133,7 +126,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     }
 
     private fun getBrightness(): Float {
-        return Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+        return Settings.System.getFloat(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS).div(255f)
     }
 
     private fun isWiredHeadsetOn(): Boolean {
@@ -156,6 +149,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         if (!isEnabled) return
 
         val values = p0!!.values.copyOf()
+        val maxRange = if (p0.sensor.maximumRange > 0) p0.sensor.maximumRange else 1f
 
         when (p0.sensor.type) {
             Sensor.TYPE_MAGNETIC_FIELD -> {
@@ -166,7 +160,6 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
                 rawGravity = values
             }
             Sensor.TYPE_ACCELEROMETER -> {
-                modelData.setLinAcceleration(values[0], values[1], values[2])
                 rawAccelerometer = values
             }
             Sensor.TYPE_ROTATION_VECTOR -> {
@@ -179,10 +172,10 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
                     )[0].toDouble()
                 ) + 360).toInt() % 360).toDouble()
             }
-            Sensor.TYPE_PROXIMITY -> modelData.setProximity(values[0])
+            //Sensor.TYPE_PROXIMITY -> modelData.setProximity(values[0].div(maxRange))
             Sensor.TYPE_GYROSCOPE -> modelData.setGyroscope(values[0], values[1], values[2])
             Sensor.TYPE_LINEAR_ACCELERATION -> modelData.setLinAcceleration(values[0], values[1], values[2])
-            Sensor.TYPE_LIGHT -> modelData.setLight(values[0])
+            Sensor.TYPE_LIGHT -> modelData.setLight(values[0].div(maxRange))
         }
 
         if (rawMagnetic != null && rawGravity != null && rawAccelerometer != null && rawRotation != null) {

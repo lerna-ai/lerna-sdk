@@ -78,14 +78,22 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         val attitude = motion.attitude
         val magnetic = motion.magneticField
 
-        magnetic.useContents { modelData.setMagneticField(this.field.x.toFloat(), this.field.y.toFloat(), this.field.z.toFloat()) }
+        magnetic.useContents {
+            modelData.setMagneticField(
+                this.field.x.toFloat(),
+                this.field.y.toFloat(), 
+                this.field.z.toFloat())
+        }
         modelData.setGyroscope(
-            (-attitude.roll * 2.0 / PI).toFloat(),
-            (-attitude.pitch * 2.0 / PI).toFloat(),
-            (-attitude.yaw * 2.0 / PI).toFloat()
+            convertHztoSI(attitude.roll).toFloat(),
+            convertHztoSI(attitude.pitch).toFloat(),
+            convertHztoSI(attitude.yaw).toFloat()
         )
         user.useContents {
-            modelData.setLinAcceleration(this.x.toFloat(), this.y.toFloat(), this.z.toFloat())
+            modelData.setLinAcceleration(
+                convertGtoSI(this.x).toFloat(),
+                convertGtoSI(this.y).toFloat(),
+                convertGtoSI(this.z).toFloat())
         }
         return SensorData(heading, convertAcceleration(user), convertAcceleration(gravity))
     }
@@ -119,13 +127,13 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
 
         val volume = audioSession.outputVolume()
 
-        modelData.setAudioActivity(2, volume, volume, volume, volume, isBluetoothConnected, false, music, isSpeakerOn, isHeadsetOn)
+        modelData.setAudioActivity(volume, isBluetoothConnected, music, isSpeakerOn, isHeadsetOn)
 
         val wifi = isWifiConnected()
         modelData.setWifiConnected(wifi)
 
-        val proximity = if (myDevice.proximityState) {5.0} else {0.0}
-        modelData.setProximity(proximity.toFloat())
+        //val proximity = if (myDevice.proximityState) {1.0f} else {0.0f}
+        //modelData.setProximity(proximity)
 
         val orientation = if (UIDeviceOrientationIsLandscape(myDevice.orientation)) {1.0} else {0.0}
         modelData.setOrientation(orientation.toFloat())
@@ -133,7 +141,6 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         val battery = if (myDevice.batteryState == UIDeviceBatteryState.UIDeviceBatteryStateCharging || myDevice.batteryState == UIDeviceBatteryState.UIDeviceBatteryStateFull) {1} else {0}
         modelData.setBatteryChargingState(battery)
 
-        modelData.setBrightness(myScreen.brightness.toFloat())
         modelData.setLight(myScreen.brightness.toFloat())
 
         modelData.setHistory()
@@ -150,6 +157,20 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
             val isWifi = success && (flags.value.toInt() and kSCNetworkReachabilityFlagsIsWWAN.toInt() == 0)
             return isReachable && isWifi
         }
+    }
+
+    /**
+     * Calculated based on a conversion factor of 1G = 9.80665m/s2, and 5th digit is rounded.
+     */
+    private fun convertGtoSI(gValue: Double): Double {
+        return gValue * 9.80665
+    }
+
+    /**
+     * Calculated based on a conversion factor of 1 radians per second = Hz/(2 × π).
+     */
+    private fun convertHztoSI(rotation: Double): Double {
+        return -rotation * 2.0 / PI
     }
 }
 
