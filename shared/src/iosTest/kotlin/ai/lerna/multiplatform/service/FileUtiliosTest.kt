@@ -23,4 +23,14 @@ internal class FileUtiliosTest {
 			fileUtilTest.mergeFilesTruncated(storage)
 		}
 	}
+
+	@Test
+	fun cleanup() {
+		runBlocking {
+			fileUtilTest.cleanup(storage)
+			fileUtilTest.cleanup_with_mldata(storage)
+			fileUtilTest.cleanup_delete_mldata(storage)
+			fileUtilTest.cleanup_delete_mldata_and_sensor2(storage)
+		}
+	}
 }
