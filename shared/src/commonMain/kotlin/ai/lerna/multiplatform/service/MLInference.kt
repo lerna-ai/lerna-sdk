@@ -38,7 +38,7 @@ class MLInference() {
 
 
             //Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
-            var max = 0.0f
+            var max = 0.5f //give success only if confidence is more than 50%
             var value = "0.0"
             outputs.forEach { (k, _) ->
                 if (outputs[k]!!.asD2Array()[0, 0] > max) {
@@ -52,6 +52,31 @@ class MLInference() {
 
         return value
     }
+
+    fun predictLabels(testFeatures: D2Array<Float>): FloatArray {
+        val outputs = HashMap<String, D2Array<Float>>()
+        thetaClass.forEach { (k, v) ->
+            outputs[k] = calculateOutput(testFeatures, v)
+        }
+        val result = Array(outputs.values.toList()[0].shape[0]){0.0f}
+
+        for (i in 0 until outputs.values.toList()[0].shape[0]) {
+            //Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
+            var max = 0.0f  //give score of success
+
+            outputs.forEach { (k, _) ->
+                if (outputs[k]!!.asD2Array()[i, 0] > max) {
+                    max = outputs[k]!!.asD2Array()[i, 0]
+                }
+            }
+            //Napier.i("chosen $i, $value")
+            result[i] = max
+        }
+
+        return result.toFloatArray()
+    }
+
+
 
     private fun calculateOutput(X: D2Array<Float>, theta: D2Array<Float>): D2Array<Float> {
         val z = X.dot(theta)
