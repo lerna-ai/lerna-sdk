@@ -2,6 +2,7 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.UserID
+import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
@@ -20,7 +21,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	private val lernaService = LernaService(_context, _token, uniqueID, autoInference)
 
 	internal companion object {
-		const val FEATURE_SIZE = 45 // Lerna features plus x0
+		const val FEATURE_SIZE = 46 // Lerna features plus x0
 	}
 
 	init {
@@ -37,6 +38,9 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 			initialize()
 			runFL()
 			runCleanUp()
+		}
+		else {
+			Napier.d("Incorrect feature size, library disabled!", null, "Lerna")
 		}
 	}
 
@@ -103,7 +107,10 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	}
 
 	private fun runCleanUp() {
-		// ToDo: Add clean up worker & interface
-		//cleanupWorker.start()
+		ContextRunner().runBlocking(_context, ::runCleanUpWithContext)
+	}
+
+	private suspend fun runCleanUpWithContext() {
+		FileUtil().cleanUp(storageService.getSessionID())
 	}
 }
