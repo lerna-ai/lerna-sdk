@@ -5,8 +5,13 @@ plugins {
     id("maven-publish")
 }
 
+group = "ai.lerna.multiplatform"
+version = "0.0.1"
+
 kotlin {
-    android()
+    android {
+        publishLibraryVariants("release", "debug")
+    }
 
     listOf(
         iosX64(),
@@ -86,6 +91,39 @@ kotlin {
             iosSimulatorArm64Test.dependsOn(this)
         }
     }
+
+    publishing {
+        repositories {
+            maven {
+                url = uri("https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/")
+                credentials {
+                    username = "aws"
+                    // to generate password run `aws codeartifact get-authorization-token --region=us-east-1 --domain lerna-dev --query authorizationToken --output text`
+                    password = "update-password-here"
+                }
+            }
+        }
+        publications {
+            withType<MavenPublication> {
+                pom {
+                    packaging = "aar"
+                    name.set("Lerna MultiPlatform SDK")
+                    description.set("A multiplatform native implementation of Lerna SDK")
+                    url.set("https://lerna.ai")
+                    licenses {
+                        license {
+                            name.set("The Lerna license")
+                            url.set("https://lerna.ai/library/license")
+                        }
+                    }
+                    organization {
+                        name.set("Lerna Inc")
+                        url.set("https://lerna.ai/")
+                    }
+                }
+            }
+        }
+    }
 }
 
 android {
@@ -111,5 +149,5 @@ android {
     }
 }
 dependencies {
-    androidTestImplementation(project(mapOf("path" to ":shared")))
+    androidTestImplementation(project(mapOf("path" to ":lerna-kmm-sdk")))
 }
