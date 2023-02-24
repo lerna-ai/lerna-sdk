@@ -22,4 +22,17 @@ internal class FileUtilAndroidTest {
 		}
 
 	}
+
+	@Test
+	fun cleanup() {
+		runBlocking {
+			withAndroidContext(ApplicationProvider.getApplicationContext()) {
+				fileUtilTest.cleanup(storage)
+				fileUtilTest.cleanup_with_mldata(storage)
+				fileUtilTest.cleanup_delete_mldata(storage)
+				fileUtilTest.cleanup_delete_mldata_and_sensor2(storage)
+			}
+		}
+
+	}
 }

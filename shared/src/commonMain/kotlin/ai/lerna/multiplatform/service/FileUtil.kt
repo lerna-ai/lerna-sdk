@@ -63,4 +63,33 @@ class FileUtil {
 		sensorFile.writeString(record)
 		sensorFile.close()
 	}
+
+	suspend fun cleanUp(sessionId: Int, threshold: Long = 50000000L) {
+		var totalSize = 0L
+		var fileDeleted = false
+		for (i in sessionId downTo 0) {
+			try {
+				totalSize += cacheVfs["sensorLog$i.csv"].size()
+				if (totalSize > threshold) {
+					cacheVfs["sensorLog$i.csv"].delete()
+					fileDeleted = true
+				}
+			} catch (e: FileNotFoundException) {
+				continue
+			}
+		}
+
+		try {
+			totalSize += cacheVfs["mldata.csv"].size()
+			if (totalSize > threshold) {
+				cacheVfs["mldata.csv"].delete()
+				fileDeleted = true
+			}
+		} catch (_: FileNotFoundException) {
+		}
+		Napier.d("Internal file size: $totalSize", null, "Lerna")
+		if (fileDeleted) {
+			Napier.d("Cleaning internal storage...", null, "Lerna")
+		}
+	}
 }
