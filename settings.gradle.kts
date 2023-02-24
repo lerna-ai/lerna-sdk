@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Lerna_KMM_SDK"
 include(":shared")
+project(":shared").name = "lerna-kmm-sdk"
