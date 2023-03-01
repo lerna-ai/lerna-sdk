@@ -1,7 +1,7 @@
 import ai.lerna.multiplatform.service.IMLExecution
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
-import com.soywiz.korio.file.std.cacheVfs
+import com.soywiz.korio.file.std.tempVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.math.exp
@@ -208,13 +208,13 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     }
 
     private suspend fun getData(): List<FloatArray>{
-        val mlData = cacheVfs["mldata.csv"].readLines().toList()
+        val mlData = tempVfs["mldata.csv"].readLines().toList()
             .filter { it.isNotEmpty() }
             .map { line -> line.split(",")
                 .filter { !it.contains("_") }
                 .map { it.toFloat() }
                 .toFloatArray() }
-        cacheVfs["mldata.csv"].delete()
+        tempVfs["mldata.csv"].delete()
         return mlData
     }
 
