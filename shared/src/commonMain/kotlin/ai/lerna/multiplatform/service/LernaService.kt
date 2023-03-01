@@ -10,7 +10,7 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import com.soywiz.korio.file.VfsOpenMode
-import com.soywiz.korio.file.std.cacheVfs
+import com.soywiz.korio.file.std.tempVfs
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
@@ -85,7 +85,9 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 		val time = GMTDate().toCustomDate()
 		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
-		Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
+		if (LernaConfig.LOG_SENSOR_DATA) {
+			Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
+		}
 		if (successValue != 0) {
 			if (!autoInference) {
 				triggerInference()
@@ -112,7 +114,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	internal suspend fun updateFileLastSession(sessionID: Int, successValue: Int) {
 		try {
-			val sensorFile = cacheVfs["sensorLog$sessionID.csv"]
+			val sensorFile = tempVfs["sensorLog$sessionID.csv"]
 			val lines = sensorFile.readLines()
 				.filter { it.isNotEmpty() }
 				.map { it.replace(",0$".toRegex(), ",$successValue") }
