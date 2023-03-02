@@ -1,7 +1,7 @@
 package ai.lerna.multiplatform.service
 
 import com.soywiz.korio.file.VfsOpenMode
-import com.soywiz.korio.file.std.cacheVfs
+import com.soywiz.korio.file.std.tempVfs
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
@@ -21,14 +21,14 @@ class FileUtil {
 		var fileSize = 0L
 		try {
 			val osw = try {
-				cacheVfs["mldata.csv"].open(VfsOpenMode.WRITE)
+				tempVfs["mldata.csv"].open(VfsOpenMode.WRITE)
 			} catch (e: FileNotFoundException) {
-				cacheVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+				tempVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 			}
 			osw.setPosition(osw.size())
 			for (i in 0 .. storage.getSessionID()) {
 				try {
-					val sensorFile = cacheVfs["sensorLog$i.csv"]
+					val sensorFile = tempVfs["sensorLog$i.csv"]
 					//ToDo: Should be optimized to avoid convert all items to list
 					val lines = sensorFile.readLines().filter { it.isNotEmpty() }.toList().takeLast(100)
 					if (isNotValidLogs(lines)) {
@@ -55,9 +55,9 @@ class FileUtil {
 
 	suspend fun commitToFile(sessionID: Int, record: String) {
 		val sensorFile = try {
-			cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.WRITE)
+			tempVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.WRITE)
 		} catch (e: FileNotFoundException) {
-			cacheVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+			tempVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		}
 		sensorFile.setPosition(sensorFile.size())
 		sensorFile.writeString(record)
@@ -69,9 +69,9 @@ class FileUtil {
 		var fileDeleted = false
 		for (i in sessionId downTo 0) {
 			try {
-				totalSize += cacheVfs["sensorLog$i.csv"].size()
+				totalSize += tempVfs["sensorLog$i.csv"].size()
 				if (totalSize > threshold) {
-					cacheVfs["sensorLog$i.csv"].delete()
+					tempVfs["sensorLog$i.csv"].delete()
 					fileDeleted = true
 				}
 			} catch (e: FileNotFoundException) {
@@ -80,9 +80,9 @@ class FileUtil {
 		}
 
 		try {
-			totalSize += cacheVfs["mldata.csv"].size()
+			totalSize += tempVfs["mldata.csv"].size()
 			if (totalSize > threshold) {
-				cacheVfs["mldata.csv"].delete()
+				tempVfs["mldata.csv"].delete()
 				fileDeleted = true
 			}
 		} catch (_: FileNotFoundException) {

@@ -11,7 +11,7 @@ import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
-import com.soywiz.korio.file.std.cacheVfs
+import com.soywiz.korio.file.std.tempVfs
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
@@ -72,7 +72,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 				.uploadFile(
 					uniqueID,
 					"mldata.csv",
-					cacheVfs["mldata.csv"].readString(),
+					tempVfs["mldata.csv"].readString(),
 					GMTDate())
 		}
 		ml.loadData()
