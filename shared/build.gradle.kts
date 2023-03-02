@@ -118,10 +118,12 @@ buildkonfig {
         buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
         buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:7357/api/v2/")
         buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/debug/")
+        buildConfigField(FieldSpec.Type.BOOLEAN, "LOG_SENSOR_DATA", "true")
     }
     defaultConfigs("release") {
-        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
+        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:8081/")
         buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:8080/api/v2/")
         buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/")
+        buildConfigField(FieldSpec.Type.BOOLEAN, "LOG_SENSOR_DATA", "false")
     }
 }
