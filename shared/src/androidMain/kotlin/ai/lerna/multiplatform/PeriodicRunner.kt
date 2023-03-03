@@ -15,6 +15,7 @@ actual class PeriodicRunner actual constructor() {
 		runPeriodicFlag = true
 		CoroutineScope(Dispatchers.Default).launch {
 			withAndroidContext(context) {
+				delay(2000)
 				while (runPeriodicFlag) {
 					runPeriodic()
 					delay(2000)
