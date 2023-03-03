@@ -13,14 +13,14 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 
 class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
     private val token = _token
     private val version = _version
-    private val client = HttpClient() {
+    private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -29,9 +29,9 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         }
     }
 
-    override fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String, fileNameDate: GMTDate) {
+    override suspend fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String, fileNameDate: GMTDate) {
         try {
-            CoroutineScope(Dispatchers.Default).launch {
+            withContext(CoroutineScope(Dispatchers.Default).coroutineContext) {
                 val request = LogData()
                 request.path = LernaConfig.UPLOAD_PREFIX
                 request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + fileNameDate.toCustomDate() + "_" + getPlatform().name + "_" + fileNameSuffix
