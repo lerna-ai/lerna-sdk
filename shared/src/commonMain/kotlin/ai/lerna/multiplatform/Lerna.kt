@@ -31,12 +31,14 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		runBlocking {
 			weightsManager.updateWeights()
 		}
+		if (checkWeightSize()) {
+			runFL()
+		}
 	}
 
 	fun start() {
 		if (checkWeightSize()) {
 			initialize()
-			runFL()
 			runCleanUp()
 		}
 		else {
