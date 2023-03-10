@@ -4,5 +4,5 @@ import io.ktor.util.date.*
 
 
 interface LogUploader {
-    fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String, fileNameDate: GMTDate)
+    suspend fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String, fileNameDate: GMTDate)
 }
