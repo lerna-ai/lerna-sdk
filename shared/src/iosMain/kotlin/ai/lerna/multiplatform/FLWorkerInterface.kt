@@ -60,7 +60,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 			printScheduledTasks()
 		} catch (e: Exception) {
 			Napier.e("=== Scheduler setup failed ===", throwable = e)
-			LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_scheduler.txt", e.stackTraceToString(), GMTDate())
+			runBlocking {LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_scheduler.txt", e.stackTraceToString(), GMTDate())}
 			runWorker(null)
 		}
 	}
