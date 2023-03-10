@@ -38,8 +38,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 
 	fun start() {
 		if (checkWeightSize()) {
-			initialize()
 			runCleanUp()
+			initialize()
 		}
 		else {
 			Napier.d("Incorrect feature size, library disabled!", null, "Lerna")
