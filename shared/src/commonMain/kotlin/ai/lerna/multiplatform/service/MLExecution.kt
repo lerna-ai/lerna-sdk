@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 interface IMLExecution {
     suspend fun loadData()
-    fun prepareData(ml_id: Int)
+    fun prepareData(ml_id: Int, featureSize: Int)
     fun localML(ml_id: Int): Long
     fun addNoise(share: Float, scaling: Int, prediction: String): D2Array<Float>?
     fun setWeights(trainingWeights: GlobalTrainingWeightsItem)
