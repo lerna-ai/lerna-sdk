@@ -25,7 +25,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         next = getData()
     }
 
-    override fun prepareData(ml_id: Int) {
+    override fun prepareData(ml_id: Int, featureSize: Int) {
         val list = next.map { it[0] }.distinct()
         val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * list.size.toFloat()).toInt()
         val sessions = list.asSequence().shuffled().take(samples).toList()
@@ -34,6 +34,10 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         val testData = mutableListOf<FloatArray>()
 
         for (i in next.indices) {
+            // Ignore line if not equal with feature size plus one (sessionId)
+            if (next[i].size != featureSize + 1) {
+                continue
+            }
             if (sessions.contains(next[i][0])) {
                 trainData.add(next[i])
             }
