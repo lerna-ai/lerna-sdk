@@ -67,7 +67,11 @@ class FileUtil {
 	suspend fun cleanUp(sessionId: Int, threshold: Long = 50000000L) {
 		var totalSize = 0L
 		var fileDeleted = false
-		for (i in sessionId downTo 0) {
+		if (tempVfs["sensorLog$sessionId.csv"].exists()) {
+			Napier.d("Cleaning unfinished log file sensorLog$sessionId.csv", null, "Lerna")
+			tempVfs["sensorLog$sessionId.csv"].delete()
+		}
+		for (i in sessionId - 1 downTo 0) {
 			try {
 				totalSize += tempVfs["sensorLog$i.csv"].size()
 				if (totalSize > threshold) {

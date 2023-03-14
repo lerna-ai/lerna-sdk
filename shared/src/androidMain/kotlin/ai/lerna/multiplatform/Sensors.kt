@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import android.provider.Settings
 import io.ktor.util.date.*
 import java.util.*
+import kotlin.math.ln
 
 actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) :
     SensorEventListener, SensorInterface {
@@ -145,6 +146,17 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         return false
     }
 
+    private fun calcBrightness(light: Float, maxValue: Float): Float {
+        var normalizedLight = light
+        if (light <= 0) {
+            normalizedLight = 1f
+        }
+        else if (light > maxValue) {
+            normalizedLight = maxValue
+        }
+        return (ln(normalizedLight.toDouble()) / ln(maxValue.toDouble())).toFloat()
+    }
+
     override fun onSensorChanged(p0: SensorEvent?) {
         if (!isEnabled) return
 
@@ -175,7 +187,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
             //Sensor.TYPE_PROXIMITY -> modelData.setProximity(values[0].div(maxRange))
             Sensor.TYPE_GYROSCOPE -> modelData.setGyroscope(values[0], values[1], values[2])
             Sensor.TYPE_LINEAR_ACCELERATION -> modelData.setLinAcceleration(values[0], values[1], values[2])
-            Sensor.TYPE_LIGHT -> modelData.setLight(values[0].div(maxRange))
+            Sensor.TYPE_LIGHT -> modelData.setLight(calcBrightness(values[0], maxRange))
         }
 
         if (rawMagnetic != null && rawGravity != null && rawAccelerometer != null && rawRotation != null) {

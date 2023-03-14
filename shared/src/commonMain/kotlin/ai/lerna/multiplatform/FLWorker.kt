@@ -78,7 +78,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 		ml.loadData()
 
 		for (i in trainingTask.trainingTasks!!.indices) {
-			ml.prepareData(i)
+			ml.prepareData(i, getWeightSize())
 			ml.setWeights(globalWeights!!.trainingWeights!![i])
 			if (weightsVersion > 1) {
 				Napier.d("Computing accuracy of version $weightsVersion and task $i", null, "LernaFL")
@@ -146,6 +146,12 @@ class FLWorker(_token: String, _uniqueID: Long) {
 				}
 			}
 		}
+	}
+
+	private fun getWeightSize(): Int {
+		val weights = storage.getWeights()?.trainingWeights?.get(0)?.weights ?: return -1
+		val firstKey = weights.keys.first()
+		return weights[firstKey]?.size ?: -1
 	}
 
 	private suspend fun getNoise(
