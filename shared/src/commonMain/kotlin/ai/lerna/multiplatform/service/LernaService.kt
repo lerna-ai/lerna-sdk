@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.ContextRunner
 import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.ModelData
 import ai.lerna.multiplatform.PeriodicRunner
@@ -9,11 +10,11 @@ import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
+import ai.lerna.multiplatform.utils.DateUtil
 import com.soywiz.korio.file.VfsOpenMode
 import com.soywiz.korio.file.std.tempVfs
 import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
-import io.ktor.util.date.*
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
@@ -21,7 +22,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long, _autoInference: Boolean) {
 	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
-	private val modelData: ModelData = ModelData()
+	private val modelData: ModelData = ModelData(50)
 	private var successValue = 0
 	private var weights: GlobalTrainingWeights? = null
 	private val fileUtil = FileUtil()
@@ -55,7 +56,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	internal fun stop() {
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
-		sessionEnd()
+		ContextRunner().runBlocking(context, ::sessionEnd)
 	}
 
 	internal fun updateFeatures(values: FloatArray) {
@@ -83,10 +84,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			triggerInference()
 		}
 
-		val time = GMTDate().toCustomDate()
-		commitToFile("${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n")
 		if (LernaConfig.LOG_SENSOR_DATA) {
-			Napier.d("Commit to file: ${storageService.getSessionID()},$time,${modelData.toCsv()},$successValue\n", null, "LernaService")
+			Napier.d("Commit to history: ${storageService.getSessionID()},${DateUtil().now()},${modelData.toCsv()},$successValue\n", null, "LernaService")
 		}
 		if (successValue != 0) {
 			if (!autoInference) {
@@ -100,12 +99,14 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		successValue = 0 // Use success for only one session after event
 	}
 
-	private fun sessionEnd() {
+	private suspend fun sessionEnd() {
 		var sessionId = storageService.getSessionID()
+		commitToFile(modelData.historyToCsv(sessionId, successValue.toString()))
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
 		storageService.putSessionID(sessionId)
-		modelData.resetSensorHistory()
+		// Erase historic data only during initialize, not when session ends
+		//modelData.resetSensorHistory()
 
 		weights?.trainingWeights?.forEach {
 			inferenceTasks[it.mlId!!]?.clearHistory()
@@ -182,13 +183,4 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				?.key
 		} else null
 	}
-
-	private fun GMTDate.toCustomDate(): String = buildString {
-		append(year.padZero(4))
-		append("-${(month.ordinal + 1).padZero(2)}")
-		append("-${dayOfMonth.padZero(2)}")
-		append("_${hours.padZero(2)}.${minutes.padZero(2)}.${seconds.padZero(2)}")
-	}
-
-	private fun Int.padZero(length: Int): String = toString().padStart(length, '0')
 }

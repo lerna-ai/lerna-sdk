@@ -9,7 +9,6 @@ import androidx.work.WorkerParameters
 import com.google.common.util.concurrent.ListenableFuture
 import com.soywiz.korio.android.withAndroidContext
 import io.github.aakira.napier.Napier
-import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +30,7 @@ class FLPeriodicWorker(_context: Context, workerParams: WorkerParameters) :
 				} catch (e: Exception) {
 					Napier.e("Lerna Worker - Failed $e")
 					withAndroidContext(context) {
-						LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString(), GMTDate())
+						LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString())
 					}
 					completer.set(Result.failure())
 				}
