@@ -57,13 +57,13 @@ class FLWorker(_token: String, _uniqueID: Long) {
 
 		val fileSize = fileUtil.mergeFiles(storage)
 
-		if (fileSize < 500000L) {
+		if (fileSize < 500000L && storage.getSessionID() > 10) {
 			Napier.d("Not enough data for training", null, "LernaFL")
 			//logUploader.uploadLogcat(uniqueID, "logcatf.txt")
 			return
 		}
 
-		storage.putSessionID(0)
+
 		var successes = 0
 		//For each ML task
 		val ml = MLExecution(trainingTask)
@@ -76,6 +76,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 					GMTDate())
 		}
 		ml.loadData()
+		storage.putSessionID(0)
 
 		for (i in trainingTask.trainingTasks!!.indices) {
 			ml.prepareData(i, getWeightSize())
