@@ -144,7 +144,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		var inference: TrainingInferenceItem? = TrainingInferenceItem()
 		inference?.ml_id = weights.mlId!!
 		inference?.model = weights.mlName
-		inferenceTasks[weights.mlId!!]?.predictLabel(dataArray)
+		inferenceTasks[weights.mlId!!]?.predictLabelFrom1Line1Item(dataArray)
 
 
 		inference?.prediction = findMostCommonInList(inferenceTasks[weights.mlId!!]?.inferHistory)
