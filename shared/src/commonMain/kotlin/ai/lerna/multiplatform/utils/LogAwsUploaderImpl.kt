@@ -10,7 +10,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,12 +28,12 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         }
     }
 
-    override suspend fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String, fileNameDate: GMTDate) {
+    override suspend fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String) {
         try {
             withContext(CoroutineScope(Dispatchers.Default).coroutineContext) {
                 val request = LogData()
                 request.path = LernaConfig.UPLOAD_PREFIX
-                request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + fileNameDate.toCustomDate() + "_" + getPlatform().name + "_" + fileNameSuffix
+                request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().now() + "_" + getPlatform().name + "_" + fileNameSuffix
                 request.token = token
                 request.data = fileContent
                 val response = client.post("https://path/to/upload/file") {
@@ -48,13 +47,6 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         } catch (e: Exception) {
             Napier.e("LogAwsUploader: Failed to upload file $fileNameSuffix.", null, "LernaLog")
         }
-    }
-
-    private fun GMTDate.toCustomDate(): String = buildString {
-        append(year.padZero(4))
-        append("-${(month.ordinal + 1).padZero(2)}")
-        append("-${dayOfMonth.padZero(2)}")
-        append("_${hours.padZero(2)}.${minutes.padZero(2)}.${seconds.padZero(2)}")
     }
 
     private fun Int.padZero(length: Int): String = toString().padStart(length, '0')
