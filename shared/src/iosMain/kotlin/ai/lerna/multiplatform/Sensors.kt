@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
 import kotlinx.cinterop.*
@@ -143,7 +144,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
 
         modelData.setLight(myScreen.brightness.toFloat())
 
-        modelData.setHistory()
+        modelData.setHistory(DateUtil().now())
         //Napier.d("Is wifi connected?: ${wifi}, Is music playing?: ${music}, Is headphone connected?: ${isHeadphoneConnected}, Is bluetooth connected?: ${isBluetoothConnected}, Is speaker on?: ${isSpeakerOn}, Is headset on?: ${isHeadsetOn}, Volume: $volume, Proximity: $proximity, orientation: $orientation, battery: $battery, brightness: ${myScreen.brightness}", null, "Lerna Sensors")
     }
 

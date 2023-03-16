@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import ai.lerna.multiplatform.utils.DateUtil
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -103,7 +104,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
 
         modelData.setWifiConnected(isConnectionUnmetered(context, true))
 
-        modelData.setHistory()
+        modelData.setHistory(DateUtil().now())
     }
 
     @SuppressLint("MissingPermission")

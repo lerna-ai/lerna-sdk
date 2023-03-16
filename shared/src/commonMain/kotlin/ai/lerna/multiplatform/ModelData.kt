@@ -1,8 +1,11 @@
 package ai.lerna.multiplatform
 
+import ai.lerna.multiplatform.utils.DateUtil
 import kotlin.math.sqrt
 
-class ModelData {
+class ModelData(_historySize: Int = 1) {
+	private val historicDataSize = 60
+	private val historySize = _historySize
 	//private var proximity: Float = 0F
 	private var linAcceleration = arrayOf(0F, 0F, 0F)
 	private var gyroscope = arrayOf(0F, 0F, 0F)
@@ -20,15 +23,15 @@ class ModelData {
 	private var weekday: Float = 0F
 	private var weekend: Float = 0F
 	private var wiredPhones: Float = 0F
-	private var linAccelerationHistoryX: MutableList<Float> = ArrayList()
-	private var linAccelerationHistoryY: MutableList<Float> = ArrayList()
-	private var linAccelerationHistoryZ: MutableList<Float> = ArrayList()
-	private var gyroscopeHistoryX: MutableList<Float> = ArrayList()
-	private var gyroscopeHistoryY: MutableList<Float> = ArrayList()
-	private var gyroscopeHistoryZ: MutableList<Float> = ArrayList()
-	private var magneticFieldHistoryX: MutableList<Float> = ArrayList()
-	private var magneticFieldHistoryY: MutableList<Float> = ArrayList()
-	private var magneticFieldHistoryZ: MutableList<Float> = ArrayList()
+	private var linAccelerationHistoryX: ArrayDeque<Float> = ArrayDeque()
+	private var linAccelerationHistoryY: ArrayDeque<Float> = ArrayDeque()
+	private var linAccelerationHistoryZ: ArrayDeque<Float> = ArrayDeque()
+	private var gyroscopeHistoryX: ArrayDeque<Float> = ArrayDeque()
+	private var gyroscopeHistoryY: ArrayDeque<Float> = ArrayDeque()
+	private var gyroscopeHistoryZ: ArrayDeque<Float> = ArrayDeque()
+	private var magneticFieldHistoryX: ArrayDeque<Float> = ArrayDeque()
+	private var magneticFieldHistoryY: ArrayDeque<Float> = ArrayDeque()
+	private var magneticFieldHistoryZ: ArrayDeque<Float> = ArrayDeque()
 	private var orientation: Float = 0F
 	private var batteryPlugged: Float = 0F
 	private var audioVolume: Float = 0F
@@ -37,11 +40,13 @@ class ModelData {
 	private var audioSpeakerOn: Float = 0F
 	private var audioHeadsetOn: Float = 0F
 	private var ambientLight: Float = 0F
-	private var ambientLightHistory: MutableList<Float> = ArrayList()
+	private var ambientLightHistory: ArrayDeque<Float> = ArrayDeque()
 	private var ambientLightMean: Float = 0F
 	private var ambientLightStd: Float = 0F
 	private var wifiConnected: Float = 0F
 	private var customFeaturesArray: FloatArray = FloatArray(0)
+
+	private var modelDataHistory: ArrayDeque<String> = ArrayDeque(0)
 
 	internal fun setupCustomFeatureSize(customFeatureSize: Int) {
 		if (customFeaturesArray.size != customFeatureSize && customFeatureSize != 0) {
@@ -175,19 +180,30 @@ class ModelData {
 		}
 	}
 
-	private fun MutableList<Float>.std(): Float {
+	private fun ArrayDeque<Float>.std(): Float {
 		val mean = this.average().toFloat()
 		return this.fold(0.0) { accumulator, next -> accumulator + (next - mean) * (next - mean) }
 			.let { sqrt(it / this.size).toFloat() }
 	}
 
-	internal fun setHistory() {
-		linAccelerationHistoryX.add(linAcceleration[0])
-		linAccelerationHistoryY.add(linAcceleration[1])
-		linAccelerationHistoryZ.add(linAcceleration[2])
-		linAccelerationHistoryX = linAccelerationHistoryX.takeLast(50).toMutableList()
-		linAccelerationHistoryY = linAccelerationHistoryY.takeLast(50).toMutableList()
-		linAccelerationHistoryZ = linAccelerationHistoryZ.takeLast(50).toMutableList()
+	private fun ArrayDeque<Float>.addBoxed(element: Float) {
+		this.add(element)
+		if (this.size > historicDataSize) {
+			this.removeFirst()
+		}
+	}
+
+	private fun ArrayDeque<String>.addBoxed(element: String) {
+		this.add(element)
+		if (this.size > historySize) {
+			this.removeFirst()
+		}
+	}
+
+	internal fun setHistory(time: String = DateUtil().now()) {
+		linAccelerationHistoryX.addBoxed(linAcceleration[0])
+		linAccelerationHistoryY.addBoxed(linAcceleration[1])
+		linAccelerationHistoryZ.addBoxed(linAcceleration[2])
 		if (linAccelerationHistoryX.isNotEmpty()) {
 			linAccelerationMean = arrayOf(
 				linAccelerationHistoryX.average().toFloat(),
@@ -201,12 +217,9 @@ class ModelData {
 			)
 		}
 
-		gyroscopeHistoryX.add(gyroscope[0])
-		gyroscopeHistoryY.add(gyroscope[1])
-		gyroscopeHistoryZ.add(gyroscope[2])
-		gyroscopeHistoryX = gyroscopeHistoryX.takeLast(50).toMutableList()
-		gyroscopeHistoryY = gyroscopeHistoryY.takeLast(50).toMutableList()
-		gyroscopeHistoryZ = gyroscopeHistoryZ.takeLast(50).toMutableList()
+		gyroscopeHistoryX.addBoxed(gyroscope[0])
+		gyroscopeHistoryY.addBoxed(gyroscope[1])
+		gyroscopeHistoryZ.addBoxed(gyroscope[2])
 		if (gyroscopeHistoryX.isNotEmpty()) {
 			gyroscopeMean = arrayOf(
 				gyroscopeHistoryX.average().toFloat(),
@@ -220,12 +233,9 @@ class ModelData {
 			)
 		}
 
-		magneticFieldHistoryX.add(magneticField[0])
-		magneticFieldHistoryY.add(magneticField[1])
-		magneticFieldHistoryZ.add(magneticField[2])
-		magneticFieldHistoryX = magneticFieldHistoryX.takeLast(50).toMutableList()
-		magneticFieldHistoryY = magneticFieldHistoryY.takeLast(50).toMutableList()
-		magneticFieldHistoryZ = magneticFieldHistoryZ.takeLast(50).toMutableList()
+		magneticFieldHistoryX.addBoxed(magneticField[0])
+		magneticFieldHistoryY.addBoxed(magneticField[1])
+		magneticFieldHistoryZ.addBoxed(magneticField[2])
 		if (magneticFieldHistoryX.isNotEmpty()) {
 			magneticFieldMean = arrayOf(
 				magneticFieldHistoryX.average().toFloat(),
@@ -239,12 +249,27 @@ class ModelData {
 			)
 		}
 
-		ambientLightHistory.add(ambientLight)
-		ambientLightHistory = ambientLightHistory.takeLast(50).toMutableList()
+		ambientLightHistory.addBoxed(ambientLight)
 		if (ambientLightHistory.isNotEmpty()) {
 			ambientLightMean = ambientLightHistory.average().toFloat()
 			ambientLightStd = ambientLightHistory.std()
 		}
+		modelDataHistory.addBoxed("$time,${toCsv()}")
+	}
+
+	internal fun historyToCsv(): String {
+		return modelDataHistory
+			.takeLast(historySize)
+			.joinToString(separator = "\n", postfix = "\n") { it }
+	}
+
+	internal fun historyToCsv(sessionID: Int, successValue: String): String {
+		return modelDataHistory
+			.takeLast(historySize)
+			.joinToString(
+				prefix = "$sessionID,",
+				separator = ",$successValue\n$sessionID,",
+				postfix = ",$successValue\n") { it }
 	}
 
 	internal fun toCsv(): String {
