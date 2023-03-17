@@ -67,7 +67,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_ambientLight() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setLight(1F)
 		modelData.setHistory("2023-03-01_14.00.00")
@@ -90,7 +90,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_ambientLight_single() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setLight(1F)
 		modelData.setHistory()
@@ -102,7 +102,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_linAcceleration() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setLinAcceleration(1F, 4F, 7F)
 		modelData.setHistory()
@@ -121,7 +121,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_linAccelerationt_single() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setLinAcceleration(1F, 4F, 7F)
 		modelData.setHistory()
@@ -133,7 +133,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_gyroscope() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setGyroscope(1F, 4F, 7F)
 		modelData.setHistory()
@@ -152,7 +152,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_gyroscope_single() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setGyroscope(1F, 4F, 7F)
 		modelData.setHistory()
@@ -164,7 +164,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_magneticField() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setMagneticField(1F, 4F, 7F)
 		modelData.setHistory()
@@ -183,7 +183,7 @@ internal class ModelDataTest {
 	@Test
 	fun toCsv_magneticField_single() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setMagneticField(1F, 4F, 7F)
 		modelData.setHistory()
@@ -195,7 +195,7 @@ internal class ModelDataTest {
 	@Test
 	fun setupCustomFeatureSize() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		// When
 		modelData.setupCustomFeatureSize(5)
 		val result = modelData.toCsv()
@@ -206,7 +206,7 @@ internal class ModelDataTest {
 	@Test
 	fun updateCustomFeatures() {
 		// Given
-		modelData.resetSensorHistory()
+		modelData.clearHistory()
 		modelData.setupCustomFeatureSize(5)
 		// When
 		modelData.updateCustomFeatures(arrayOf(1F, 2F, 3F, 4F, 5F).toFloatArray())
@@ -217,11 +217,13 @@ internal class ModelDataTest {
 
 	@Test
 	fun light_historyToCsv() {
-		// When
+		// Given
+		modelData.clearHistory()
 		for (i in 1 .. 55) {
 			modelData.setAudioActivity(i.toFloat(), false, false, false, false)
 			modelData.setHistory("2023-03-01_14.57.$i")
 		}
+		// When
 		val result = modelData.historyToCsv()
 		val resultWithMetaData = modelData.historyToCsv(5, "1")
 		// Then
