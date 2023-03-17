@@ -56,9 +56,12 @@ class FLWorker(_token: String, _uniqueID: Long) {
 
 		val fileSize = fileUtil.mergeFiles(storage)
 
-		if (fileSize < 500000L && storage.getSessionID() > 10) {
-			Napier.d("Not enough data for training", null, "LernaFL")
-			//logUploader.uploadLogcat(uniqueID, "logcatf.txt")
+		/*
+		 * Check file size and session number to allow FL execution
+		 * fileSize: 500KB -> about 15 minutes of data collection
+		 */
+		if (fileSize < 500000L || storage.getSessionID() < 10) {
+			Napier.d("Not enough data for training. Total file size: $fileSize, session ${storage.getSessionID()}.", null, "LernaFL")
 			return
 		}
 

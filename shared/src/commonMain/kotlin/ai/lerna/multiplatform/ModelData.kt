@@ -128,7 +128,7 @@ class ModelData(_historySize: Int = 1) {
 		wifiConnected = if (isConnectionUnmetered) 1F else 0F
 	}
 
-	internal fun resetSensorHistory() {
+	internal fun clearHistory() {
 		linAccelerationHistoryX.clear()
 		linAccelerationHistoryY.clear()
 		linAccelerationHistoryZ.clear()
@@ -139,6 +139,7 @@ class ModelData(_historySize: Int = 1) {
 		magneticFieldHistoryY.clear()
 		magneticFieldHistoryZ.clear()
 		ambientLightHistory.clear()
+		modelDataHistory.clear()
 	}
 
 	internal fun setDateTime(hour: Int, dayOfWeek: Int) {

@@ -49,7 +49,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			inferenceTasks[it.mlId!!] = inferenceTask
 		}
 		Napier.d("Start Periodic", null, "LernaService")
-		//ToDO: initialize flService
 		periodicRunner.run(context, ::runPeriodic)
 	}
 
@@ -57,6 +56,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
 		ContextRunner().runBlocking(context, ::sessionEnd)
+		modelData.clearHistory()
 	}
 
 	internal fun updateFeatures(values: FloatArray) {
@@ -93,7 +93,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			}
 			val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
 			flService.submitSuccess(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
-			updateFileLastSession(storageService.getSessionID(), successValue)
 			sessionEnd()
 		}
 		successValue = 0 // Use success for only one session after event
@@ -105,8 +104,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
 		storageService.putSessionID(sessionId)
-		// Erase historic data only during initialize, not when session ends
-		//modelData.resetSensorHistory()
 
 		weights?.trainingWeights?.forEach {
 			inferenceTasks[it.mlId!!]?.clearHistory()
@@ -121,7 +118,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				.map { it.replace(",0$".toRegex(), ",$successValue") }
 				.toList()
 
-
 			val sensorFileOutput = sensorFile.open(VfsOpenMode.CREATE_OR_TRUNCATE)
 			for (line in lines) {
 				sensorFileOutput.writeString("$line\n")
@@ -133,25 +129,15 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	private suspend fun calcAndSubmitInference(dataArray: D2Array<Float>) {
-
-		var inferenceList: List<TrainingInferenceItem?>? = weights?.trainingWeights?.map { it -> calcInference(dataArray, it) }
-
-
-		inferenceList = inferenceList?.filterNotNull()
-
-
-		// ToDo: for future use, currently response is empty
-//		flService.submitInferenceListener= { submitInference ->
-//			Log.d("LernaService", submitInference)
-//		}
-		if (inferenceList != null) {
-			if (inferenceList.isNotEmpty()) {
-				storageService.putInference(inferenceList)
-				Napier.d("Sending ${inferenceList.size} inference(s) to the DB", null, "LernaService")
-				flService.submitInference(weights!!.version, inferenceList, storageService.getUserIdentifier() ?: "")
-
+		weights?.trainingWeights
+			?.mapNotNull { it -> calcInference(dataArray, it) }
+			?.let {
+				if (it.isNotEmpty()) {
+					storageService.putInference(it)
+					Napier.d("Sending ${it.size} inference(s) to the DB", null, "LernaService")
+					flService.submitInference(weights!!.version, it, storageService.getUserIdentifier() ?: "")
+				}
 			}
-		}
 	}
 
 	private fun calcInference(dataArray: D2Array<Float>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
