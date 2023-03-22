@@ -328,4 +328,13 @@ class ModelData(_historySize: Int = 1) {
 		doubleArray.addAll(customFeaturesArray.map { it.toDouble() })
 		return doubleArray.toTypedArray()
 	}
+
+	internal fun historyToArray(): Array<DoubleArray> {
+		return modelDataHistory
+			.takeLast(historySize)
+			.map { line -> line.split(",")
+				.filter { !it.contains("_") }
+				.map { it.toDouble() }.toDoubleArray() }
+			.toTypedArray()
+	}
 }
