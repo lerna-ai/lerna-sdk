@@ -48,17 +48,17 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         val train = mk.ndarray(trainData.toTypedArray())
         val test = mk.ndarray(testData.toTypedArray())
 
-        var range=IntRange(1, trainData[0].size-1)
+        var range=IntRange(1, trainData[0].size-2)
 
         trainFeatures = train.slice<Float,D2,D2>(range, 1).transpose()
-        trainFeatures = mk.ones<Float>(trainData.size).cat(trainFeatures.flatten()).reshape(range.count(), trainData.size)
+        trainFeatures = mk.ones<Float>(trainData.size).cat(trainFeatures.flatten()).reshape(range.count()+1, trainData.size)
         trainFeatures = trainFeatures.transpose()
 
         testFeatures = test.slice<Float,D2,D2>(range, 1).transpose()
-        testFeatures = mk.ones<Float>(testData.size).cat(testFeatures.flatten()).reshape(range.count(), testData.size)
+        testFeatures = mk.ones<Float>(testData.size).cat(testFeatures.flatten()).reshape(range.count()+1, testData.size)
         testFeatures = testFeatures.transpose()
 
-        range = IntRange(trainData[0].size-1, trainData[0].size)
+        range = IntRange(trainData[0].size-1, trainData[0].size-1)
 
         trainLabels = train.slice(range, 1)
         testLabels = test.slice(range, 1)
