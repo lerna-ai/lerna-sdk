@@ -93,8 +93,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	}
 
 	private fun validateEventNumber(eventNumber: Int) {
-		if (eventNumber <= 0) {
-			throw IllegalArgumentException("Invalid event number. Value should be positive.")
+		if (eventNumber <= LernaService.SUCCESS_INVALID) {
+			throw IllegalArgumentException("Invalid event number. Value should be greater than ${LernaService.SUCCESS_INVALID}.")
 		}
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights
 		if (weights != null

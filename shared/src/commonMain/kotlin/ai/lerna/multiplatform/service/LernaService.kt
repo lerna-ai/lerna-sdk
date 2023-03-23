@@ -23,7 +23,7 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long, _autoInference: Boolean) {
 	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
 	private val modelData: ModelData = ModelData(50)
-	private var successValue = 0
+	private var successValue = SUCCESS_INVALID
 	private var weights: GlobalTrainingWeights? = null
 	private val fileUtil = FileUtil()
 	private val storageService = StorageImpl(context)
@@ -31,6 +31,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
 	private var autoInference = _autoInference
+
+	internal companion object {
+		const val SUCCESS_INVALID = -1
+	}
 
 	private suspend fun commitToFile(record: String) {
 		fileUtil.commitToFile(storageService.getSessionID(), record)
@@ -87,7 +91,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		if (LernaConfig.LOG_SENSOR_DATA) {
 			Napier.d("Commit to history: ${storageService.getSessionID()},${DateUtil().now()},${modelData.toCsv()},$successValue\n", null, "LernaService")
 		}
-		if (successValue != 0) {
+		if (successValue != SUCCESS_INVALID) {
 			if (!autoInference) {
 				triggerInference()
 			}
@@ -95,7 +99,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			flService.submitSuccess(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
 			sessionEnd()
 		}
-		successValue = 0 // Use success for only one session after event
+		successValue = SUCCESS_INVALID // Use success for only one session after event
 	}
 
 	private suspend fun sessionEnd() {
