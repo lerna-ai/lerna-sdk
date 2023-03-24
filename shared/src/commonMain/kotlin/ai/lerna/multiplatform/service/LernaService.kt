@@ -93,7 +93,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				triggerInference()
 			}
 			val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
-			flService.submitSuccess(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
+			flService.submitOutcome(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
 			sessionEnd()
 		}
 		successValue = SUCCESS_INVALID // Use success for only one session after event

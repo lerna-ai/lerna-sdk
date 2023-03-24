@@ -144,13 +144,14 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		return response.bodyAsText()
 	}
 
-	suspend fun submitSuccess(version: Long, mlId: Long, prediction: String, success: String): String? {
+	suspend fun submitOutcome(version: Long, mlId: Long, prediction: String, success: String, position: Long? = null): String? {
 		val request = Success()
 		request.ml_id = mlId
 		request.version = version
 		request.deviceId = uniqueID
 		request.prediction = prediction
 		request.success = success
+		request.position = position
 		val response = client.post(FL_API_URL + "training/success?token=" + token) {
 			contentType(ContentType.Application.Json)
 			setBody(request)
