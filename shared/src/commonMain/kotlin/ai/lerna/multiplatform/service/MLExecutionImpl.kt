@@ -211,6 +211,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         return newTheta
     }
 
+    //TODO: make the ML to work for String labels so we do not have to keep mappings
     private suspend fun getData(): List<FloatArray>{
         val mlData = tempVfs["mldata.csv"].readLines().toList()
             .filter { it.isNotEmpty() }
@@ -236,6 +237,23 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
             }
         }
         return correctSamples.toFloat()
+    }
+
+    private fun concat(A: Array<DoubleArray>, B: Array<DoubleArray>, vararg X: Array<DoubleArray>): D2Array<Double>? {
+        val mkA = mk.ndarray(A).transpose()
+        val mkB = mk.ndarray(B).transpose()
+        if(mkA.shape[1]!=mkB.shape[1])
+            return null
+        var output = mkA.flatten().cat(mkB.flatten())
+        var totalColumns = mkA.shape[0]+mkB.shape[0]
+        for (list in X) {
+            val mkX = mk.ndarray(list).transpose()
+            if(mkA.shape[1]!=mkX.shape[1])
+                return null
+            output = output.cat(mkX.flatten())
+            totalColumns += mkX.shape[0]
+        }
+        return output.reshape(totalColumns, mkA.shape[1]).transpose()
     }
 
     fun mapping(prediction: String): String {
