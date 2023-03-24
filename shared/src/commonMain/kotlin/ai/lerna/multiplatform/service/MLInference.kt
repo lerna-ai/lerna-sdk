@@ -59,33 +59,45 @@ class MLInference() {
 	/*
 	 * 1 line per item, multiple items - return the percentages - take class as input
 	 */
-	internal fun predictLabelScore1LineMulItems(testFeatures: D2Array<Float>, thetaName: String): FloatArray? {
-		if (!thetaClass.containsKey(thetaName)) {
-			Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
-			return null
+	internal fun predictLabelScore1LineMulItems(testFeatures: Pair<Array<String>, D2Array<Float>>, thetaName: String): Map<String, Float>? {
+		val name = if(thetaName!=null) {
+			if (!thetaClass.containsKey(thetaName)) {
+				Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
+				return null
+			} else {
+				thetaName
+			}
+		} else {
+			thetaClass.keys.first()
 		}
 
-		val outputs = calculateOutput(testFeatures, thetaClass[thetaName]!!)
+		val outputs = calculateOutput(testFeatures.second, thetaClass[thetaName]!!)
 
-		val result = Array(outputs.shape[0]) { 0.0f }
+		val result = HashMap<String, Float>()
 
 		for (i in 0 until outputs.shape[0]) {
-			result[i] = outputs.asD2Array()[i, 0]
+			result[testFeatures.first[i]] = outputs.asD2Array()[i, 0]
 		}
 
-		return result.toFloatArray()
+		return result
 	}
 
 	/*
 	 * Multiple lines per item, 1 item - return the total score - take class as input
 	 */
-	private fun predictLabelScoreMulLines1Item(testFeatures: D2Array<Float>, thetaName: String): Float {
-		if (!thetaClass.containsKey(thetaName)) {
-			Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
-			return -1.0f
+	private fun predictLabelScoreMulLines1Item(testFeatures: D2Array<Float>, thetaName: String?): Float {
+		val name = if(thetaName!=null) {
+			if (!thetaClass.containsKey(thetaName)) {
+				Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
+				return -1.0f
+			} else {
+				thetaName
+			}
+		} else {
+			thetaClass.keys.first()
 		}
 
-		val outputs = calculateOutput(testFeatures, thetaClass[thetaName]!!)
+		val outputs = calculateOutput(testFeatures, thetaClass[name]!!)
 
 		var result = 0.0f
 
@@ -100,16 +112,22 @@ class MLInference() {
 	/*
 	 * Multiple lines per item, multiple items - return the scores - take class as input
 	 */
-	internal fun predictLabelScoreMulLinesMulItems(testFeatures: Array<D2Array<Float>>, thetaName: String): FloatArray? {
-		if (!thetaClass.containsKey(thetaName)) {
-			Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
-			return null
+	internal fun predictLabelScoreMulLinesMulItems(testFeatures: Map<String, D2Array<Float>>, thetaName: String?): Map<String, Float>? {
+		val name = if(thetaName!=null) {
+			if (!thetaClass.containsKey(thetaName)) {
+				Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
+				return null
+			} else {
+				thetaName
+			}
+		} else {
+			thetaClass.keys.first()
 		}
-		val result = Array(testFeatures.size) { 0.0f }
-		for (i in testFeatures.indices) {
-			result[i] = predictLabelScoreMulLines1Item(testFeatures[i], thetaName)
+		val result = HashMap<String, Float>()
+		testFeatures.forEach { (k, v) ->
+			result[k] = predictLabelScoreMulLines1Item(v, name)
 		}
-		return result.toFloatArray()
+		return result
 	}
 
 	private fun calculateOutput(X: D2Array<Float>, theta: D2Array<Float>): D2Array<Float> {

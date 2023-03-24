@@ -1,24 +1,16 @@
 package ai.lerna.multiplatform.service
 
-import ai.lerna.multiplatform.ContextRunner
+import ai.lerna.multiplatform.*
 import ai.lerna.multiplatform.LernaConfig
-import ai.lerna.multiplatform.ModelData
-import ai.lerna.multiplatform.PeriodicRunner
-import ai.lerna.multiplatform.SensorInterface
-import ai.lerna.multiplatform.Sensors
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
-import com.soywiz.korio.file.VfsOpenMode
-import com.soywiz.korio.file.std.tempVfs
-import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlinx.multik.api.mk
-import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
+
 
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long, _autoInference: Boolean) {
 	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
@@ -31,6 +23,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
 	private var autoInference = _autoInference
+	private var inferencesInSession = HashMap<String, String>() //reset on stop()?
+	private var mergedInput = MergeInputData(modelData, 10) //initialize/create on start() for each position/inferenceID?
 
 	internal companion object {
 		const val SUCCESS_INVALID = -1
@@ -74,7 +68,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	internal fun triggerInference() {
 		if ((weights?.version ?: 0) > 0) {
 			runBlocking {
-				calcAndSubmitInference(mk.ndarray(arrayOf(modelData.toArray().map { it.toFloat() }.toFloatArray())))
+
+				//choose one of the two
+				calcAndSubmitInferenceMulItems("Top", mergedInput.getMergedInputData())
+				calcAndSubmitInferenceMulItemsHistory("Top", mergedInput.getMergedInputDataHistory())
 			}
 		} else {
 			Napier.d("No weights yet from server", null, "LernaService")
@@ -104,7 +101,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun sessionEnd() {
 		var sessionId = storageService.getSessionID()
-		commitToFile(modelData.historyToCsv(sessionId, successValue.toString()))
+		// 2 issues:
+		//  1)how to take as input the itemID?
+		//  2)Does mergedInput, when calling modelData, always get the latest history data? Or we need to create the mergedInput object every time?
+		commitToFile(mergedInput.historyToCsv(sessionId, "top", successValue.toString()))
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
 		storageService.putSessionID(sessionId)
@@ -114,23 +114,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	internal suspend fun updateFileLastSession(sessionID: Int, successValue: Int) {
-		try {
-			val sensorFile = tempVfs["sensorLog$sessionID.csv"]
-			val lines = sensorFile.readLines()
-				.filter { it.isNotEmpty() }
-				.map { it.replace(",0$".toRegex(), ",$successValue") }
-				.toList()
-
-			val sensorFileOutput = sensorFile.open(VfsOpenMode.CREATE_OR_TRUNCATE)
-			for (line in lines) {
-				sensorFileOutput.writeString("$line\n")
-			}
-			sensorFileOutput.close()
-		} catch (e: Exception) {
-			Napier.d("Log file not found: sensorLog$sessionID.csv", null, "LernaService")
-		}
-	}
 
 	private suspend fun calcAndSubmitInference(dataArray: D2Array<Float>) {
 		weights?.trainingWeights
@@ -142,6 +125,76 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					flService.submitInference(weights!!.version, it, storageService.getUserIdentifier() ?: "")
 				}
 			}
+	}
+
+	private suspend fun calcAndSubmitInferenceMulItems(inferenceID: String, inputData: Pair<Array<String>, D2Array<Float>>) {
+		//does the first "it" represent different ML models?
+		//Are the ml models the prediction for like, comment etc. or are these different successes for the same model?!
+		weights?.trainingWeights
+			?.mapNotNull { it -> calcInferenceMulItems(inferenceID, inputData, it) }
+			?.let {
+				if (it.isNotEmpty()) {
+					storageService.putInference(it)
+					Napier.d("Sending ${it.size} inference(s) to the DB", null, "LernaService")
+					flService.submitInference(weights!!.version, it, storageService.getUserIdentifier() ?: "")
+				}
+			}
+	}
+
+	private fun calcInferenceMulItems(inferenceID: String, inputData: Pair<Array<String>, D2Array<Float>>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
+		var inference: TrainingInferenceItem? = TrainingInferenceItem()
+		inference?.ml_id = weights.mlId!!
+		inference?.model = weights.mlName!!
+		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScore1LineMulItems(inputData, "like")
+		val maxEntry = scores?.maxByOrNull { it.value }
+
+		inferencesInSession[inferenceID] = maxEntry?.key ?: "-1"
+
+		inference?.prediction = maxEntry?.key
+		if (storageService.getLastInference() == inference?.prediction
+			|| inference?.prediction == null
+			|| weights.mlName != storageService.getModelSelect()
+		) { //to only compute inference of the selected model - what do we select now?
+			inference = null
+		} else {
+			storageService.putLastInference(inference.prediction!!)
+		}
+		return inference
+	}
+
+	private suspend fun calcAndSubmitInferenceMulItemsHistory(inferenceID: String, inputDataHistory: Map<String, D2Array<Float>>) {
+		//does the first "it" represent different ML models?
+		//Are the ml models the prediction for like, comment etc. or are these different successes for the same model?!
+		weights?.trainingWeights
+			?.mapNotNull { it -> calcInferenceMulItemsHistory(inferenceID, inputDataHistory, it) }
+			?.let {
+				if (it.isNotEmpty()) {
+					storageService.putInference(it)
+					Napier.d("Sending ${it.size} inference(s) to the DB", null, "LernaService")
+					flService.submitInference(weights!!.version, it, storageService.getUserIdentifier() ?: "")
+				}
+			}
+	}
+
+	private fun calcInferenceMulItemsHistory(inferenceID: String, inputDataHistory: Map<String, D2Array<Float>>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
+		var inference: TrainingInferenceItem? = TrainingInferenceItem()
+		inference?.ml_id = weights.mlId!!
+		inference?.model = weights.mlName!!
+		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScoreMulLinesMulItems(inputDataHistory, "like")
+		val maxEntry = scores?.maxByOrNull { it.value }
+
+		inferencesInSession[inferenceID] = maxEntry?.key ?: "-1"
+
+		inference?.prediction = maxEntry?.key
+		if (storageService.getLastInference() == inference?.prediction
+			|| inference?.prediction == null
+			|| weights.mlName != storageService.getModelSelect()
+		) { //to only compute inference of the selected model - what do we select now?
+			inference = null
+		} else {
+			storageService.putLastInference(inference.prediction!!)
+		}
+		return inference
 	}
 
 	private fun calcInference(dataArray: D2Array<Float>, weights: GlobalTrainingWeightsItem): TrainingInferenceItem? {
@@ -174,20 +227,4 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		} else null
 	}
 
-	private fun concat(A: Array<DoubleArray>, B: Array<DoubleArray>, vararg X: Array<DoubleArray>): D2Array<Double>? {
-		val mkA = mk.ndarray(A).transpose()
-		val mkB = mk.ndarray(B).transpose()
-		if(mkA.shape[1]!=mkB.shape[1])
-			return null
-		var output = mkA.flatten().cat(mkB.flatten())
-		var totalColumns = mkA.shape[0]+mkB.shape[0]
-		for (list in X) {
-			val mkX = mk.ndarray(list).transpose()
-			if(mkA.shape[1]!=mkX.shape[1])
-				return null
-			output = output.cat(mkX.flatten())
-			totalColumns += mkX.shape[0]
-		}
-		return output.reshape(totalColumns, mkA.shape[1]).transpose()
-	}
 }
