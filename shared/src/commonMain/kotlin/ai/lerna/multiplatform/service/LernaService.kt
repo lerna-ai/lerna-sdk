@@ -16,6 +16,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
 	private val modelData: ModelData = ModelData(50)
 	private var successValue = SUCCESS_INVALID
+	private val successPositions = mutableListOf<String>()
+	private val successSubmitted = mutableListOf<String>()
 	private var weights: GlobalTrainingWeights? = null
 	private val fileUtil = FileUtil()
 	private val storageService = StorageImpl(context)
@@ -24,7 +26,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private val periodicRunner = PeriodicRunner()
 	private var autoInference = _autoInference
 	private var inferencesInSession = HashMap<String, String>() //reset on stop()?
-	private var mergedInput = MergeInputData(modelData, 10) //initialize/create on start() for each position/inferenceID?
+	private lateinit var mergedInput : MergeInputData // (modelData, 10) //initialize/create on start() for each position/inferenceID?
 
 	internal companion object {
 		const val SUCCESS_INVALID = -1
@@ -38,8 +40,13 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		modelData.setupCustomFeatureSize(size)
 	}
 
+	internal fun initInputSize(size: Int) {
+		mergedInput = MergeInputData(modelData, size) //initialize/create on start() for each position/inferenceID?
+	}
+
 	internal fun start() {
 		sensors.start()
+		mergedInput.clear()
 		this.weights = storageService.getWeights()
 		weights?.trainingWeights?.forEach {
 			val inferenceTask = MLInference()
@@ -61,8 +68,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		modelData.updateCustomFeatures(values)
 	}
 
+	internal fun addInputData(itemId: String, values: FloatArray) {
+		mergedInput.putItem(itemId, values)
+	}
+
 	internal fun captureEvent(eventNumber: Int) {
 		successValue = eventNumber
+	}
+
+	internal fun captureEvent(itemId: String) {
+		successPositions.add(itemId)
+		successValue = 1
 	}
 
 	internal fun triggerInference() {
@@ -93,7 +109,16 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				triggerInference()
 			}
 			val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
-			flService.submitOutcome(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
+			if (successPositions.isEmpty()) {
+				flService.submitOutcome(weights!!.version, mlId, storageService.getLastInference() ?: "N/A", successValue.toString())
+			}
+			else {
+				successPositions.forEach { successPosition ->
+					flService.submitOutcome(weights!!.version, mlId, "1", "1", successPosition) // we need to define the type of position (API use Int but here we use String)
+					successSubmitted.add(successPosition)
+				}
+				successPositions.clear()
+			}
 			sessionEnd()
 		}
 		successValue = SUCCESS_INVALID // Use success for only one session after event
@@ -104,6 +129,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		// 2 issues:
 		//  1)how to take as input the itemID?
 		//  2)Does mergedInput, when calling modelData, always get the latest history data? Or we need to create the mergedInput object every time?
+		val mlId = weights?.trainingWeights?.first { w -> w.mlName == storageService.getModelSelect() }?.mlId ?: -1
+		mergedInput.getNames().forEach { failedPosition ->
+			if (!successSubmitted.contains(failedPosition)) {
+				flService.submitOutcome(weights!!.version, mlId, "1", "0", failedPosition) // we need to define the type of position (API use Int but here we use String)
+			}
+		}
 		commitToFile(mergedInput.historyToCsv(sessionId, "top", successValue.toString()))
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		sessionId++
