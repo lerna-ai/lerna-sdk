@@ -33,7 +33,7 @@ internal class FileUtilTest {
 
 		storage.putSessionID(3)
 		// When
-		fileUtil.mergeFiles(storage)
+		fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 		// Then
 		val mlData = tempVfs["mldata.csv"].readLines().toList().filter { it.isNotEmpty() }
 		assertEquals(10, mlData.size)
@@ -65,7 +65,7 @@ internal class FileUtilTest {
 
 		storage.putSessionID(3)
 		// When
-		fileUtil.mergeFiles(storage)
+		fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 		// Then
 		val mlData = tempVfs["mldata.csv"].readLines().toList().filter { it.isNotEmpty() }
 		assertEquals(2, mlData.size)
@@ -120,7 +120,7 @@ internal class FileUtilTest {
 		sensorFile.writeString("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.close()
-		fileUtil.mergeFiles(storage)
+		fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 		sensorFile = tempVfs["sensorLog2.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		sensorFile.writeString("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
@@ -163,7 +163,7 @@ internal class FileUtilTest {
 		sensorFile.writeString("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.close()
-		fileUtil.mergeFiles(storage)
+		fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 		sensorFile = tempVfs["sensorLog2.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		sensorFile.writeString("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
@@ -206,7 +206,7 @@ internal class FileUtilTest {
 		sensorFile.writeString("3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.close()
-		fileUtil.mergeFiles(storage)
+		fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 		sensorFile = tempVfs["sensorLog2.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		sensorFile.writeString("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")
 		sensorFile.writeString("1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n")

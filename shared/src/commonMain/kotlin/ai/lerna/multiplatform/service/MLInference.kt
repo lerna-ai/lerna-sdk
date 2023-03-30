@@ -20,7 +20,7 @@ class MLInference() {
 	internal fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
 		thetaClass.clear()
 		trainingWeights.weights!!.forEach { (k, v) ->
-			thetaClass[mapping(k)] = v
+			thetaClass[k] = v
 		}
 	}
 
@@ -39,7 +39,7 @@ class MLInference() {
 
 		//Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
 		var max = 0.0f //if more than 1 class, always pick the most probable one even if the probability is very low
-		var value = "0.0"
+		var value = "0"
 		if (thetaClass.size == 1) {
 			max = 0.5f //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
 		}
@@ -59,7 +59,7 @@ class MLInference() {
 	/*
 	 * 1 line per item, multiple items - return the percentages - take class as input
 	 */
-	internal fun predictLabelScore1LineMulItems(testFeatures: Pair<Array<String>, D2Array<Float>>, thetaName: String): Map<String, Float>? {
+	internal fun predictLabelScore1LineMulItems(testFeatures: Pair<Array<String>, D2Array<Float>>, thetaName: String?): Map<String, Float>? {
 		val name = if(thetaName!=null) {
 			if (!thetaClass.containsKey(thetaName)) {
 				Napier.e("No class $thetaName exists in ${thetaClass.keys}", null, "LernaMLInfer")
@@ -71,7 +71,7 @@ class MLInference() {
 			thetaClass.keys.first()
 		}
 
-		val outputs = calculateOutput(testFeatures.second, thetaClass[thetaName]!!)
+		val outputs = calculateOutput(testFeatures.second, thetaClass[name]!!)
 
 		val result = HashMap<String, Float>()
 
@@ -148,18 +148,4 @@ class MLInference() {
 		)
 	}
 
-	private fun mapping(prediction: String): String {
-		return when (prediction) {
-			"audio" -> "1.0"
-			"game" -> "2.0"
-			"image" -> "3.0"
-			"maps" -> "4.0"
-			"news" -> "5.0"
-			"productivity" -> "6.0"
-			"social" -> "7.0"
-			"video" -> "8.0"
-			else -> "0.0"
-		}
-
-	}
 }
