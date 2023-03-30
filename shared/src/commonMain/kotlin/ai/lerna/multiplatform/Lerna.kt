@@ -66,17 +66,13 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		storageService.putUserIdentifier(userID)
 	}
 
-	fun captureEvent(event: LernaEvent = LernaEvent.SUCCESS) {
-		captureEvent(event.value)
+	fun captureEvent(event: String) {
+		//validateEventNumber(event)
+		lernaService.captureEvent(event)
 	}
 
-	fun captureEvent(eventNumber: Int) {
-		validateEventNumber(eventNumber)
-		lernaService.captureEvent(eventNumber)
-	}
-
-	fun captureEvent(itemID: String) {
-		lernaService.captureEvent(itemID)
+	fun captureEvent(positionID: String, successVal: String) {
+		lernaService.captureEvent(positionID, successVal)
 	}
 
 	fun updateFeature(values: FloatArray) {
@@ -86,19 +82,23 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		lernaService.updateFeatures(values)
 	}
 
-	fun addInputData(itemID: String, values: FloatArray) {
+	fun addInputData(itemID: String, values: FloatArray, positionID: String) {
 		if (values.size != _inputDataSize) {
 			throw IllegalArgumentException("Incorrect input data size")
 		}
-		lernaService.addInputData(itemID, values)
+		lernaService.addInputData(itemID, values, positionID)
 	}
 
-	fun triggerInference() {
-		lernaService.triggerInference()
+	fun triggerInference(positionID: String, predictValue: String) {
+		lernaService.triggerInference(positionID, predictValue)
 	}
 
 	fun enableUserDataUpload(enable: Boolean) {
 		storageService.putUploadDataEnabled(enable)
+	}
+
+	fun refresh() {
+		lernaService.refresh()
 	}
 
 	private fun checkWeightSize(): Boolean {
@@ -115,15 +115,12 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		lernaService.start()
 	}
 
-	private fun validateEventNumber(eventNumber: Int) {
-		if (eventNumber <= LernaService.SUCCESS_INVALID) {
-			throw IllegalArgumentException("Invalid event number. Value should be greater than ${LernaService.SUCCESS_INVALID}.")
-		}
+	private fun validateEventNumber(event: String) {
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights
 		if (weights != null
-			&& eventNumber >= weights.keys.size
+			&& !weights.keys.contains(event)
 		) {
-			throw IllegalArgumentException("Invalid event number. Value should be within weights range.")
+			throw IllegalArgumentException("Invalid event. Value should be within weights.")
 		}
 	}
 

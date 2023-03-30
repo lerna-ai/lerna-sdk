@@ -38,10 +38,11 @@ internal class MergeInputDataTest {
 			modelData.setLinAcceleration(i.toFloat(), i.toFloat(), i.toFloat())
 			modelData.setHistory()
 		}
-		inferenceData.putItem("first", floatArrayOf(1f, 2f, 3f, 4f, 5f))
-		inferenceData.putItem("second", floatArrayOf(6f, 7f, 8f, 9f, 10f))
+		val data4Inference = mutableMapOf<String, FloatArray>()
+		data4Inference["first"] = floatArrayOf(1f, 2f, 3f, 4f, 5f)
+		data4Inference["second"] = floatArrayOf(6f, 7f, 8f, 9f, 10f)
 		// When
-		val result = inferenceData.getMergedInputData()
+		val result = inferenceData.getMergedInputData(data4Inference)
 		// Then
 		assertEquals(2, result.first.size)
 		assertEquals(100, result.second.size)
@@ -77,10 +78,11 @@ internal class MergeInputDataTest {
 			modelData.setLinAcceleration(i.toFloat(), i.toFloat(), i.toFloat())
 			modelData.setHistory()
 		}
-		inferenceData.putItem("first", floatArrayOf(1f, 2f, 3f, 4f, 5f))
-		inferenceData.putItem("second", floatArrayOf(6f, 7f, 8f, 9f, 10f))
+		val data4Inference = mutableMapOf<String, FloatArray>()
+		data4Inference["first"] = floatArrayOf(1f, 2f, 3f, 4f, 5f)
+		data4Inference["second"] = floatArrayOf(6f, 7f, 8f, 9f, 10f)
 		// When
-		val result = inferenceData.getMergedInputDataHistory()
+		val result = inferenceData.getMergedInputDataHistory(data4Inference)
 		// Then
 		assertEquals(2, result.size)
 		assertContentEquals(arrayOf("first", "second"), result.keys.toTypedArray())

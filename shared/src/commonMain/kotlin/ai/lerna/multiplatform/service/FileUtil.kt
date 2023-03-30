@@ -17,18 +17,18 @@ class FileUtil {
 		}
 	}
 
-	suspend fun mergeFiles(storage: Storage): Long {
+	suspend fun mergeFiles(storage: Storage, fileName: String, filesPrefix: String): Long {
 		var fileSize = 0L
 		try {
 			val osw = try {
-				tempVfs["mldata.csv"].open(VfsOpenMode.WRITE)
+				tempVfs[fileName].open(VfsOpenMode.WRITE)
 			} catch (e: FileNotFoundException) {
-				tempVfs["mldata.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+				tempVfs[fileName].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 			}
 			osw.setPosition(osw.size())
 			for (i in 0 .. storage.getSessionID()) {
 				try {
-					val sensorFile = tempVfs["sensorLog$i.csv"]
+					val sensorFile = tempVfs["$filesPrefix$i.csv"]
 					//ToDo: Should be optimized to avoid convert all items to list
 					val lines = sensorFile.readLines().filter { it.isNotEmpty() }.toList().takeLast(100)
 					if (isNotValidLogs(lines)) {
@@ -40,7 +40,7 @@ class FileUtil {
 					}
 					sensorFile.delete()
 				} catch (e: FileNotFoundException) {
-					Napier.d("File not found: sensorLog$i.csv", null, "LernaFL")
+					Napier.d("File not found: $filesPrefix$i.csv", null, "LernaFL")
 					continue
 				}
 			}
@@ -53,11 +53,11 @@ class FileUtil {
 		return fileSize
 	}
 
-	suspend fun commitToFile(sessionID: Int, record: String) {
+	suspend fun commitToFile(sessionID: Int, filesPrefix: String, record: String) {
 		val sensorFile = try {
-			tempVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.WRITE)
+			tempVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.WRITE)
 		} catch (e: FileNotFoundException) {
-			tempVfs["sensorLog$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+			tempVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		}
 		sensorFile.setPosition(sensorFile.size())
 		sensorFile.writeString(record)
