@@ -29,6 +29,10 @@ class MergeInputData(modelData: ModelData, length: Int) {
 		inputDataMap.clear()
 	}
 
+	internal fun getNames(): MutableSet<String> {
+		return inputDataMap.keys
+	}
+
 	internal fun getMergedInputData(): Pair<Array<String>, D2Array<Float>> {
 		val sensorData = modelData.toArray().toFloatArray()
 		val names = mutableListOf<String>()

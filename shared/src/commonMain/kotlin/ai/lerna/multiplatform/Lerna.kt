@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, autoInference: Boolean = true) {
 	private val _context = context
 	private val _customFeaturesSize = customFeaturesSize
+	private var _inputDataSize = 0
 	private var _token = token
 	private val uniqueID = UserID().getUniqueId(_context).toLong()
 	private val storageService = StorageImpl(_context)
@@ -34,6 +35,17 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		if (checkWeightSize()) {
 			runFL()
 		}
+	}
+
+	fun setInputSize(size: Int) {
+		if (_inputDataSize != 0) {
+			throw IllegalArgumentException("The input size already set.")
+		}
+		if (size <= 0) {
+			throw IllegalArgumentException("Invalid input size.")
+		}
+		_inputDataSize = size
+		lernaService.initInputSize(size)
 	}
 
 	fun start() {
@@ -63,11 +75,22 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		lernaService.captureEvent(eventNumber)
 	}
 
+	fun captureEvent(itemID: String) {
+		lernaService.captureEvent(itemID)
+	}
+
 	fun updateFeature(values: FloatArray) {
 		if (values.size != _customFeaturesSize) {
 			throw IllegalArgumentException("Incorrect feature size")
 		}
 		lernaService.updateFeatures(values)
+	}
+
+	fun addInputData(itemID: String, values: FloatArray) {
+		if (values.size != _inputDataSize) {
+			throw IllegalArgumentException("Incorrect input data size")
+		}
+		lernaService.addInputData(itemID, values)
 	}
 
 	fun triggerInference() {
@@ -82,7 +105,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights ?: return false
 		val firstKey = weights.keys.first()
 		val featuresSize = weights[firstKey]?.size ?: return false
-		return (featuresSize - _customFeaturesSize == FEATURE_SIZE)
+		return (featuresSize - _customFeaturesSize - _inputDataSize == FEATURE_SIZE)
 	}
 
 	private fun initialize() {

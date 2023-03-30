@@ -7,5 +7,5 @@ class Success {
 	var deviceId: Long = 0
 	var prediction: String? = null
 	var success: String? = null
-	var position: Long? = null
+	var position: String? = null
 }
