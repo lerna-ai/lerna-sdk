@@ -168,10 +168,9 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		sessionId++
 		storageService.putSessionID(sessionId)
 
-		//this now must be wrong...
-		weights?.trainingWeights?.forEach {
-			inferenceTasks[it.mlId!!]?.clearHistory()
-		}
+//		weights?.trainingWeights?.forEach {
+//			inferenceTasks[it.mlId!!]?.clearHistory()
+//		}
 	}
 
 
@@ -263,13 +262,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		var inference: TrainingInferenceItem? = TrainingInferenceItem()
 		inference?.ml_id = weights.mlId!!
 		inference?.model = weights.mlName
-		inferenceTasks[weights.mlId!!]?.predictLabelFrom1Line1Item(dataArray)
+		inference?.prediction = inferenceTasks[weights.mlId!!]?.predictLabelFrom1Line1Item(dataArray)
 
 
-		inference?.prediction = findMostCommonInList(inferenceTasks[weights.mlId!!]?.inferHistory)
-		if (inference?.prediction == "0"
-			|| inference?.prediction == "0.0"
-			|| storageService.getLastInference() == inference?.prediction
+		//inference?.prediction = findMostCommonInList(inferenceTasks[weights.mlId!!]?.inferHistory)
+		if (storageService.getLastInference() == inference?.prediction
 			|| inference?.prediction == null
 			|| weights.mlName != storageService.getModelSelect()
 		) { //to only compute inference of the selected model

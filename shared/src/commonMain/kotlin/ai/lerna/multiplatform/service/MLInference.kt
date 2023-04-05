@@ -14,7 +14,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.times
 
 
 class MLInference() {
-	internal var inferHistory: MutableList<String> = ArrayList()
+	//internal var inferHistory: MutableList<String> = ArrayList()
 	private var thetaClass = HashMap<String, D2Array<Float>>()
 
 	internal fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
@@ -51,7 +51,7 @@ class MLInference() {
 			}
 		}
 		//Napier.i("chosen $i, $value")
-		inferHistory.add(value)
+		//inferHistory.add(value)
 
 		return value
 	}
@@ -135,9 +135,9 @@ class MLInference() {
 		return sigmoid(z)
 	}
 
-	internal fun clearHistory() {
-		inferHistory.clear()
-	}
+//	internal fun clearHistory() {
+//		inferHistory.clear()
+//	}
 
 	private fun sigmoid(Z: D2Array<Float>): D2Array<Float> {
 		// S(Z) = 1 / ( 1 - e ^ (-Z))
