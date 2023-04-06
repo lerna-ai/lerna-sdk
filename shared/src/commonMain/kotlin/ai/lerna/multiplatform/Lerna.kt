@@ -10,7 +10,7 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, autoInference: Boolean = true) {
+class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val _context = context
 	private val _customFeaturesSize = customFeaturesSize
 	private var _inputDataSize = 0
@@ -19,7 +19,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	private val storageService = StorageImpl(_context)
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val flWorker = FLWorkerInterface(_context)
-	private val lernaService = LernaService(_context, _token, uniqueID, autoInference)
+	private val lernaService = LernaService(_context, _token, uniqueID)
 
 	internal companion object {
 		const val FEATURE_SIZE = 46 // Lerna features plus x0
@@ -32,9 +32,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		runBlocking {
 			weightsManager.updateWeights()
 		}
-		if (checkWeightSize()) {
-			runFL()
-		}
+		runFL()
 	}
 
 	fun setInputSize(size: Int) {
@@ -49,13 +47,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 	}
 
 	fun start() {
-		if (checkWeightSize()) {
-			runCleanUp()
-			initialize()
-		}
-		else {
-			Napier.d("Incorrect feature size, library disabled!", null, "Lerna")
-		}
+		runCleanUp()
+		initialize()
 	}
 
 	fun stop() {
@@ -66,13 +59,9 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		storageService.putUserIdentifier(userID)
 	}
 
-	fun captureEvent(event: String) {
-		//validateEventNumber(event)
-		lernaService.captureEvent(event)
-	}
 
-	fun captureEvent(positionID: String, successVal: String) {
-		lernaService.captureEvent(positionID, successVal)
+	fun captureEvent(modelName:String, positionID: String, successVal: String) {
+		lernaService.captureEvent(modelName, positionID, successVal)
 	}
 
 	fun updateFeature(values: FloatArray) {
@@ -89,23 +78,20 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 		lernaService.addInputData(itemID, values, positionID)
 	}
 
-	fun triggerInference(positionID: String, predictValue: String) {
-		lernaService.triggerInference(positionID, predictValue)
+	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null): String? {
+		return lernaService.triggerInference(modelName, positionID, predictionClass)
+	}
+
+	fun setAutoInference(modelName: String, setting: String) {
+		lernaService.setAutoInference(modelName, setting)
 	}
 
 	fun enableUserDataUpload(enable: Boolean) {
 		storageService.putUploadDataEnabled(enable)
 	}
 
-	fun refresh() {
-		lernaService.refresh()
-	}
-
-	private fun checkWeightSize(): Boolean {
-		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights ?: return false
-		val firstKey = weights.keys.first()
-		val featuresSize = weights[firstKey]?.size ?: return false
-		return (featuresSize - _customFeaturesSize - _inputDataSize == FEATURE_SIZE)
+	fun refresh(modelName:String) {
+		lernaService.refresh(modelName)
 	}
 
 	private fun initialize() {
@@ -113,15 +99,6 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, aut
 			lernaService.initCustomFeatureSize(_customFeaturesSize)
 		}
 		lernaService.start()
-	}
-
-	private fun validateEventNumber(event: String) {
-		val weights = storageService.getWeights()?.trainingWeights?.get(0)?.weights
-		if (weights != null
-			&& !weights.keys.contains(event)
-		) {
-			throw IllegalArgumentException("Invalid event. Value should be within weights.")
-		}
 	}
 
 	private fun runFL() {

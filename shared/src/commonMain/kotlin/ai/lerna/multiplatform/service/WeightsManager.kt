@@ -26,17 +26,17 @@ class WeightsManager(token: String, uniqueID: Long) {
 			val trainingWeights = federatedLearningService.requestNewWeights(weightsVersion)
 			if (trainingWeights !== null) {
 				Napier.d("New Weights Version: ${trainingWeights.version}", null, "LernaWeights")
-				var maxAccuracy = -1.0f
+				//var maxAccuracy = -1.0f
 				trainingWeights.trainingWeights?.forEach() {
 					Napier.d("Weights accuracies: ${it.accuracy.toString()} for ${it.mlName}", null, "LernaWeights")
-					if (it.accuracy != null) {
-						if (maxAccuracy < it.accuracy!!) {
-							maxAccuracy = it.accuracy!!
-							storage.putModelSelect(it.mlName ?: "")
-						}
-					}
+//					if (it.accuracy != null) {
+//						if (maxAccuracy < it.accuracy!!) {
+//							maxAccuracy = it.accuracy!!
+//							storage.putModelSelect(it.mlName ?: "")
+//						}
+//					}
 				}
-				Napier.d("Selected model for inferences: ${storage.getModelSelect()}", null, "LernaWeights")
+//				Napier.d("Selected model for inferences: ${storage.getModelSelect()}", null, "LernaWeights")
 				storage.putWeights(trainingWeights)
 				//ml.setWeights(trainingWeights.trainingWeights!![0])
 				weightsVersion = trainingWeights.version
