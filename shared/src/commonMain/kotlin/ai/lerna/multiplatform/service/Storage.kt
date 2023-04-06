@@ -1,7 +1,6 @@
 package ai.lerna.multiplatform.service
 
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
-import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 
 interface Storage {
 
@@ -21,17 +20,13 @@ interface Storage {
 
 	fun putSize(fileSize: Int)
 
-	fun getInference(): MutableSet<String>?
+	fun getTempInference(): String?
 
-	fun putInference(inference: List<TrainingInferenceItem>)
+	fun putTempInference(lastInference: String)
 
-	fun getModelSelect(): String?
+	fun getLatestInference(): String?
 
-	fun putModelSelect(model: String)
-
-	fun getLastInference(): String?
-
-	fun putLastInference(lastInference: String)
+	fun putLatestInference(lastInference: String)
 
 	fun getLastTraining(): Int
 

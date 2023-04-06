@@ -5,7 +5,6 @@ import ai.lerna.multiplatform.config.KMMPreference
 import ai.lerna.multiplatform.service.converter.DLArrayConverter
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsApi
-import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -17,7 +16,6 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefTraining = "LernaLastTraining"
 	private val prefSize = "LernaSize"
 	private val prefInference = "LernaInference"
-	private val prefModelSelect = "LernaModelSelect"
 	private val prefLastInference = "LernaLastInference"
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
@@ -65,26 +63,26 @@ class StorageImpl(context: KMMContext) : Storage {
 		sharedPref.put(prefSize, fileSize)
 	}
 
-	override fun getModelSelect(): String? {
-		if (!sharedPref.contains(prefModelSelect)) {
-			return ""
-		}
-		return sharedPref.getString(prefModelSelect)
-	}
-
-	override fun putModelSelect(model: String) {
-		sharedPref.put(prefModelSelect, model)
-	}
-
-	override fun getLastInference(): String? {
+	override fun getLatestInference(): String? {
 		if (!sharedPref.contains(prefLastInference)) {
 			return ""
 		}
 		return sharedPref.getString(prefLastInference)
 	}
 
-	override fun putLastInference(lastInference: String) {
+	override fun putLatestInference(lastInference: String) {
 		sharedPref.put(prefLastInference, lastInference)
+	}
+
+	override fun getTempInference(): String? {
+		if (!sharedPref.contains(prefInference)) {
+			return ""
+		}
+		return sharedPref.getString(prefInference)
+	}
+
+	override fun putTempInference(lastInference: String) {
+		sharedPref.put(prefInference, lastInference)
 	}
 
 	override fun getVersion(): Int {
@@ -107,17 +105,6 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putLastTraining(trainingNumber: Int) {
 		sharedPref.put(prefTraining, trainingNumber)
-	}
-
-	override fun getInference(): MutableSet<String>? {
-		if (!sharedPref.contains(prefInference)) {
-			return null
-		}
-		return sharedPref.getArray(prefInference)?.toMutableSet()
-	}
-
-	override fun putInference(inference: List<TrainingInferenceItem>) {
-		sharedPref.put(prefInference, inference.map { Json.encodeToString(it) }.toTypedArray())
 	}
 
 	override fun getUserIdentifier(): String? {

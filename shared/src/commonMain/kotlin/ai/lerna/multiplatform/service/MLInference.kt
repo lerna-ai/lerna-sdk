@@ -39,7 +39,7 @@ class MLInference() {
 
 		//Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
 		var max = 0.0f //if more than 1 class, always pick the most probable one even if the probability is very low
-		var value = "0"
+		var value = "failure"
 		if (thetaClass.size == 1) {
 			max = 0.5f //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
 		}

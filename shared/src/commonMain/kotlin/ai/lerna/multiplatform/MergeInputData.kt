@@ -53,6 +53,16 @@ class MergeInputData(private val modelData: ModelData, private val length: Int) 
 			postfix = ",$successValue\n") { it.toString() }
 	}
 
+	internal fun historyToD2Array(): D2Array<Float> {
+		val sensorDataHistory = modelData.historyToArray()
+		return mk.ndarray(sensorDataHistory)
+	}
+	internal fun lastLineD2Array(): D2Array<Float> {
+		val sensorData = modelData.toArray().toFloatArray()
+		return mk.ndarray(listOf(sensorData).toTypedArray())
+	}
+
+
 	internal fun lastLineToCsv(inputDataMap: Map<String, FloatArray>, sessionID: Int, itemID: String, successValue: String): String {
 		val sensorData = modelData.toArray().toFloatArray()
 		val item = inputDataMap[itemID]!!
