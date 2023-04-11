@@ -76,6 +76,22 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	internal fun captureEvent(modelName: String, positionID: String, event: String) {
 		runBlocking {
+			val classes = storageService.getClasses()
+			if(classes!=null) {
+				if (classes.containsKey(modelName)) {
+					if (!classes[modelName]!!.contains(event)) {
+						classes[modelName]!!.add(event)
+						storageService.putClasses(classes)
+					}
+				} else {
+					classes[modelName] = mutableListOf(event)
+					storageService.putClasses(classes)
+				}
+			} else {
+					val temp: MutableMap<String, MutableList<String>> =
+						mutableMapOf(Pair(modelName, mutableListOf(event)))
+					storageService.putClasses(temp)
+			}
 			sessionEnd(modelName, positionID, event, event)
 			inferencesInSession.remove(positionID)
 		}

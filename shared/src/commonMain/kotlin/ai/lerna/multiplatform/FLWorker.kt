@@ -41,7 +41,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 
 	suspend fun startFLSuspend() = run {
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
-		val trainingTask = federatedLearningService.requestNewTraining() ?: return
+		val trainingTask = federatedLearningService.requestNewTraining(storage.getClasses()) ?: return
 
 		Napier.d("Task Version: ${trainingTask.version.toString()}", null, "LernaFL")
 
