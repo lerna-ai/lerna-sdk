@@ -7,6 +7,8 @@ import ai.lerna.multiplatform.service.dto.Success
 import ai.lerna.multiplatform.service.dto.TrainingAccuracy
 import ai.lerna.multiplatform.service.dto.TrainingInference
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
+import ai.lerna.multiplatform.service.dto.TrainingInitialize
+import ai.lerna.multiplatform.service.dto.TrainingInitializeItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import ai.lerna.multiplatform.service.dto.TrainingWeights
 import io.github.aakira.napier.Napier
@@ -54,9 +56,31 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		return null
 	}
 
-	suspend fun requestNewTraining(): TrainingTasks? {
+	private suspend fun requestNewTraining(): TrainingTasks? {
 		try {
 			val response = client.get(FL_API_URL + "training/new?token=" + token + "&deviceId=" + uniqueID)
+			if (response.status != HttpStatusCode.OK) {
+				Napier.d("LernaFLService - requestNewTraining Response error: ${response.bodyAsText()}", null, "Lerna")
+				return null
+			}
+			return response.body()
+		} catch (cause: Throwable) {
+			Napier.d("LernaFLService - requestNewTraining deserialize exception: ${cause.message}", cause, "Lerna")
+			return null
+		}
+	}
+
+	suspend fun requestNewTraining(classes: MutableMap<String, MutableList<String>>?): TrainingTasks? {
+		if (classes == null) {
+			return requestNewTraining();
+		}
+		try {
+			val request = TrainingInitialize()
+			classes.forEach { ( model, job) -> request.classes.add(TrainingInitializeItem(modelName = model, jobs = job.toList())) }
+			val response = client.post(FL_API_URL + "training/new?token=" + token + "&deviceId=" + uniqueID) {
+				contentType(ContentType.Application.Json)
+				setBody(request)
+			}
 			if (response.status != HttpStatusCode.OK) {
 				Napier.d("LernaFLService - requestNewTraining Response error: ${response.bodyAsText()}", null, "Lerna")
 				return null
