@@ -54,7 +54,11 @@ class FLWorker(_token: String, _uniqueID: Long) {
 			}
 		}
 
-		val fileSize = fileUtil.mergeFiles(storage)
+		var successes = 0
+		val ml = MLExecution(trainingTask)
+
+		//checkpoint
+		val fileSize = fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 
 		/*
 		 * Check file size and session number to allow FL execution
@@ -66,9 +70,6 @@ class FLWorker(_token: String, _uniqueID: Long) {
 		}
 
 
-		var successes = 0
-		//For each ML task
-		val ml = MLExecution(trainingTask)
 		if (storage.getUploadDataEnabled()) {
 			LogAwsUploaderImpl(token, FL_WORKER_VERSION)
 				.uploadFile(
@@ -76,9 +77,10 @@ class FLWorker(_token: String, _uniqueID: Long) {
 					"mldata.csv",
 					tempVfs["mldata.csv"].readString())
 		}
-		ml.loadData()
+		ml.loadData("mldata.csv")
 		storage.putSessionID(0)
 
+		//For each ML task - if we want different files for different mls, we need to put everything after the checkpoint inside the loop and use the parameter i
 		for (i in trainingTask.trainingTasks!!.indices) {
 			ml.prepareData(i, getWeightSize())
 			ml.setWeights(globalWeights!!.trainingWeights!![i])
@@ -96,7 +98,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 
 			val newWeights: HashMap<String, D2Array<Float>> = HashMap()
 			globalWeights.trainingWeights!![i].weights?.forEach {
-				newWeights[it.key] = ml.thetaClass[ml.mapping(it.key)]!!
+				newWeights[it.key] = ml.thetaClass[it.key]!!
 			}
 			globalWeights.trainingWeights!![i].weights = newWeights.toMap()
 

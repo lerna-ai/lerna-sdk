@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KSuspendFunction0
+import kotlin.reflect.KSuspendFunction1
 
 
 actual class ContextRunner actual constructor() {
@@ -18,6 +19,11 @@ actual class ContextRunner actual constructor() {
 	actual fun runBlocking(context: KMMContext, runPeriodic: KSuspendFunction0<Unit>) {
 		runBlocking {
 			runPeriodic()
+		}
+	}
+	actual fun runBlocking(context: KMMContext, modelName: String, runPeriodic: KSuspendFunction1<String, Unit>) {
+		runBlocking {
+			runPeriodic(modelName)
 		}
 	}
 }

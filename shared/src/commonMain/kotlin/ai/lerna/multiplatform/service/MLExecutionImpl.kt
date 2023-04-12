@@ -14,65 +14,61 @@ import kotlin.math.ceil
 class MLExecution(_task: TrainingTasks) : IMLExecution {
     private lateinit var trainFeatures: D2Array<Float>
     private lateinit var testFeatures: D2Array<Float>
-    private lateinit var trainLabels: D2Array<Float>
-    private lateinit var testLabels: D2Array<Float>
+    private lateinit var trainLabels: Array<String>
+    private lateinit var testLabels: Array<String>
     var thetaClass = HashMap<String, D2Array<Float>>()
     private val task = _task
-    private lateinit var next: List<FloatArray>
+    private lateinit var nextFeatures: List<FloatArray>
+    private lateinit var nextLabels: List<Pair<Float, String>>
 
-
-    override suspend fun loadData() {
-        next = getData()
-    }
 
     override fun prepareData(ml_id: Int, featureSize: Int) {
-        val list = next.map { it[0] }.distinct()
+        val list = nextFeatures.map { it[0] }.distinct()
         val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * list.size.toFloat()).toInt()
         val sessions = list.asSequence().shuffled().take(samples).toList()
 
-        val trainData = mutableListOf<FloatArray>()
-        val testData = mutableListOf<FloatArray>()
+        val trainDataFeatures = mutableListOf<FloatArray>()
+        val testDataFeatures = mutableListOf<FloatArray>()
+        val trainDataLabels = mutableListOf<String>()
+        val testDataLabels = mutableListOf<String>()
 
-        for (i in next.indices) {
-            // Ignore line if not equal with feature size plus one (sessionId)
-            if (next[i].size != featureSize + 1) {
+        for (i in nextFeatures.indices) {
+            // Ignore line if not equal with feature size
+            if (nextFeatures[i].size != featureSize) {
                 continue
             }
-            if (sessions.contains(next[i][0])) {
-                trainData.add(next[i])
+            if (sessions.contains(nextFeatures[i][0])) {
+                trainDataFeatures.add(nextFeatures[i])
+                trainDataLabels.add(nextLabels[i].second)
             }
             else {
-                testData.add(next[i])
+                testDataFeatures.add(nextFeatures[i])
+                testDataLabels.add(nextLabels[i].second)
             }
         }
-        val train = mk.ndarray(trainData.toTypedArray())
-        val test = mk.ndarray(testData.toTypedArray())
+        val train = mk.ndarray(trainDataFeatures.toTypedArray())
+        val test = mk.ndarray(testDataFeatures.toTypedArray())
 
-        var range=IntRange(1, trainData[0].size-1)
+        trainLabels = trainDataLabels.toTypedArray()
+        testLabels = testDataLabels.toTypedArray()
+
+        val range=IntRange(1, trainDataFeatures[0].size-1)
 
         trainFeatures = train.slice<Float,D2,D2>(range, 1).transpose()
-        trainFeatures = mk.ones<Float>(trainData.size).cat(trainFeatures.flatten()).reshape(range.count(), trainData.size)
+        trainFeatures = mk.ones<Float>(trainDataFeatures.size).cat(trainFeatures.flatten()).reshape(range.count()+1, trainDataFeatures.size)
         trainFeatures = trainFeatures.transpose()
 
         testFeatures = test.slice<Float,D2,D2>(range, 1).transpose()
-        testFeatures = mk.ones<Float>(testData.size).cat(testFeatures.flatten()).reshape(range.count(), testData.size)
+        testFeatures = mk.ones<Float>(testDataFeatures.size).cat(testFeatures.flatten()).reshape(range.count()+1, testDataFeatures.size)
         testFeatures = testFeatures.transpose()
 
-        range = IntRange(trainData[0].size-1, trainData[0].size)
 
-        trainLabels = train.slice(range, 1)
-        testLabels = test.slice(range, 1)
-
-
-        Napier.d("LernaML - Data size: " + trainData.size + " and " + testData.size)
+        Napier.d("LernaML - Data size: " + trainDataFeatures.size + " and " + testDataFeatures.size)
     }
 
     override fun localML(ml_id: Int): Long {
         if (thetaClass.isEmpty()) {
             Napier.e("LernaML - Cannot train without initializing the weights first")
-            //thetaClass["1.0"] = mk.rand<Float>(trainFeatures[0].size, 1)
-            //thetaClass["2.0"] = mk.rand<Float>(trainFeatures[0].size, 1)
-            //thetaClass["4.0"] = mk.rand<Float>(trainFeatures[0].size, 1)
             return -1L
         }
 
@@ -85,7 +81,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
                 thetaClass[key]!!,
                 lr!!.toFloat(),
                 trainFeatures,
-                filterClassLabels(trainLabels, key.toFloat()),
+                filterClassLabels(trainLabels, key),
                 epoch,
                 0.0001f,
                 a!!.toFloat()
@@ -96,14 +92,14 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     }
 
     override fun addNoise(share: Float, scaling: Int, prediction: String): D2Array<Float>? {
-        return thetaClass[mapping(prediction)]?.times(scaling.toFloat())?.plus(share)
+        return thetaClass[prediction]?.times(scaling.toFloat())?.plus(share)
     }
 
 
     override fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
         thetaClass.clear()
         trainingWeights.weights!!.forEach { (k, v) ->
-            thetaClass[mapping(k)] = v
+            thetaClass[k] = v
         }
     }
 
@@ -116,17 +112,17 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         return accuracy
     }
 
-    private fun predictLabels(testFeatures: D2Array<Float>): FloatArray {
+    private fun predictLabels(testFeatures: D2Array<Float>): Array<String> {
         val outputs = HashMap<String, D2Array<Float>>()
         thetaClass.forEach { (k, v) ->
             outputs[k] = calculateOutput(testFeatures, v)
         }
-        val result = Array(outputs.values.toList()[0].shape[0]){0.0f}
+        val result = Array(outputs.values.toList()[0].shape[0]){"failure"}
 
         for (i in 0 until outputs.values.toList()[0].shape[0]) {
             //Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
             var max = 0.0f //if more than 1 class, always pick the most probable one even if the probability is very low
-            var value = "0.0"
+            var value = "failure"
             if(thetaClass.size==1)
                 max = 0.5f //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
             outputs.forEach { (k, _) ->
@@ -136,10 +132,10 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
                 }
             }
             //Napier.i("chosen $i, $value")
-            result[i] = value.toFloat()
+            result[i] = value
         }
 
-        return result.toFloatArray()
+        return result
     }
 
     private fun sigmoid(Z: D2Array<Float>): D2Array<Float> {
@@ -211,53 +207,54 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         return newTheta
     }
 
-    private suspend fun getData(): List<FloatArray>{
-        val mlData = tempVfs["mldata.csv"].readLines().toList()
+
+    override suspend fun loadData(filename: String, deleteAfter: Boolean){
+        val mlData = tempVfs[filename].readLines().toList()
             .filter { it.isNotEmpty() }
-            .map { line -> line.split(",")
+
+        nextFeatures=mlData
+            .map { line -> line.split(",").dropLast(1)
                 .filter { !it.contains("_") }
                 .map { it.toFloat() }
                 .toFloatArray() }
-        tempVfs["mldata.csv"].delete()
-        return mlData
+
+        nextLabels=mlData
+            .map { line -> Pair(line.split(",").first().toFloat(), line.split(",").last())
+            }
+        if(deleteAfter)
+            tempVfs[filename].delete()
     }
 
-    private fun filterClassLabels(labels: D2Array<Float>, label: Float): D2Array<Float> {
+    private fun filterClassLabels(labels: Array<String>, label: String): D2Array<Float> {
         //returns an array with zeros where labels[i]!=label and ones where labels[i]==label
-        val classn: D2Array<Float> = labels.copy()
-        return classn.map { if ( it != label) 0.0f else it}
+        val classn: List<List<Float>> = labels.map { if ( it != label) listOf(0.0f) else listOf(1.0f)}
+        return mk.ndarray(classn)
     }
 
-    private fun countCorrectSamples(labels: D2Array<Float>, predictedLabels: FloatArray): Float {
+    private fun countCorrectSamples(labels: Array<String>, predictedLabels: Array<String>): Float {
         var correctSamples = 0
-        for (i in 0 until labels.size) {
-            if (labels[i][0] == predictedLabels[i]) {
+        for (i in labels.indices) {
+            if (labels[i] == predictedLabels[i]) {
                 correctSamples++
             }
         }
         return correctSamples.toFloat()
     }
 
-    fun mapping(prediction: String): String {
-        return when (prediction) {
-            "audio" -> "1.0"
-            "game" -> "2.0"
-            "image" -> "3.0"
-            "maps" -> "4.0"
-            "news" -> "5.0"
-            "productivity" -> "6.0"
-            "social" -> "7.0"
-            "video" -> "8.0"
-            "1.0", "1" -> "audio"
-            "2.0", "2" -> "game"
-            "3.0", "3" -> "image"
-            "4.0", "4" -> "maps"
-            "5.0", "5" -> "news"
-            "6.0", "6" -> "productivity"
-            "7.0", "7" -> "social"
-            "8.0", "8" -> "video"
-            "0.0", "0" -> "undefined/none"
-            else -> "0.0"
+    private fun concat(A: Array<DoubleArray>, B: Array<DoubleArray>, vararg X: Array<DoubleArray>): D2Array<Double>? {
+        val mkA = mk.ndarray(A).transpose()
+        val mkB = mk.ndarray(B).transpose()
+        if(mkA.shape[1]!=mkB.shape[1])
+            return null
+        var output = mkA.flatten().cat(mkB.flatten())
+        var totalColumns = mkA.shape[0]+mkB.shape[0]
+        for (list in X) {
+            val mkX = mk.ndarray(list).transpose()
+            if(mkA.shape[1]!=mkX.shape[1])
+                return null
+            output = output.cat(mkX.flatten())
+            totalColumns += mkX.shape[0]
         }
+        return output.reshape(totalColumns, mkA.shape[1]).transpose()
     }
 }

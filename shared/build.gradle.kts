@@ -28,8 +28,8 @@ kotlin {
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:multik-core:0.2.0")
-                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.0")
+                implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
+                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
