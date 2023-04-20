@@ -168,9 +168,10 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		return response.bodyAsText()
 	}
 
-	suspend fun submitOutcome(version: Long, mlId: Long, prediction: String, success: String, position: String? = null): String? {
+	suspend fun submitOutcome(version: Long, mlId: Long, mlName: String, prediction: String, success: String, position: String? = null): String? {
 		val request = Success()
 		request.ml_id = mlId
+		request.mlName = mlName
 		request.version = version
 		request.deviceId = uniqueID
 		request.prediction = prediction

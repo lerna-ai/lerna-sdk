@@ -44,4 +44,8 @@ interface Storage {
 
 	fun putUploadDataEnabled(enabled: Boolean)
 
+	fun getABTest(): Boolean
+
+	fun putABTest(enabled: Boolean)
+
 }
