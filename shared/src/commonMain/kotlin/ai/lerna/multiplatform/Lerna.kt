@@ -9,8 +9,9 @@ import ai.lerna.multiplatform.service.WeightsManager
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
+import kotlin.random.Random
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
+class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, ABTest: Double = 0.0) {
 	private val _context = context
 	private val _customFeaturesSize = customFeaturesSize
 	private var _inputDataSize = 0
@@ -25,6 +26,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 		Napier.base(DebugAntilog())
 		Napier.d("Initialize library", null, "Lerna")
 		weightsManager.setupStorage(storageService)
+		storageService.putABTest(Random.nextFloat()<ABTest)
 		runBlocking {
 			weightsManager.updateWeights()
 		}

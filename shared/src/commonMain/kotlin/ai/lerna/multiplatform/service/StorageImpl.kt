@@ -20,6 +20,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefLastInference = "LernaLastInference"
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
+	private val preABTestEnabled = "LernaABTestEnabled"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
@@ -140,5 +141,16 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putUploadDataEnabled(enabled: Boolean) {
 		sharedPref.put(preUploadDataEnabled, enabled)
+	}
+
+	override fun getABTest(): Boolean {
+		if (!sharedPref.contains(preABTestEnabled)) {
+			return false
+		}
+		return sharedPref.getBool(preABTestEnabled, false)
+	}
+
+	override fun putABTest(enabled: Boolean) {
+		sharedPref.put(preABTestEnabled, enabled)
 	}
 }
