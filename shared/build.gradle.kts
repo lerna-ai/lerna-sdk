@@ -23,8 +23,8 @@ kotlin {
     }
 
     sourceSets {
-        val ktorVersion = "2.1.3"
-        val korioVersion = "3.3.1"
+        val ktorVersion = "2.2.4"
+        val korioVersion = "3.4.0"
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
@@ -52,16 +52,16 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("androidx.work:work-runtime-ktx:2.7.1")
+                implementation("androidx.work:work-runtime-ktx:2.8.1")
                 implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             val junitVersion = "4.13.2"
             dependencies {
                 implementation("junit:junit:$junitVersion")
                 implementation("androidx.test:core:1.5.0")
-                implementation("androidx.test.ext:junit:1.1.4")
+                implementation("androidx.test.ext:junit:1.1.5")
                 implementation("org.robolectric:robolectric:4.2.1")
                 implementation("org.testng:testng:7.4.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
@@ -94,7 +94,7 @@ kotlin {
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "ai.lerna.multiplatform"
-    compileSdk = 32
+    compileSdk = 33
     defaultConfig {
         minSdk = 26
     }
@@ -107,6 +107,9 @@ android {
             isMinifyEnabled = false
         }
     }
+}
+dependencies {
+    androidTestImplementation(project(mapOf("path" to ":shared")))
 }
 
 buildkonfig {
