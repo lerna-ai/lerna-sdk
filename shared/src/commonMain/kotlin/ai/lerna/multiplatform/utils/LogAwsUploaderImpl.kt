@@ -1,6 +1,5 @@
 package ai.lerna.multiplatform.utils
 
-import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.getPlatform
 import ai.lerna.multiplatform.service.dto.LogData
 import io.github.aakira.napier.Napier
@@ -28,11 +27,11 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         }
     }
 
-    override suspend fun uploadFile(uniqueID: Long, fileNameSuffix: String, fileContent: String) {
+    override suspend fun uploadFile(uniqueID: Long, uploadPrefix: String, fileNameSuffix: String, fileContent: String) {
         try {
             withContext(CoroutineScope(Dispatchers.Default).coroutineContext) {
                 val request = LogData()
-                request.path = LernaConfig.UPLOAD_PREFIX
+                request.path = uploadPrefix
                 request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().now() + "_" + getPlatform().name + "_" + fileNameSuffix
                 request.token = token
                 request.data = fileContent

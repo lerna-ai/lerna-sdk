@@ -1,7 +1,6 @@
 package ai.lerna.multiplatform.service
 
 import ai.lerna.multiplatform.*
-import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
@@ -14,13 +13,13 @@ import kotlin.random.Random
 
 
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long) {
-	private var flService: FederatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, _token, uniqueID)
 	private val modelData: ModelData = ModelData(50)
 	private var autoInferenceValue : String? = null
 	private var data4Inference = mutableMapOf<String, MutableMap<String, FloatArray>>()
 	private var weights: GlobalTrainingWeights? = null
 	private val fileUtil = FileUtil()
 	private val storageService = StorageImpl(context)
+	private var flService: FederatedLearningService = FederatedLearningService(storageService.getFLServer(), _token, uniqueID)
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
@@ -173,7 +172,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun runPeriodic() {
 		sensors.updateData()
-		if (LernaConfig.LOG_SENSOR_DATA) {
+		if (storageService.getLog()) {
 			Napier.d("Commit to history: ${storageService.getSessionID()},${DateUtil().now()},${modelData.toCsv()}\n", null, "LernaService")
 		}
 		if(autoInferenceValue!=null){
