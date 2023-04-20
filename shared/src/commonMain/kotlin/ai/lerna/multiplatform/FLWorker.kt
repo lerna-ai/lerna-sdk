@@ -18,7 +18,6 @@ import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 class FLWorker(_token: String, _uniqueID: Long) {
 	private val token = _token
 	private val uniqueID = _uniqueID
-	private val federatedLearningService = FederatedLearningService(LernaConfig.FL_SERVER, token, uniqueID)
 	private lateinit var flWorkerInterface: FLWorkerInterface
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val fileUtil = FileUtil()
@@ -27,6 +26,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 	private var taskVersion = -1
 	private lateinit var storage: Storage
 	private lateinit var context: KMMContext
+	private lateinit var federatedLearningService: FederatedLearningService
 
 	internal companion object {
 		const val FL_WORKER_VERSION = 1    // Increment on worker changes
@@ -35,6 +35,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 	fun setupStorage(kmmContext: KMMContext) {
 		context = kmmContext
 		storage = StorageImpl(kmmContext)
+		federatedLearningService = FederatedLearningService(storage.getFLServer(), token, uniqueID)
 		flWorkerInterface = FLWorkerInterface(kmmContext)
 		weightsManager.setupStorage(storage)
 	}
@@ -74,6 +75,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 			LogAwsUploaderImpl(token, FL_WORKER_VERSION)
 				.uploadFile(
 					uniqueID,
+					storage.getUploadPrefix(),
 					"mldata.csv",
 					tempVfs["mldata.csv"].readString())
 		}
@@ -146,7 +148,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 						}
 					}
 				} catch (ex: Exception) {
-					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, "error_fl.txt", ex.stackTraceToString())
+					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, storage.getUploadPrefix(), "error_fl.txt", ex.stackTraceToString())
 				}
 			}
 		}
@@ -170,6 +172,6 @@ class FLWorker(_token: String, _uniqueID: Long) {
 			return null
 		}
 		Napier.d("Retrieving noise share from MPC...", null, "LernaFL")
-		return MpcService(LernaConfig.MPC_SERVER, token).lerna(job_id, uniqueID, size)
+		return MpcService(storage.getMPCServer(), token).lerna(job_id, uniqueID, size)
 	}
 }

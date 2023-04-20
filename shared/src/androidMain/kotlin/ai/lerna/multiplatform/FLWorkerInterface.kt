@@ -25,6 +25,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 		val inputData = Data.Builder()
 			.putString("token", token)
 			.putLong("ID", uniqueID)
+			.putString("uploadPrefix", storage.getUploadPrefix())
 			.build()
 
 		val flWorkRequest: PeriodicWorkRequest =
