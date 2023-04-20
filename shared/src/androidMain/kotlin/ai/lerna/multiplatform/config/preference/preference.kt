@@ -13,11 +13,11 @@ actual fun KMMContext.getInt(key: String, default: Int): Int {
 }
 
 actual fun KMMContext.getFloat(key: String, default: Float): Float {
-    return  getSp().getFloat(key, default.toFloat()).toFloat()
+    return  getSp().getFloat(key, default)
 }
 
 actual fun KMMContext.putFloat(key: String, value: Float) {
-    getSpEditor().putFloat(key, value.toFloat()).apply()
+    getSpEditor().putFloat(key, value).apply()
 }
 
 actual fun KMMContext.putString(key: String, value: String) {

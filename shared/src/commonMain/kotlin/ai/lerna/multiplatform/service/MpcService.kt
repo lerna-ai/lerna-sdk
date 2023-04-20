@@ -15,7 +15,7 @@ import kotlinx.serialization.json.Json
 class MpcService(host: String, _token: String) {
 	private val token = _token
 	private val mpcHost = host
-	private val client = HttpClient() {
+	private val client = HttpClient {
 		install(ContentNegotiation) {
 			json(Json {
 				prettyPrint = true
