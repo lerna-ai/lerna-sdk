@@ -38,7 +38,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 			storage.putVersion(FLWorker.FL_WORKER_VERSION)
 			WorkManager
 				.getInstance(context)
-				.enqueueUniquePeriodicWork("LernaFLWork", ExistingPeriodicWorkPolicy.REPLACE, flWorkRequest)
+				.enqueueUniquePeriodicWork("LernaFLWork", ExistingPeriodicWorkPolicy.UPDATE, flWorkRequest)
 			Napier.d("LernaFLWorker replaced", null, "Lerna")
 		} else {
 			WorkManager

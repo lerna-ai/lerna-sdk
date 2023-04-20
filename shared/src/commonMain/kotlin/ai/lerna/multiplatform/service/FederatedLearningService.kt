@@ -31,7 +31,7 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 
 	private lateinit var trainingTasks: TrainingTasks
 
-	private val client = HttpClient() {
+	private val client = HttpClient {
 		install(ContentNegotiation) {
 			json(Json {
 				prettyPrint = true
@@ -44,7 +44,7 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 		this.trainingTasks = trainingTasks
 	}
 
-	fun isTrainingTaskReady(version: Long = 0): Boolean {
+	private fun isTrainingTaskReady(version: Long = 0): Boolean {
 		return this::trainingTasks.isInitialized
 				&& trainingTasks.version!! > version
 	}
@@ -72,7 +72,7 @@ class FederatedLearningService(host: String, _token: String, _uniqueId: Long) {
 
 	suspend fun requestNewTraining(classes: MutableMap<String, MutableList<String>>?): TrainingTasks? {
 		if (classes == null) {
-			return requestNewTraining();
+			return requestNewTraining()
 		}
 		try {
 			val request = TrainingInitialize()

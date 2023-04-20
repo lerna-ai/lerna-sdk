@@ -18,11 +18,12 @@ import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
-import kotlinx.coroutines.flow.MutableStateFlow
 import android.provider.Settings
 import io.ktor.util.date.*
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.*
 import kotlin.math.ln
+
 
 actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) :
     SensorEventListener, SensorInterface {
@@ -99,12 +100,25 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
             audioManager.isBluetoothScoOn,
             audioManager.isMusicActive,
             audioManager.isSpeakerphoneOn,
-            audioManager.isWiredHeadsetOn
+            isHeadsetOn(audioManager)
         )
 
         modelData.setWifiConnected(isConnectionUnmetered(context, true))
 
         modelData.setHistory(DateUtil().now())
+    }
+
+    private fun isHeadsetOn(am: AudioManager): Boolean {
+        val devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        for (device in devices) {
+            if (device.type == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                || device.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                || device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+            ) {
+                return true
+            }
+        }
+        return false
     }
 
     @SuppressLint("MissingPermission")

@@ -1,6 +1,6 @@
 package ai.lerna.multiplatform
 
-import MLExecution
+import ai.lerna.multiplatform.service.MLExecution
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.service.FederatedLearningService
 import ai.lerna.multiplatform.service.FileUtil
