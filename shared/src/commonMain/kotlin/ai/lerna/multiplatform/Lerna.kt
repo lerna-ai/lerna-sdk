@@ -2,6 +2,7 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.UserID
+import ai.lerna.multiplatform.service.ConfigService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
@@ -11,7 +12,7 @@ import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, ABTest: Double = 0.0) {
+class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	private val _context = context
 	private val _customFeaturesSize = customFeaturesSize
 	private var _inputDataSize = 0
@@ -26,7 +27,15 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, ABT
 		Napier.base(DebugAntilog())
 		Napier.d("Initialize library", null, "Lerna")
 		weightsManager.setupStorage(storageService)
-		storageService.putABTest(Random.nextFloat()<ABTest)
+		runBlocking {
+			ConfigService(_token, uniqueID).requestConfig()?.let { response ->
+				response.mpcServerUri?.let { storageService.putMPCServer(it) }
+				response.flServerUri?.let { storageService.putFLServer(it) }
+				response.uploadPrefix?.let { storageService.putUploadPrefix(it) }
+				response.logSensorData.let { storageService.putUploadDataEnabled(it) }
+				response.abTest.let { storageService.putABTest(Random.nextFloat()<it) }
+			}
+		}
 		runBlocking {
 			weightsManager.updateWeights()
 		}
