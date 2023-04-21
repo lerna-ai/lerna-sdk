@@ -8,6 +8,10 @@ interface Storage {
 
 	fun putWeights(trainingWeights: GlobalTrainingWeights?)
 
+	fun getClasses(): MutableMap<String, MutableList<String>>?
+
+	fun putClasses(classes: MutableMap<String, MutableList<String>>)
+
 	fun getSessionID(): Int
 
 	fun putSessionID(session: Int)
@@ -39,5 +43,9 @@ interface Storage {
 	fun getUploadDataEnabled(): Boolean
 
 	fun putUploadDataEnabled(enabled: Boolean)
+
+	fun getABTest(): Boolean
+
+	fun putABTest(enabled: Boolean)
 
 }

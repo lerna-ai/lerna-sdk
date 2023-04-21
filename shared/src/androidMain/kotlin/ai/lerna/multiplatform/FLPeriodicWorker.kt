@@ -18,7 +18,7 @@ class FLPeriodicWorker(_context: Context, workerParams: WorkerParameters) :
 	private val token = inputData.getString("token") ?: ""
 	private val context = _context
 	private val uniqueID = inputData.getLong("ID", 0L)
-	private val flWorker = FLWorker(token.toString(), uniqueID)
+	private val flWorker = FLWorker(token, uniqueID)
 	override fun startWork(): ListenableFuture<Result> {
 		return CallbackToFutureAdapter.getFuture { completer ->
 			flWorker.setupStorage(context.applicationContext as Application)

@@ -27,7 +27,7 @@ class WeightsManager(token: String, uniqueID: Long) {
 			if (trainingWeights !== null) {
 				Napier.d("New Weights Version: ${trainingWeights.version}", null, "LernaWeights")
 				//var maxAccuracy = -1.0f
-				trainingWeights.trainingWeights?.forEach() {
+				trainingWeights.trainingWeights?.forEach {
 					Napier.d("Weights accuracies: ${it.accuracy.toString()} for ${it.mlName}", null, "LernaWeights")
 //					if (it.accuracy != null) {
 //						if (maxAccuracy < it.accuracy!!) {
