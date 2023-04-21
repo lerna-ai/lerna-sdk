@@ -25,7 +25,7 @@ internal class ModelDataTest {
 		// When
 		val result = modelData.toCsv()
 		// Then
-		assertEquals(Lerna.FEATURE_SIZE - 1, result.split(",").size, "Check feature size without x0")
+		assertEquals(45, result.split(",").size, "Check feature size without x0")
 	}
 
 //	@Test

@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
 
 
-class MLInference() {
+class MLInference {
 	//internal var inferHistory: MutableList<String> = ArrayList()
 	private var thetaClass = HashMap<String, D2Array<Float>>()
 

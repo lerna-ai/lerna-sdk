@@ -14,11 +14,13 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefSessionID = "LernaSession"
 	private val prefVersion = "LernaVersion"
 	private val prefTraining = "LernaLastTraining"
+	private val prefClasses = "LernaClasses"
 	private val prefSize = "LernaSize"
 	private val prefInference = "LernaInference"
 	private val prefLastInference = "LernaLastInference"
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
+	private val preABTestEnabled = "LernaABTestEnabled"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
@@ -39,6 +41,18 @@ class StorageImpl(context: KMMContext) : Storage {
 		val weightsApi = dlArrayConverter.convert(trainingWeights)
 		val weights = Json.encodeToString(weightsApi)
 		sharedPref.put(prefWeightsID, weights)
+	}
+
+	override fun getClasses(): MutableMap<String, MutableList<String>>? {
+		return if (!sharedPref.contains(prefClasses)) {
+			null
+		} else {
+			Json.decodeFromString<MutableMap<String, MutableList<String>>>(sharedPref.getString(prefClasses)!!)
+		}
+	}
+
+	override fun putClasses(classes: MutableMap<String, MutableList<String>>) {
+		sharedPref.put(prefClasses, Json.encodeToString(classes))
 	}
 
 	override fun getSessionID(): Int {
@@ -127,5 +141,16 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putUploadDataEnabled(enabled: Boolean) {
 		sharedPref.put(preUploadDataEnabled, enabled)
+	}
+
+	override fun getABTest(): Boolean {
+		if (!sharedPref.contains(preABTestEnabled)) {
+			return false
+		}
+		return sharedPref.getBool(preABTestEnabled, false)
+	}
+
+	override fun putABTest(enabled: Boolean) {
+		sharedPref.put(preABTestEnabled, enabled)
 	}
 }

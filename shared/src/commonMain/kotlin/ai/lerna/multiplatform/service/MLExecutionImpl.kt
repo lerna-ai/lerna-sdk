@@ -1,4 +1,5 @@
-import ai.lerna.multiplatform.service.IMLExecution
+package ai.lerna.multiplatform.service
+
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import com.soywiz.korio.file.std.tempVfs
@@ -191,18 +192,17 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
 
         //optimalTheta = theta.dup()
         for (i in 1..maxIterations) {
-            var gradients: D2Array<Float>? = gradientFunction(oldTheta, X, y, a, lr)
+            val gradients: D2Array<Float> = gradientFunction(oldTheta, X, y, a, lr)
 
             //calculate new theta with gradients and learning rate alpha
             //gradients = gradients.mul(alpha)
-            newTheta = oldTheta.minus(gradients!!)
+            newTheta = oldTheta.minus(gradients)
 
             if (hasConverged(oldTheta, newTheta, epsilon)) {
                 break
             }
             oldTheta = newTheta
             //gradients!!.cleanup()
-            gradients = null
         }
         return newTheta
     }
