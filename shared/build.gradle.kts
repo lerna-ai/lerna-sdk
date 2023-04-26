@@ -59,7 +59,7 @@ kotlin {
                 implementation("junit:junit:$junitVersion")
                 implementation("androidx.test:core:1.5.0")
                 implementation("androidx.test.ext:junit:1.1.5")
-                implementation("org.robolectric:robolectric:4.2.1")
+                implementation("org.robolectric:robolectric:4.10")
                 implementation("org.testng:testng:7.4.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
             }
@@ -95,10 +95,16 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_19
+        targetCompatibility = JavaVersion.VERSION_19
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            proguardFiles(
+                "proguard-rules.pro"
+            )
         }
         getByName("debug") {
             isMinifyEnabled = false
