@@ -33,7 +33,12 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 				response.flServerUri?.let { storageService.putFLServer(it) }
 				response.uploadPrefix?.let { storageService.putUploadPrefix(it) }
 				response.logSensorData.let { storageService.putUploadDataEnabled(it) }
-				response.abTest.let { storageService.putABTest(Random.nextFloat()<it) }
+				response.abTest.let {
+					if(storageService.getABTestPer()!=it) {
+						storageService.putABTest(Random.nextFloat() < it)
+						storageService.putABTestPer(it)
+					}
+				}
 			}
 		}
 		runBlocking {

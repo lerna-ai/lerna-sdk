@@ -60,6 +60,10 @@ interface Storage {
 
 	fun putABTest(enabled: Boolean)
 
+	fun getABTestPer(): Float?
+
+	fun putABTestPer(abtestper: Float)
+
 	fun getLog(): Boolean
 
 	fun putLog(enabled: Boolean)

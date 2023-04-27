@@ -12,5 +12,5 @@ class LernaAppConfig {
 
 	var logSensorData: Boolean = true
 
-	var abTest: Double = 0.0
+	var abTest: Float = 0.0f
 }
