@@ -22,6 +22,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
 	private val preABTestEnabled = "LernaABTestEnabled"
+	private val preABTestPercent = "LernaABTestPercent"
 	private val prefMPCServer = "LernaMPC"
 	private val prefFLServer = "LernaFL"
 	private val prefUploadPrefix = "LernaUploadPrefix"
@@ -186,6 +187,17 @@ class StorageImpl(context: KMMContext) : Storage {
 			return false
 		}
 		return sharedPref.getBool(preABTestEnabled, false)
+	}
+
+	override fun putABTestPer(abtestper: Float) {
+		sharedPref.put(preABTestPercent, abtestper)
+	}
+
+	override fun getABTestPer(): Float? {
+		if (!sharedPref.contains(preABTestPercent)) {
+			return null
+		}
+		return sharedPref.getFloat(preABTestPercent, 0.0f)
 	}
 
 	override fun putABTest(enabled: Boolean) {
