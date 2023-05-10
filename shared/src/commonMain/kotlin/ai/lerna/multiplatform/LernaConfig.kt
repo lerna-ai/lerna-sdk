@@ -4,7 +4,7 @@ import kotlin.Boolean
 import kotlin.String
 
 internal object LernaConfig {
-	internal val CONFIG_SERVER: String = "https://api.dev.lerna.ai:7357/api/v2/"
+	internal val CONFIG_SERVER: String = "https://api.dev.lerna.ai:7357/api/v1/"
 
 	internal val MPC_SERVER: String = "https://api.dev.lerna.ai:3443/"
 
