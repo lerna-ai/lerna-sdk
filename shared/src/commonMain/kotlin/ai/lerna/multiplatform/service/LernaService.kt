@@ -199,7 +199,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		var sessionId = storageService.getSessionID()
 		val mlId = weights?.trainingWeights?.first { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
-		commitToFile(mergedInput.historyToCsv(inferencesInSession[positionID]!!.entries.elementAt(0).value, sessionId, successValue), "sensorLog")
+		ContextRunner().run(
+			context,
+			mergedInput.historyToCsv(inferencesInSession[positionID]!!.entries.elementAt(0).value, sessionId, successValue),
+			"sensorLog",
+			::commitToFile)
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		if(ABTest)
 			flService.submitOutcome(weights!!.version, mlId, "$modelName-Random", predictValue, successValue, positionID)
