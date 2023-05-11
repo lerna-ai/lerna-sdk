@@ -114,13 +114,15 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 							storageService.getABTest()
 						)
 						//////////////////////////
-						calcAndSubmitInferenceMulItemsHistory(
-							modelName,
-							positionID,
-							predictionClass,
-							mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
-							storageService.getABTest()
-						)
+						if (data4Inference[positionID]!!.isNotEmpty()) {
+							calcAndSubmitInferenceMulItemsHistory(
+								modelName,
+								positionID,
+								predictionClass,
+								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
+								storageService.getABTest()
+							)
+						}
 						//////////////////////////
 					}
 				} else { //if we do not have a specific prediction to make, then only for 1 item:
@@ -303,7 +305,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 		inference.prediction = maxEntry?.key
 
-		storageService.putTempInference(inference.prediction!!)
+		inference.prediction?.let { storageService.putTempInference(it) }
 
 		return inference
 	}

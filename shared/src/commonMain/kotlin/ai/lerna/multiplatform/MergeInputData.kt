@@ -32,7 +32,9 @@ class MergeInputData(private val modelData: ModelData, private val length: Int) 
 			sensorDataHistory.forEach { sensor ->
 				inputDataItem.add(sensor + item.value)
 			}
-			inferenceInputDataHistory[item.key] = mk.ndarray(inputDataItem.toTypedArray())
+			if (inputDataItem.isNotEmpty()) {
+				inferenceInputDataHistory[item.key] = mk.ndarray(inputDataItem.toTypedArray())
+			}
 		}
 		return inferenceInputDataHistory
 	}
