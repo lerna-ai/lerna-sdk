@@ -71,7 +71,11 @@ class MLInference {
 			thetaClass.keys.first()
 		}
 
-		val outputs = calculateOutput(testFeatures.second, thetaClass[name]!!)
+		val features = mk.ones<Float>(testFeatures.second.shape[0]).cat(testFeatures.second.flatten())
+			.reshape(testFeatures.second.shape[1] + 1, testFeatures.second.shape[0])
+			.transpose()
+
+		val outputs = calculateOutput(features, thetaClass[name]!!)
 
 		val result = HashMap<String, Float>()
 
@@ -97,7 +101,11 @@ class MLInference {
 			thetaClass.keys.first()
 		}
 
-		val outputs = calculateOutput(testFeatures, thetaClass[name]!!)
+		val features = mk.ones<Float>(testFeatures.shape[0]).cat(testFeatures.flatten())
+			.reshape(testFeatures.shape[1] + 1, testFeatures.shape[0])
+			.transpose()
+
+		val outputs = calculateOutput(features, thetaClass[name]!!)
 
 		var result = 0.0f
 
