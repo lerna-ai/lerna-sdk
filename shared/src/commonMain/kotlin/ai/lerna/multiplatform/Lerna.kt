@@ -48,6 +48,9 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	fun setInputSize(size: Int) {
+		if (_inputDataSize == size) {
+			return
+		}
 		if (_inputDataSize != 0) {
 			throw IllegalArgumentException("The input size already set.")
 		}

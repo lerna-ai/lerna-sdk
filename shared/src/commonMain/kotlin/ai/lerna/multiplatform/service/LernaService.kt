@@ -40,15 +40,20 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	internal fun start() {
-		sensors.start()
-		this.weights = storageService.getWeights()
-		weights?.trainingWeights?.forEach {
-			val inferenceTask = MLInference()
-			inferenceTask.setWeights(it)
-			inferenceTasks[it.mlId!!] = inferenceTask
+		try {
+			sensors.start()
+			this.weights = storageService.getWeights()
+			weights?.trainingWeights?.forEach {
+				val inferenceTask = MLInference()
+				inferenceTask.setWeights(it)
+				inferenceTasks[it.mlId!!] = inferenceTask
+			}
+			Napier.d("Start Periodic", null, "LernaService")
+			periodicRunner.run(context, ::runPeriodic)
 		}
-		Napier.d("Start Periodic", null, "LernaService")
-		periodicRunner.run(context, ::runPeriodic)
+		catch (e: Exception) {
+			Napier.d("Start method failed: ${e.message}", e, "LernaService")
+		}
 	}
 
 	internal fun stop() {
