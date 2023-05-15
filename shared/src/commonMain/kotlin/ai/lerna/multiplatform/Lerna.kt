@@ -37,6 +37,7 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 					if(storageService.getABTestPer()!=it) {
 						storageService.putABTest(Random.nextFloat() < it)
 						storageService.putABTestPer(it)
+						Napier.d("I am choosing ${if (storageService.getABTest()) "" else "non"} randomly ABTest", null, "Lerna")
 					}
 				}
 			}

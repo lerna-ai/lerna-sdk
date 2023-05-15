@@ -97,8 +97,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 						mutableMapOf(Pair(modelName, mutableListOf(event)))
 					storageService.putClasses(temp)
 			}
-			sessionEnd(modelName, positionID, event, event, storageService.getABTest())
-			inferencesInSession.remove(positionID)
+			if (inferencesInSession.containsKey(positionID)) {
+				sessionEnd(modelName, positionID, event, event, storageService.getABTest())
+				inferencesInSession.remove(positionID)
+			}
 		}
 	}
 
@@ -111,13 +113,13 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					//then we must have a position for the output of this position, i.e., object metadata
 					if(positionID!=null) {
 						//remember to choose one of the two!!
-						calcAndSubmitInferenceMulItems(
-							modelName,
-							positionID,
-							predictionClass,
-							mergedInput.getMergedInputData(data4Inference[positionID]!!),
-							storageService.getABTest()
-						)
+//						calcAndSubmitInferenceMulItems(
+//							modelName,
+//							positionID,
+//							predictionClass,
+//							mergedInput.getMergedInputData(data4Inference[positionID]!!),
+//							storageService.getABTest()
+//						)
 						//////////////////////////
 						if (data4Inference[positionID]!!.isNotEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
