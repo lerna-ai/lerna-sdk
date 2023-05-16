@@ -100,6 +100,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			if (inferencesInSession.containsKey(positionID)) {
 				sessionEnd(modelName, positionID, event, event, storageService.getABTest())
 				inferencesInSession.remove(positionID)
+			} else {
+				Napier.d("Wrong model/position or event already captured!", null, "LernaService")
 			}
 		}
 	}
@@ -129,15 +131,21 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
 								storageService.getABTest()
 							)
+						} else {
+							Napier.d("Cannot run inference without sensor and/or content data", null, "LernaService")
 						}
 						//////////////////////////
 					}
 				} else { //if we do not have a specific prediction to make, then only for 1 item:
 					if(positionID==null) { //do not use metadata, just use the sensor and custom data (mostly for the autoInference, but you never know...)
-						calcAndSubmitInference(
-							modelName,
-							mergedInput.lastLineD2Array()
-						)
+						if (modelData.isHistoryNonEmpty()) {
+							calcAndSubmitInference(
+								modelName,
+								mergedInput.lastLineD2Array()
+							)
+						} else {
+							Napier.d("Cannot run inference without sensor data", null, "LernaService")
+						}
 					}
 				}
 			}
@@ -173,7 +181,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				return true
 			}
 			else -> {
-				Napier.d("Wrong setting $setting", null, "LernaService")
+				Napier.d("Wrong setting $setting. Choose between on and off", null, "LernaService")
 				return false
 			}
 		}
