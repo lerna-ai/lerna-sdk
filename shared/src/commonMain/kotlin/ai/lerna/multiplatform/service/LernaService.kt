@@ -122,6 +122,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //							mergedInput.getMergedInputData(data4Inference[positionID]!!),
 //							storageService.getABTest()
 //						)
+//						data4Inference.remove(positionID)
 						//////////////////////////
 						if (data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
@@ -131,6 +132,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
 								storageService.getABTest()
 							)
+							data4Inference.remove(positionID)
 						} else {
 							Napier.d("Cannot run inference without sensor and/or content data", null, "LernaService")
 						}
