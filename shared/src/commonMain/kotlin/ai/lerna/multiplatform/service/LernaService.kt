@@ -121,7 +121,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //							storageService.getABTest()
 //						)
 						//////////////////////////
-						if (data4Inference[positionID]!!.isNotEmpty()) {
+						if (data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
 								modelName,
 								positionID,
