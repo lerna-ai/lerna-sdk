@@ -337,4 +337,8 @@ class ModelData(_historySize: Int = 1) {
 				.map { it.toFloat() }.toFloatArray() }
 			.toTypedArray()
 	}
+
+	internal fun isHistoryNonEmpty(): Boolean {
+		return modelDataHistory.isNotEmpty()
+	}
 }
