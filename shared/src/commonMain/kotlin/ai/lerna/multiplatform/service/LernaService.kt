@@ -97,7 +97,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 						mutableMapOf(Pair(modelName, mutableListOf(event)))
 					storageService.putClasses(temp)
 			}
-			if (inferencesInSession.containsKey(positionID)) {
+			if (inferencesInSession.containsKey(positionID)&&inferencesInSession[positionID]!!.isNotEmpty()) {
 				sessionEnd(modelName, positionID, event, event, storageService.getABTest())
 				inferencesInSession.remove(positionID)
 			} else {
@@ -122,9 +122,9 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //							mergedInput.getMergedInputData(data4Inference[positionID]!!),
 //							storageService.getABTest()
 //						)
-//						data4Inference.remove(positionID)
+//						//data4Inference.remove(positionID)
 						//////////////////////////
-						if (data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
+						if (data4Inference.contains(positionID)&& data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
 								modelName,
 								positionID,
@@ -132,7 +132,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
 								storageService.getABTest()
 							)
-							data4Inference.remove(positionID)
+							//data4Inference.remove(positionID)
 						} else {
 							Napier.d("Cannot run inference without sensor and/or content data", null, "LernaService")
 						}
