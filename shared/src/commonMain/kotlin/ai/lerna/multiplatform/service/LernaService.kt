@@ -122,7 +122,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //							mergedInput.getMergedInputData(data4Inference[positionID]!!),
 //							storageService.getABTest()
 //						)
-//						//data4Inference.remove(positionID)
+//						data4Inference.remove(positionID)
 						//////////////////////////
 						if (data4Inference.contains(positionID)&& data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
@@ -132,7 +132,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
 								storageService.getABTest()
 							)
-							//data4Inference.remove(positionID)
+							data4Inference.remove(positionID)
 						} else {
 							Napier.d("Cannot run inference without sensor and/or content data", null, "LernaService")
 						}
@@ -212,6 +212,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			sessionEnd(modelName, it, "success", "failure") //it shouldn't matter what we predicted as long as it is different?
 		}
 		inferencesInSession.clear()
+		data4Inference.clear()
 	}
 
 	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false) {
