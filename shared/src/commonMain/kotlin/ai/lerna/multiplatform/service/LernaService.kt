@@ -7,6 +7,7 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import kotlin.random.Random
@@ -61,7 +62,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		periodicRunner.stop()
 		this.weights = storageService.getWeights()
 		weights?.trainingWeights?.forEach {
-			it.mlName?.let { it1 -> if(storageService.getABTest()){ContextRunner().runBlocking(context, "$it1-Random", ::timeout)} else {ContextRunner().runBlocking(context, it1, ::timeout)} }
+			it.mlName?.let { modelName -> ContextRunner().runBlocking(context, modelName, ::timeout) }
 		}
 		modelData.clearHistory()
 	}
@@ -124,7 +125,15 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //						)
 //						data4Inference.remove(positionID)
 						//////////////////////////
-						if (data4Inference.contains(positionID)&& data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
+						var retries = 0
+						while (!modelData.isHistoryNonEmpty() && retries < 100) {
+							runBlocking { delay(20) }
+							retries++
+						}
+						if (retries > 0) {
+							Napier.d("Waiting $retries times for sensor data", null, "LernaService")
+						}
+						if (data4Inference.contains(positionID) && data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
 							calcAndSubmitInferenceMulItemsHistory(
 								modelName,
 								positionID,
@@ -209,7 +218,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun timeout(modelName: String) {
 		inferencesInSession.keys.forEach {
-			sessionEnd(modelName, it, "success", "failure") //it shouldn't matter what we predicted as long as it is different?
+			sessionEnd(modelName, it, "success", "failure", storageService.getABTest()) //it shouldn't matter what we predicted as long as it is different?
 		}
 		inferencesInSession.clear()
 		data4Inference.clear()
@@ -217,7 +226,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false) {
 		var sessionId = storageService.getSessionID()
-		val mlId = weights?.trainingWeights?.first { w -> w.mlName == modelName }?.mlId ?: -1
+		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
 		ContextRunner().run(
 			context,
