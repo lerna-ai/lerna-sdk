@@ -7,7 +7,10 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import kotlin.random.Random
@@ -110,7 +113,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	//if predictionClass == null, choose best class
 	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?) : String? {
 		if ((weights?.version ?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName }!=null) {
-			runBlocking {
+			CoroutineScope(Dispatchers.Default).launch {
 				//if we have a specific prediction to make (e.g., like, comment, ...)
 				if(predictionClass!=null) {
 					//then we must have a position for the output of this position, i.e., object metadata
@@ -127,7 +130,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 						//////////////////////////
 						var retries = 0
 						while (!modelData.isHistoryNonEmpty() && retries < 100) {
-							runBlocking { delay(20) }
+							delay(20)
 							retries++
 						}
 						if (retries > 0) {
