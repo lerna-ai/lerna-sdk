@@ -13,7 +13,7 @@ actual class PeriodicRunner actual constructor() {
 	actual fun run(context: KMMContext, runPeriodic: KSuspendFunction0<Unit>) {
 		runPeriodicFlag = true
 		CoroutineScope(Dispatchers.Default).launch {
-			delay(2000)
+			delay(400)
 			while (runPeriodicFlag) {
 				runPeriodic()
 				delay(2000)

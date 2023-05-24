@@ -21,6 +21,7 @@ class ConfigService(_token: String, _uniqueId: Long) {
 			json(Json {
 				prettyPrint = true
 				isLenient = true
+				ignoreUnknownKeys = true
 			})
 		}
 	}
