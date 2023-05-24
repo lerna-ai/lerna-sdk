@@ -68,4 +68,8 @@ interface Storage {
 
 	fun putLog(enabled: Boolean)
 
+	fun getSensorInitialDelay(): Long
+
+	fun putSensorInitialDelay(delay: Int)
+
 }

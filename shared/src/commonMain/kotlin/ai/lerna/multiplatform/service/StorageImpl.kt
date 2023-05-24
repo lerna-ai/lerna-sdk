@@ -27,6 +27,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefFLServer = "LernaFL"
 	private val prefUploadPrefix = "LernaUploadPrefix"
 	private val prefLogData = "LernaLog"
+	private val prefSensorDelay = "LernaSensorDelay"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
@@ -213,5 +214,16 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putLog(enabled: Boolean) {
 		sharedPref.put(prefLogData, enabled)
+	}
+
+	override fun getSensorInitialDelay(): Long {
+		if (!sharedPref.contains(prefSensorDelay)) {
+			return 0
+		}
+		return sharedPref.getInt(prefSensorDelay, 0).toLong()
+	}
+
+	override fun putSensorInitialDelay(delay: Int) {
+		sharedPref.put(prefSensorDelay, delay)
 	}
 }
