@@ -12,10 +12,10 @@ import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
+class Lerna(context: KMMContext, token: String) {
 	private val _context = context
-	private val _customFeaturesSize = customFeaturesSize
-	private var _inputDataSize = 0
+	private var customFeaturesSize = 0
+	private var inputDataSize = 0
 	private var _token = token
 	private val uniqueID = UserID().getUniqueId(_context).toLong()
 	private val storageService = StorageImpl(_context)
@@ -40,26 +40,18 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 						Napier.d("I am choosing ${if (storageService.getABTest()) "" else "non"} randomly ABTest", null, "Lerna")
 					}
 				}
+				response.customFeaturesSize.let { customFeaturesSize = it }
+				response.inputDataSize.let {
+					inputDataSize = it
+					lernaService.initInputSize(it)
+				}
+				response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
 			}
 		}
 		runBlocking {
 			weightsManager.updateWeights()
 		}
 		runFL()
-	}
-
-	fun setInputSize(size: Int) {
-		if (_inputDataSize == size) {
-			return
-		}
-		if (_inputDataSize != 0) {
-			throw IllegalArgumentException("The input size already set.")
-		}
-		if (size <= 0) {
-			throw IllegalArgumentException("Invalid input size.")
-		}
-		_inputDataSize = size
-		lernaService.initInputSize(size)
 	}
 
 	fun start() {
@@ -81,14 +73,14 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	fun updateFeature(values: FloatArray) {
-		if (values.size != _customFeaturesSize) {
+		if (values.size != customFeaturesSize) {
 			throw IllegalArgumentException("Incorrect feature size")
 		}
 		lernaService.updateFeatures(values)
 	}
 
 	fun addInputData(itemID: String, values: FloatArray, positionID: String) {
-		if (values.size != _inputDataSize) {
+		if (values.size != inputDataSize) {
 			throw IllegalArgumentException("Incorrect input data size")
 		}
 		lernaService.addInputData(itemID, values, positionID)
@@ -111,8 +103,8 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0) {
 	}
 
 	private fun initialize() {
-		if (_customFeaturesSize > 0) {
-			lernaService.initCustomFeatureSize(_customFeaturesSize)
+		if (customFeaturesSize > 0) {
+			lernaService.initCustomFeatureSize(customFeaturesSize)
 		}
 		lernaService.start()
 	}

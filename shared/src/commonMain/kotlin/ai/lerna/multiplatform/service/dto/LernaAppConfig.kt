@@ -13,4 +13,10 @@ class LernaAppConfig {
 	var logSensorData: Boolean = true
 
 	var abTest: Float = 0.0f
+
+	var customFeaturesSize: Int = 0
+
+	var inputDataSize: Int = 0
+
+	var sensorInitialDelay: Int = 0
 }

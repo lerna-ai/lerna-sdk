@@ -53,7 +53,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				inferenceTasks[it.mlId!!] = inferenceTask
 			}
 			Napier.d("Start Periodic", null, "LernaService")
-			periodicRunner.run(context, ::runPeriodic)
+			periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
 		}
 		catch (e: Exception) {
 			Napier.d("Start method failed: ${e.message}", e, "LernaService")
@@ -216,7 +216,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		periodicRunner.stop()
 		ContextRunner().runBlocking(context, modelName, ::timeout)
 		Napier.d("Start Periodic", null, "LernaService")
-		periodicRunner.run(context, ::runPeriodic)
+		periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
 	}
 
 	private suspend fun timeout(modelName: String) {
