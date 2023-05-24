@@ -220,7 +220,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	private suspend fun timeout(modelName: String) {
-		inferencesInSession.keys.forEach {
+		inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
 			sessionEnd(modelName, it, "success", "failure", storageService.getABTest()) //it shouldn't matter what we predicted as long as it is different?
 		}
 		inferencesInSession.clear()
