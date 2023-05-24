@@ -23,6 +23,7 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
             json(Json {
                 prettyPrint = true
                 isLenient = true
+                ignoreUnknownKeys = true
             })
         }
     }

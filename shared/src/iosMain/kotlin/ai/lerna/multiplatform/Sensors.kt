@@ -37,7 +37,7 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     private val scope = CoroutineScope(UIDispatcher())
     private val queue = NSOperationQueue.mainQueue
     private val manager = CMMotionManager().apply {
-        deviceMotionUpdateInterval = 1.0 //20 / 1000.0
+        deviceMotionUpdateInterval = 3.0/10.0 //20 / 1000.0
     }
     private val myDevice = UIDevice.currentDevice
     private val myScreen = UIScreen.mainScreen
