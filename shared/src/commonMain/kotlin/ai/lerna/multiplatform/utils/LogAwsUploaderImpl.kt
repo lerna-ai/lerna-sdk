@@ -28,26 +28,38 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
         }
     }
 
-    override suspend fun uploadFile(uniqueID: Long, uploadPrefix: String, fileNameSuffix: String, fileContent: String) {
+    override suspend fun uploadFile(
+        uniqueID: Long,
+        uploadPrefix: String,
+        fileNameSuffix: String,
+        fileContent: String
+    ) {
         try {
-            withContext(CoroutineScope(Dispatchers.Default).coroutineContext) {
-                val request = LogData()
-                request.path = uploadPrefix
-                request.key = uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().now() + "_" + getPlatform().name + "_" + fileNameSuffix
-                request.token = token
-                request.data = fileContent
-                val response = client.post("https://4chh1yguvg.execute-api.eu-west-1.amazonaws.com/release/logfile") {
+
+            val request = LogData()
+            request.path = uploadPrefix
+            request.key =
+                uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().now() + "_" + getPlatform().name + "_" + fileNameSuffix
+            request.token = token
+            request.data = fileContent
+            val response =
+                client.post("https://4chh1yguvg.execute-api.eu-west-1.amazonaws.com/release/logfile") {
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }
-                if (response.status != HttpStatusCode.OK) {
-                    Napier.e("LogAwsUploader - Log response error: ${response.bodyAsText()}", null, "LernaLog")
-                }
+            if (response.status != HttpStatusCode.OK) {
+                Napier.e(
+                    "LogAwsUploader - Log response error: ${response.bodyAsText()}",
+                    null,
+                    "LernaLog"
+                )
             }
-        } catch (e: Exception) {
-            Napier.e("LogAwsUploader: Failed to upload file $fileNameSuffix.", null, "LernaLog")
-        }
+
+    } catch (e: Exception)
+    {
+        Napier.e("LogAwsUploader: Failed to upload file $fileNameSuffix.", null, "LernaLog")
     }
+}
 
     private fun Int.padZero(length: Int): String = toString().padStart(length, '0')
 }
