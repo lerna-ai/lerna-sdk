@@ -55,7 +55,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 			}
 		}
 
-		var successes = 0
+		var success = true
 		val ml = MLExecution(trainingTask)
 
 		//checkpoint
@@ -119,42 +119,20 @@ class FLWorker(_token: String, _uniqueID: Long) {
 					val weights = ml.addNoise(share, scaling, key)
 					Napier.d("Submitting noisy weights for job $jobId", null, "LernaFL")
 
-					val submitedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
-					if (submitedWeights != null) {
-						successes++
-						if (successes == (globalWeights!!.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs??
-							// Upload to AWS S3 implementation - Start
-//							val fileNameDate = LocalDateTime.now(ZoneOffset.UTC).format(dateFormatter)
-//							val temp = storage.getSuccesses()?.toList()?.sorted()
-//							val baos = ByteArrayOutputStream()
-//							temp?.forEach {
-//								val row = if (it.split(',').size > 6)
-//									it.split(',')[0] + "," + it.split(',')[1] + "," + it.split(',')[2] + "," + it.split(',')[4] + "," + it.split(',')[5] + "," + it.split(',')[6] + "\r\n"
-//								else
-//									it.split(',')[0] + "," + it.split(',')[1] + "," + it.split(',')[2] + "," + it.split(',')[4] + "\r\n"
-//								baos.write(row.toByteArray())
-//							}
-//							val mlFile = context.openFileInput("mldata.csv")
-
-//							logUploader.uploadFile(uniqueID, "inference.csv", baos.toByteArray(), fileNameDate)
-//							if (fileSize > 0) {
-//								logUploader.uploadFile(uniqueID, "mldata.csv", mlFile, fileNameDate)
-//							}
-//							logUploader.uploadLogcat(uniqueID, "logcatf.txt", fileNameDate)
-
-							// Upload to AWS S3 implementation - End
-							storage.putWeights(globalWeights)
-							storage.putLastTraining(taskVersion)
-							storage.putSize(storage.getSize() + fileSize.toInt())
-
-//							FileUtils.cleanDirectory(context.filesDir)
-							Napier.d("Cleaned up directory", null, "LernaFL")
-						}
-					}
+					val submittedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
+					if(submittedWeights==null)
+						success = false
 				} catch (ex: Exception) {
 					LogAwsUploaderImpl(token, FL_WORKER_VERSION).uploadFile(uniqueID, storage.getUploadPrefix(), "error_fl.txt", ex.stackTraceToString())
 				}
 			}
+		}
+		if(success) {
+			storage.putWeights(globalWeights)
+			storage.putLastTraining(taskVersion)
+			storage.putSize(storage.getSize() + fileSize.toInt())
+//			FileUtils.cleanDirectory(context.filesDir)
+//			Napier.d("Cleaned up directory", null, "LernaFL")
 		}
 	}
 
