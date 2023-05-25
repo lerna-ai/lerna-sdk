@@ -85,14 +85,14 @@ class FLWorker(_token: String, _uniqueID: Long) {
 		//For each ML task - if we want different files for different mls, we need to put everything after the checkpoint inside the loop and use the parameter i
 		for (i in trainingTask.trainingTasks!!.indices) {
 
-			if(!ml.prepareData(i, globalWeights!!.trainingWeights!![i].weights!!.entries.first().value.size)) {
+			if(!ml.prepareData(i, globalWeights!!.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights!!.entries.first().value.size)) {
 				Napier.d("Skipping task $i because of not enough data or wrong data size", null, "LernaFL")
 				continue
 			}
-			ml.setWeights(globalWeights.trainingWeights!![i])
+			ml.setWeights(globalWeights.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!)
 			if (weightsVersion > 1) {
 				Napier.d("Computing accuracy of version $weightsVersion and task $i", null, "LernaFL")
-				federatedLearningService.submitAccuracy(globalWeights.trainingWeights!![i].mlId!!, weightsVersion, ml.computeAccuracy())
+				federatedLearningService.submitAccuracy(trainingTask.trainingTasks!![i].mlId!!, weightsVersion, ml.computeAccuracy())
 			}
 			//Train locally
 			val size = ml.localML(i)
@@ -103,16 +103,16 @@ class FLWorker(_token: String, _uniqueID: Long) {
 			}
 
 			val newWeights: HashMap<String, D2Array<Float>> = HashMap()
-			globalWeights.trainingWeights!![i].weights?.forEach {
+			globalWeights.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights?.forEach {
 				newWeights[it.key] = ml.thetaClass[it.key]!!
 			}
-			globalWeights.trainingWeights!![i].weights = newWeights.toMap()
+			globalWeights.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights = newWeights.toMap() //will this work now?
 
 			Napier.d("Computing accuracy of local model for task $i", null, "LernaFL")
 			ml.computeAccuracy()
 
 			//For each prediction/job
-			globalWeights.trainingWeights!![i].weights!!.forEach { (key, _) ->
+			globalWeights.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights!!.forEach { (key, _) ->
 				try {
 					val jobId = trainingTask.trainingTasks!![i].jobIds!![key]!!
 					val share = getNoise(uniqueID, size, jobId)!!.Share!!.toFloat()
@@ -122,7 +122,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 					val submitedWeights = federatedLearningService.submitWeights(jobId, taskVersion.toLong(), size, weights!!)
 					if (submitedWeights != null) {
 						successes++
-						if (successes == (globalWeights.trainingWeights!![0].weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs
+						if (successes == (globalWeights!!.trainingWeights!!.find { it.mlId ==  trainingTask.trainingTasks!![i].mlId}!!.weights!!.size * trainingTask.trainingTasks!!.size)) { //assuming every task has the same number of jobs??
 							// Upload to AWS S3 implementation - Start
 //							val fileNameDate = LocalDateTime.now(ZoneOffset.UTC).format(dateFormatter)
 //							val temp = storage.getSuccesses()?.toList()?.sorted()
