@@ -23,7 +23,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     private lateinit var nextLabels: List<Pair<Float, String>>
 
 
-    override fun prepareData(ml_id: Int, featureSize: Int) {
+    override fun prepareData(ml_id: Int, featureSize: Int): Boolean {
         val list = nextFeatures.map { it[0] }.distinct()
         val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * list.size.toFloat()).toInt()
         val sessions = list.asSequence().shuffled().take(samples).toList()
@@ -47,6 +47,10 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
                 testDataLabels.add(nextLabels[i].second)
             }
         }
+
+        if (trainDataFeatures.isEmpty() || testDataFeatures.isEmpty())
+            return false
+
         val train = mk.ndarray(trainDataFeatures.toTypedArray())
         val test = mk.ndarray(testDataFeatures.toTypedArray())
 
@@ -63,8 +67,8 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         testFeatures = mk.ones<Float>(testDataFeatures.size).cat(testFeatures.flatten()).reshape(range.count()+1, testDataFeatures.size)
         testFeatures = testFeatures.transpose()
 
-
         Napier.d("LernaML - Data size: " + trainDataFeatures.size + " and " + testDataFeatures.size)
+        return true
     }
 
     override fun localML(ml_id: Int): Long {

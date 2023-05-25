@@ -84,8 +84,12 @@ class FLWorker(_token: String, _uniqueID: Long) {
 
 		//For each ML task - if we want different files for different mls, we need to put everything after the checkpoint inside the loop and use the parameter i
 		for (i in trainingTask.trainingTasks!!.indices) {
-			ml.prepareData(i, getWeightSize())
-			ml.setWeights(globalWeights!!.trainingWeights!![i])
+
+			if(!ml.prepareData(i, globalWeights!!.trainingWeights!![i].weights!!.entries.first().value.size)) {
+				Napier.d("Skipping task $i because of not enough data or wrong data size", null, "LernaFL")
+				continue
+			}
+			ml.setWeights(globalWeights.trainingWeights!![i])
 			if (weightsVersion > 1) {
 				Napier.d("Computing accuracy of version $weightsVersion and task $i", null, "LernaFL")
 				federatedLearningService.submitAccuracy(globalWeights.trainingWeights!![i].mlId!!, weightsVersion, ml.computeAccuracy())
@@ -154,11 +158,11 @@ class FLWorker(_token: String, _uniqueID: Long) {
 		}
 	}
 
-	private fun getWeightSize(): Int {
-		val weights = storage.getWeights()?.trainingWeights?.get(0)?.weights ?: return -1
-		val firstKey = weights.keys.first()
-		return weights[firstKey]?.size ?: -1
-	}
+//	private fun getWeightSize(): Int {
+//		val weights = storage.getWeights()?.trainingWeights?.get(0)?.weights ?: return -1
+//		val firstKey = weights.keys.first()
+//		return weights[firstKey]?.size ?: -1
+//	}
 
 	private suspend fun getNoise(
 		uniqueID: Long,
