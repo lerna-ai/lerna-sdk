@@ -89,29 +89,39 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 
 	internal fun captureEvent(modelName: String, positionID: String, event: String) {
-		runBlocking {
-			val classes = storageService.getClasses()
-			if(classes!=null) {
-				if (classes.containsKey(modelName)) {
-					if (!classes[modelName]!!.contains(event)) {
-						classes[modelName]!!.add(event)
+		if ((weights?.version
+				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
+		) {
+			runBlocking {
+				val classes = storageService.getClasses()
+				if (classes != null) {
+					if (classes.containsKey(modelName)) {
+						if (!classes[modelName]!!.contains(event)) {
+							classes[modelName]!!.add(event)
+							storageService.putClasses(classes)
+						}
+					} else {
+						classes[modelName] = mutableListOf(event)
 						storageService.putClasses(classes)
 					}
 				} else {
-					classes[modelName] = mutableListOf(event)
-					storageService.putClasses(classes)
-				}
-			} else {
 					val temp: MutableMap<String, MutableList<String>> =
 						mutableMapOf(Pair(modelName, mutableListOf(event)))
 					storageService.putClasses(temp)
+				}
+				if (inferencesInSession.containsKey(positionID) && inferencesInSession[positionID]!!.isNotEmpty()) {
+					sessionEnd(modelName, positionID, event, event, storageService.getABTest())
+					inferencesInSession.remove(positionID)
+				} else {
+					Napier.d(
+						"Wrong position or event already captured!",
+						null,
+						"LernaService"
+					)
+				}
 			}
-			if (inferencesInSession.containsKey(positionID)&&inferencesInSession[positionID]!!.isNotEmpty()) {
-				sessionEnd(modelName, positionID, event, event, storageService.getABTest())
-				inferencesInSession.remove(positionID)
-			} else {
-				Napier.d("Wrong model/position or event already captured!", null, "LernaService")
-			}
+		} else {
+			Napier.d("CaptureEvent: No weights yet from server for model $modelName", null, "LernaService")
 		}
 	}
 
@@ -120,7 +130,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		if(!disabled) {
 			if ((weights?.version
 					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
-			) {
+			) { if(predictionClass==null || inferenceTasks[weights?.trainingWeights?.find { it.mlName == modelName }?.mlId]?.thetaClass!!.containsKey(predictionClass)) {
 				CoroutineScope(Dispatchers.Default).launch {
 					//if we have a specific prediction to make (e.g., like, comment, ...)
 					if (predictionClass != null) {
@@ -185,7 +195,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				}
 				return storageService.getTempInference() //make sure that every path writes the tempInference
 			} else {
-				Napier.d("No weights yet from server for model $modelName", null, "LernaService")
+				Napier.d("No prediction class $predictionClass for $modelName", null, "LernaService")
+				return null
+			}
+		} else {
+				Napier.d("TriggerInference: No weights yet from server for model $modelName", null, "LernaService")
 				return null
 			}
 		} else {
@@ -209,7 +223,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					autoInferenceValue = modelName
 					true
 				} else {
-					Napier.d("No weights yet from server for model $modelName", null, "LernaService")
+					Napier.d("AutoInference: No weights yet from server for model $modelName", null, "LernaService")
 					false
 				}
 			}
@@ -235,11 +249,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	internal fun refresh(modelName: String) {
-		Napier.d("Stop Periodic", null, "LernaService")
-		periodicRunner.stop()
-		ContextRunner().runBlocking(context, modelName, ::timeout)
-		Napier.d("Start Periodic", null, "LernaService")
-		periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
+		if ((weights?.version
+				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
+		) {
+			Napier.d("Stop Periodic", null, "LernaService")
+			periodicRunner.stop()
+			ContextRunner().runBlocking(context, modelName, ::timeout)
+			Napier.d("Start Periodic", null, "LernaService")
+			periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
+		} else {
+			Napier.d("Refresh: No weights yet from server for model $modelName", null, "LernaService")
+		}
 	}
 
 	private suspend fun timeout(modelName: String) {

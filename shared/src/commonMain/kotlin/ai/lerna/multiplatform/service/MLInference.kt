@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.times
 
 class MLInference {
 	//internal var inferHistory: MutableList<String> = ArrayList()
-	private var thetaClass = HashMap<String, D2Array<Float>>()
+	var thetaClass = HashMap<String, D2Array<Float>>()
 
 	internal fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
 		thetaClass.clear()
