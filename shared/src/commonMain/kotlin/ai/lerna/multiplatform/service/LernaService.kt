@@ -28,7 +28,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
 	private var inferencesInSession = mutableMapOf<String, MutableMap<String, FloatArray>>()
-	private lateinit var mergedInput : MergeInputData 
+	private lateinit var mergedInput : MergeInputData
+	private var failsafe = mutableMapOf<String, String>()
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
@@ -74,12 +75,16 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		modelData.updateCustomFeatures(values)
 	}
 
-	internal fun addInputData(itemId: String, values: FloatArray, positionID: String) {
-		if(!data4Inference.containsKey(positionID)) {
-			data4Inference[positionID] = mutableMapOf()
-			inferencesInSession[positionID] = mutableMapOf()
+	internal fun addInputData(itemId: String, values: FloatArray, positionID: String, disabled: Boolean = false) {
+		if(!disabled) {
+			if (!data4Inference.containsKey(positionID)) {
+				data4Inference[positionID] = mutableMapOf()
+				inferencesInSession[positionID] = mutableMapOf()
+			}
+			data4Inference[positionID]!![itemId] = values
+		} else {
+			failsafe[positionID] = itemId
 		}
-		data4Inference[positionID]!![itemId] = values
 	}
 
 
@@ -111,14 +116,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	//if predictionClass == null, choose best class
-	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?) : String? {
-		if ((weights?.version ?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName }!=null) {
-			CoroutineScope(Dispatchers.Default).launch {
-				//if we have a specific prediction to make (e.g., like, comment, ...)
-				if(predictionClass!=null) {
-					//then we must have a position for the output of this position, i.e., object metadata
-					if(positionID!=null) {
-						//remember to choose one of the two!!
+	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false) : String? {
+		if(!disabled) {
+			if ((weights?.version
+					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
+			) {
+				CoroutineScope(Dispatchers.Default).launch {
+					//if we have a specific prediction to make (e.g., like, comment, ...)
+					if (predictionClass != null) {
+						//then we must have a position for the output of this position, i.e., object metadata
+						if (positionID != null) {
+							//remember to choose one of the two!!
 //						calcAndSubmitInferenceMulItems(
 //							modelName,
 //							positionID,
@@ -127,46 +135,61 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 //							storageService.getABTest()
 //						)
 //						data4Inference.remove(positionID)
-						//////////////////////////
-						var retries = 0
-						while (!modelData.isHistoryNonEmpty() && retries < 100) {
-							delay(20)
-							retries++
+							//////////////////////////
+							var retries = 0
+							while (!modelData.isHistoryNonEmpty() && retries < 100) {
+								delay(20)
+								retries++
+							}
+							if (retries > 0) {
+								Napier.d(
+									"Waiting $retries times for sensor data",
+									null,
+									"LernaService"
+								)
+							}
+							if (data4Inference.contains(positionID) && data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
+								calcAndSubmitInferenceMulItemsHistory(
+									modelName,
+									positionID,
+									predictionClass,
+									mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
+									storageService.getABTest()
+								)
+								data4Inference.remove(positionID)
+							} else {
+								Napier.d(
+									"Cannot run inference without sensor and/or content data",
+									null,
+									"LernaService"
+								)
+							}
+							//////////////////////////
 						}
-						if (retries > 0) {
-							Napier.d("Waiting $retries times for sensor data", null, "LernaService")
-						}
-						if (data4Inference.contains(positionID) && data4Inference[positionID]!!.isNotEmpty() && modelData.isHistoryNonEmpty()) {
-							calcAndSubmitInferenceMulItemsHistory(
-								modelName,
-								positionID,
-								predictionClass,
-								mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
-								storageService.getABTest()
-							)
-							data4Inference.remove(positionID)
-						} else {
-							Napier.d("Cannot run inference without sensor and/or content data", null, "LernaService")
-						}
-						//////////////////////////
-					}
-				} else { //if we do not have a specific prediction to make, then only for 1 item:
-					if(positionID==null) { //do not use metadata, just use the sensor and custom data (mostly for the autoInference, but you never know...)
-						if (modelData.isHistoryNonEmpty()) {
-							calcAndSubmitInference(
-								modelName,
-								mergedInput.lastLineD2Array()
-							)
-						} else {
-							Napier.d("Cannot run inference without sensor data", null, "LernaService")
+					} else { //if we do not have a specific prediction to make, then only for 1 item:
+						if (positionID == null) { //do not use metadata, just use the sensor and custom data (mostly for the autoInference, but you never know...)
+							if (modelData.isHistoryNonEmpty()) {
+								calcAndSubmitInference(
+									modelName,
+									mergedInput.lastLineD2Array()
+								)
+							} else {
+								Napier.d(
+									"Cannot run inference without sensor data",
+									null,
+									"LernaService"
+								)
+							}
 						}
 					}
 				}
+				return storageService.getTempInference() //make sure that every path writes the tempInference
+			} else {
+				Napier.d("No weights yet from server for model $modelName", null, "LernaService")
+				return null
 			}
-			return storageService.getTempInference() //make sure that every path writes the tempInference
 		} else {
-			Napier.d("No weights yet from server for model $modelName", null, "LernaService")
-			return null
+			return failsafe.remove(positionID)
 		}
 	}
 
