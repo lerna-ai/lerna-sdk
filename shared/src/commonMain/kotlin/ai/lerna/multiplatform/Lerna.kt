@@ -23,6 +23,7 @@ class Lerna(context: KMMContext, token: String) {
 	private val flWorker = FLWorkerInterface(_context)
 	private val lernaService = LernaService(_context, _token, uniqueID)
 	private var disabled = false
+	private var started = false
 
 	init {
 		try {
@@ -71,15 +72,25 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun start() {
+		if (started) {
+			Napier.d("Start library error. Lerna already started!", null, "Lerna")
+			return
+		}
 		if (!disabled) {
 			runCleanUp()
 			initialize()
+			started = true
 		}
 	}
 
 	fun stop() {
+		if (!started) {
+			Napier.d("Stop library error. Lerna already stopped!", null, "Lerna")
+			return
+		}
 		if (!disabled) {
 			lernaService.stop()
+			started = false
 		}
 	}
 
@@ -99,7 +110,8 @@ class Lerna(context: KMMContext, token: String) {
 	fun updateFeature(values: FloatArray) {
 		if (!disabled) {
 			if (values.size != customFeaturesSize) {
-				throw IllegalArgumentException("Incorrect feature size")
+				Napier.d("Update feature error, Incorrect feature size", null, "Lerna")
+				return
 			}
 			lernaService.updateFeatures(values)
 		}
@@ -108,7 +120,8 @@ class Lerna(context: KMMContext, token: String) {
 	fun addInputData(itemID: String, values: FloatArray, positionID: String) {
 		if (!disabled) {
 			if (values.size != inputDataSize) {
-				throw IllegalArgumentException("Incorrect input data size")
+				Napier.d("Add input data error, Incorrect input data size", null, "Lerna")
+				return
 			}
 			lernaService.addInputData(itemID, values, positionID, disabled)
 		}
