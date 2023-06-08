@@ -24,6 +24,7 @@ class Lerna(context: KMMContext, token: String) {
 	private val lernaService = LernaService(_context, _token, uniqueID)
 	private var disabled = false
 	private var started = false
+	private var cleanupThreshold = 50000000L
 
 	init {
 		try {
@@ -53,6 +54,9 @@ class Lerna(context: KMMContext, token: String) {
 						lernaService.initInputSize(it)
 					}
 					response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
+					response.trainingDataThreshold.let { storageService.putTrainingDataThreshold(it) }
+					response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
+					response.cleanupThreshold.let { cleanupThreshold = it.toLong() }
 				} ?: run {
 					Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
 					disabled = true
@@ -165,6 +169,6 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	private suspend fun runCleanUpWithContext() {
-		FileUtil().cleanUp(storageService.getSessionID())
+		FileUtil().cleanUp(storageService.getSessionID(), cleanupThreshold)
 	}
 }
