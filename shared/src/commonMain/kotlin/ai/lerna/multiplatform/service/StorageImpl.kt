@@ -28,6 +28,8 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefUploadPrefix = "LernaUploadPrefix"
 	private val prefLogData = "LernaLog"
 	private val prefSensorDelay = "LernaSensorDelay"
+	private val prefTrainingDataThreshold = "LernaTrainingDataThreshold"
+	private val prefTrainingSessionsThreshold = "LernaTrainingSessionsThreshold"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
@@ -225,5 +227,27 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putSensorInitialDelay(delay: Int) {
 		sharedPref.put(prefSensorDelay, delay)
+	}
+
+	override fun getTrainingDataThreshold(): Long {
+		if (!sharedPref.contains(prefTrainingDataThreshold)) {
+			return 500000L
+		}
+		return sharedPref.getInt(prefTrainingDataThreshold, 500000).toLong()
+	}
+
+	override fun putTrainingDataThreshold(threshold: Int) {
+		sharedPref.put(prefTrainingDataThreshold, threshold)
+	}
+
+	override fun getTrainingSessionsThreshold(): Int {
+		if (!sharedPref.contains(prefTrainingSessionsThreshold)) {
+			return 10
+		}
+		return sharedPref.getInt(prefTrainingSessionsThreshold, 10)
+	}
+
+	override fun putTrainingSessionsThreshold(threshold: Int) {
+		sharedPref.put(prefTrainingSessionsThreshold, threshold.toInt())
 	}
 }
