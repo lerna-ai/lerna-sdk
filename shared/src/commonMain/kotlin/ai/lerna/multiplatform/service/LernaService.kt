@@ -392,4 +392,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		} else null
 	}
 
+	fun clearInputData(positionID: String) {
+		data4Inference.remove(positionID)
+	}
+
 }
