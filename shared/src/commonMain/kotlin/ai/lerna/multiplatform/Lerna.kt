@@ -135,6 +135,12 @@ class Lerna(context: KMMContext, token: String) {
 		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled)
 	}
 
+	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null): String? {
+		lernaService.clearInputData(positionID)
+		inputData.forEach { (itemID, values) -> addInputData(itemID, values, positionID) }
+		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled)
+	}
+
 	fun setAutoInference(modelName: String, setting: String) {
 		if (!disabled) {
 			lernaService.setAutoInference(modelName, setting)
