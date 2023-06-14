@@ -105,9 +105,9 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 
-	fun captureEvent(modelName: String, positionID: String, successVal: String) {
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementPos: Int =0) {
 		if (!disabled) {
-			lernaService.captureEvent(modelName, positionID, successVal)
+			lernaService.captureEvent(modelName, positionID, successVal, elementPos)
 		}
 	}
 
@@ -127,18 +127,22 @@ class Lerna(context: KMMContext, token: String) {
 				Napier.d("Add input data error, Incorrect input data size", null, "Lerna")
 				return
 			}
+			if (itemID.contains("|")) {
+				Napier.d("Add input data error, itemID should not contains vertical bar character (|)", null, "Lerna")
+				return
+			}
 			lernaService.addInputData(itemID, values, positionID, disabled)
 		}
 	}
 
-	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null): String? {
-		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled)
+	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int =1): String? {
+		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
 	}
 
-	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null): String? {
+	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null, numElements: Int =1): String? {
 		lernaService.clearInputData(positionID)
 		inputData.forEach { (itemID, values) -> addInputData(itemID, values, positionID) }
-		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled)
+		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
 	}
 
 	fun setAutoInference(modelName: String, setting: String) {

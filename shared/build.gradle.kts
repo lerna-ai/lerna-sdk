@@ -93,7 +93,7 @@ android {
     namespace = "ai.lerna.multiplatform"
     compileSdk = 33
     defaultConfig {
-        minSdk = 21
+        minSdk = 23
     }
     compileOptions {
         targetCompatibility = JavaVersion.VERSION_17

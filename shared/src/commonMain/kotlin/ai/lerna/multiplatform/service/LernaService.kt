@@ -88,7 +88,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 
-	internal fun captureEvent(modelName: String, positionID: String, event: String) {
+	internal fun captureEvent(modelName: String, positionID: String, event: String, elementPos: Int = 0) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
@@ -110,7 +110,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					storageService.putClasses(temp)
 				}
 				if (inferencesInSession.containsKey(positionID) && inferencesInSession[positionID]!!.isNotEmpty()) {
-					sessionEnd(modelName, positionID, event, event, storageService.getABTest())
+					sessionEnd(modelName, positionID, event, event, storageService.getABTest(), elementPos)
 					inferencesInSession.remove(positionID)
 				} else {
 					Napier.d(
@@ -126,7 +126,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	//if predictionClass == null, choose best class
-	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false) : String? {
+	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false, numElements: Int = 1) : String? {
 		if(!disabled) {
 			if ((weights?.version
 					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
@@ -164,7 +164,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 									positionID,
 									predictionClass,
 									mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
-									storageService.getABTest()
+									storageService.getABTest(), numElements
 								)
 								data4Inference.remove(positionID)
 							} else {
@@ -270,13 +270,13 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		data4Inference.clear()
 	}
 
-	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false) {
+	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementPos: Int = 0) {
 		var sessionId = storageService.getSessionID()
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
 		ContextRunner().run(
 			context,
-			mergedInput.historyToCsv(inferencesInSession[positionID]!!.entries.elementAt(0).value, sessionId, successValue),
+			mergedInput.historyToCsv(inferencesInSession[positionID]!!.entries.elementAt(elementPos).value, sessionId, successValue),
 			"sensorLog",
 			::commitToFile)
 		Napier.d("Session $sessionId ended", null, "LernaService")
@@ -324,9 +324,9 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		return inference
 	}
 
-	private suspend fun calcAndSubmitInferenceMulItems(modelName: String, positionID: String, predictionClass: String, inputData: Pair<Array<String>, D2Array<Float>>, pickRandom: Boolean = false) {
+	private suspend fun calcAndSubmitInferenceMulItems(modelName: String, positionID: String, predictionClass: String, inputData: Pair<Array<String>, D2Array<Float>>, pickRandom: Boolean = false, numElements: Int = 1) {
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
-			?.let { calcInferenceMulItems(positionID, predictionClass, inputData, it, pickRandom) }
+			?.let { calcInferenceMulItems(positionID, predictionClass, inputData, it, pickRandom, numElements) }
 		if(item!=null) {
 			Napier.d("Sending inference to the DB", null, "LernaService")
 			flService.submitInference(
@@ -337,25 +337,40 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	private fun calcInferenceMulItems(positionID: String, predictionClass: String, inputData: Pair<Array<String>, D2Array<Float>>, weights: GlobalTrainingWeightsItem, pickRandom: Boolean): TrainingInferenceItem {
+	private fun calcInferenceMulItems(positionID: String, predictionClass: String, inputData: Pair<Array<String>, D2Array<Float>>, weights: GlobalTrainingWeightsItem, pickRandom: Boolean, numElements: Int = 1): TrainingInferenceItem {
 		val inference = TrainingInferenceItem()
 		inference.ml_id = weights.mlId!!
 		inference.model = if(!pickRandom) {weights.mlName!!} else {weights.mlName!!+"-Random"}
 		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScore1LineMulItems(inputData, predictionClass)
-		val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
 
-		if(maxEntry?.key!=null)
-			inferencesInSession[positionID]?.set(maxEntry.key, data4Inference[positionID]?.get(maxEntry.key)!!)
+		val topEntries = if(!pickRandom) {
+			scores?.toList()?.sortedBy { (_, value) -> value}
+		} else {
+			scores?.toList()
+		}
 
-		inference.prediction = maxEntry?.key
-		storageService.putTempInference(inference.prediction!!)
+		//val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
+		val predictions  = ArrayList<String>()
+		//if(maxEntry?.key!=null)
+		for(item in topEntries?.take(if(topEntries.size>numElements) numElements else topEntries.size)!!)
+		{
+			inferencesInSession[positionID]?.set(
+				item.first,
+				data4Inference[positionID]?.get(item.first)!!
+			)
+			predictions.add(item.first)
+		}
+
+		inference.prediction = predictions.joinToString(separator = "|")
+
+		inference.prediction?.let { storageService.putTempInference(it) }
 
 		return inference
 	}
 
-	private suspend fun calcAndSubmitInferenceMulItemsHistory(modelName: String, positionID: String, predictionClass: String, inputDataHistory: Map<String, D2Array<Float>>, pickRandom: Boolean = false) {
+	private suspend fun calcAndSubmitInferenceMulItemsHistory(modelName: String, positionID: String, predictionClass: String, inputDataHistory: Map<String, D2Array<Float>>, pickRandom: Boolean = false, numElements: Int = 1) {
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
-			?.let { calcInferenceMulItemsHistory(positionID, predictionClass, inputDataHistory, it, pickRandom) }
+			?.let { calcInferenceMulItemsHistory(positionID, predictionClass, inputDataHistory, it, pickRandom, numElements) }
 		if(item!=null) {
 			Napier.d("Sending inference to the DB", null, "LernaService")
 			flService.submitInference(
@@ -366,17 +381,27 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	private fun calcInferenceMulItemsHistory(positionID: String, predictionClass: String, inputDataHistory: Map<String, D2Array<Float>>, weights: GlobalTrainingWeightsItem, pickRandom: Boolean): TrainingInferenceItem {
+	private fun calcInferenceMulItemsHistory(positionID: String, predictionClass: String, inputDataHistory: Map<String, D2Array<Float>>, weights: GlobalTrainingWeightsItem, pickRandom: Boolean, numElements: Int = 1): TrainingInferenceItem {
 		val inference = TrainingInferenceItem()
 		inference.ml_id = weights.mlId!!
 		inference.model = if(!pickRandom) {weights.mlName!!} else {weights.mlName!!+"-Random"}
 		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScoreMulLinesMulItems(inputDataHistory, predictionClass)
-		val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
-
-		if(maxEntry?.key!=null)
-			inferencesInSession[positionID]?.set(maxEntry.key, data4Inference[positionID]?.get(maxEntry.key)!!)
-
-		inference.prediction = maxEntry?.key
+		//val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
+		val topEntries = if(!pickRandom) {
+			scores?.toList()?.sortedBy { (_, value) -> value}
+		} else {
+			scores?.toList()
+		}
+		val predictions  = ArrayList<String>()
+		for(item in topEntries?.take(if(topEntries.size>numElements) numElements else topEntries.size)!!)
+		{
+			inferencesInSession[positionID]?.set(
+				item.first,
+				data4Inference[positionID]?.get(item.first)!!
+			)
+			predictions.add(item.first)
+		}
+		inference.prediction = predictions.joinToString(separator = "|")
 
 		inference.prediction?.let { storageService.putTempInference(it) }
 
