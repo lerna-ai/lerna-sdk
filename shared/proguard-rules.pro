@@ -1,1 +1,2 @@
+-keep class ai.lerna.multiplatform.Lerna {*;}
 -dontwarn java.lang.invoke.StringConcatFactory
