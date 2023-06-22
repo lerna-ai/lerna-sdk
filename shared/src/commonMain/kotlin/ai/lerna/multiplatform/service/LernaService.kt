@@ -7,10 +7,7 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import kotlin.random.Random
@@ -131,7 +128,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			if ((weights?.version
 					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 			) { if(predictionClass==null || inferenceTasks[weights?.trainingWeights?.find { it.mlName == modelName }?.mlId]?.thetaClass!!.containsKey(predictionClass)) {
-				CoroutineScope(Dispatchers.Default).launch {
+				runBlocking {
 					//if we have a specific prediction to make (e.g., like, comment, ...)
 					if (predictionClass != null) {
 						//then we must have a position for the output of this position, i.e., object metadata
@@ -198,7 +195,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 				Napier.d("No prediction class $predictionClass for $modelName", null, "LernaService")
 				return null
 			}
-		} else {
+			} else {
 				Napier.d("TriggerInference: No weights yet from server for model $modelName", null, "LernaService")
 				return null
 			}
@@ -293,12 +290,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInference(dataArray, it) }
 		if(item!=null) {
-			Napier.d("Sending inference to the DB", null, "LernaService")
-			flService.submitInference(
-				weights!!.version,
-				listOf(item),
-				storageService.getUserIdentifier() ?: ""
-			)
+			try {
+				Napier.d("Sending inference to the DB... ", null, "LernaService")
+				flService.submitInference(
+					weights!!.version,
+					listOf(item),
+					storageService.getUserIdentifier() ?: ""
+				)
+			} catch(e: Exception){
+				Napier.d("Error! +${e.message}", null, "LernaService")
+			}
+			Napier.d("Done!", null, "LernaService")
 		}
 	}
 
@@ -328,12 +330,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInferenceMulItems(positionID, predictionClass, inputData, it, pickRandom, numElements) }
 		if(item!=null) {
-			Napier.d("Sending inference to the DB", null, "LernaService")
-			flService.submitInference(
-				weights!!.version,
-				listOf(item),
-				storageService.getUserIdentifier() ?: ""
-			)
+			try {
+				Napier.d("Sending inference to the DB... ", null, "LernaService")
+				flService.submitInference(
+					weights!!.version,
+					listOf(item),
+					storageService.getUserIdentifier() ?: ""
+				)
+			} catch(e: Exception){
+				Napier.d("Error! +${e.message}", null, "LernaService")
+			}
+			Napier.d("Done!", null, "LernaService")
 		}
 	}
 
@@ -371,13 +378,19 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private suspend fun calcAndSubmitInferenceMulItemsHistory(modelName: String, positionID: String, predictionClass: String, inputDataHistory: Map<String, D2Array<Float>>, pickRandom: Boolean = false, numElements: Int = 1) {
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInferenceMulItemsHistory(positionID, predictionClass, inputDataHistory, it, pickRandom, numElements) }
+
 		if(item!=null) {
-			Napier.d("Sending inference to the DB", null, "LernaService")
-			flService.submitInference(
-				weights!!.version,
-				listOf(item),
-				storageService.getUserIdentifier() ?: ""
-			)
+			try {
+				Napier.d("Sending inference to the DB... ", null, "LernaService")
+				flService.submitInference(
+					weights!!.version,
+					listOf(item),
+					storageService.getUserIdentifier() ?: ""
+				)
+			} catch(e: Exception){
+				Napier.d("Error! +${e.message}", null, "LernaService")
+			}
+			Napier.d("Done!", null, "LernaService")
 		}
 	}
 
