@@ -289,7 +289,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private suspend fun calcAndSubmitInference(modelName: String, dataArray: D2Array<Float>) {
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInference(dataArray, it) }
-		if(item!=null) {
+		if(item!=null && autoInferenceValue == modelName) {
 			try {
 				Napier.d("Sending inference to the DB... ", null, "LernaService")
 				flService.submitInference(
@@ -329,7 +329,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private suspend fun calcAndSubmitInferenceMulItems(modelName: String, positionID: String, predictionClass: String, inputData: Pair<Array<String>, D2Array<Float>>, pickRandom: Boolean = false, numElements: Int = 1) {
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInferenceMulItems(positionID, predictionClass, inputData, it, pickRandom, numElements) }
-		if(item!=null) {
+		if(item!=null && autoInferenceValue == modelName) {
 			try {
 				Napier.d("Sending inference to the DB... ", null, "LernaService")
 				flService.submitInference(
@@ -379,7 +379,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		val item = weights?.trainingWeights?.find { it.mlName == modelName }
 			?.let { calcInferenceMulItemsHistory(positionID, predictionClass, inputDataHistory, it, pickRandom, numElements) }
 
-		if(item!=null) {
+		if(item!=null && autoInferenceValue == modelName) {
 			try {
 				Napier.d("Sending inference to the DB... ", null, "LernaService")
 				flService.submitInference(
