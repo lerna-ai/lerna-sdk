@@ -2,10 +2,10 @@ package ai.lerna.multiplatform.service
 
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
+import ai.lerna.multiplatform.utils.CalculationUtil
 import com.soywiz.korio.file.std.tempVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
-import org.jetbrains.kotlinx.multik.api.math.exp
 import org.jetbrains.kotlinx.multik.api.stat.abs
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
@@ -17,10 +17,11 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     private lateinit var testFeatures: D2Array<Float>
     private lateinit var trainLabels: Array<String>
     private lateinit var testLabels: Array<String>
-    var thetaClass = HashMap<String, D2Array<Float>>()
+    var thetaClass = mutableMapOf<String, D2Array<Float>>()
     private val task = _task
     private lateinit var nextFeatures: List<FloatArray>
     private lateinit var nextLabels: List<Pair<Float, String>>
+    private val calculationUtil = CalculationUtil()
 
 
     override fun prepareData(ml_id: Int, featureSize: Int): Boolean {
@@ -118,9 +119,9 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
     }
 
     private fun predictLabels(testFeatures: D2Array<Float>): Array<String> {
-        val outputs = HashMap<String, D2Array<Float>>()
+        val outputs = mutableMapOf<String, D2Array<Float>>()
         thetaClass.forEach { (k, v) ->
-            outputs[k] = calculateOutput(testFeatures, v)
+            outputs[k] = calculationUtil.calculateOutput(testFeatures, v)
         }
         val result = Array(outputs.values.toList()[0].shape[0]){"failure"}
 
@@ -143,23 +144,6 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         return result
     }
 
-    private fun sigmoid(Z: D2Array<Float>): D2Array<Float> {
-        //Z = (-Z)
-        var z = Z.times(-1.0f)
-        //Z = e^(Z); do not create new array
-        z = z.exp()
-        //1 + Z
-        z = z.plus(1.0f)
-        //1.0 / Z
-        z = 1.0f.div(z)
-        return z
-    }
-
-    private fun calculateOutput(X: D2Array<Float>, theta: D2Array<Float>): D2Array<Float> {
-        val z = X.dot(theta)
-        return sigmoid(z)
-    }
-
     private fun gradientFunction(
         theta: D2Array<Float>,
         X: D2Array<Float>,
@@ -170,7 +154,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
         //number of samples
         val m = X.shape[0]
 
-        val h = calculateOutput(X, theta)
+        val h = calculationUtil.calculateOutput(X, theta)
         // difference between predicted and actual class
         val diff = h.minus(y)
         return X.transpose().dot(diff).times(lr).plus(a * theta.sum().toFloat()).times(1.0f / m)

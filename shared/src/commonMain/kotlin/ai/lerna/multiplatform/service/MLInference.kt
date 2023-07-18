@@ -1,21 +1,19 @@
 package ai.lerna.multiplatform.service
 
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
+import ai.lerna.multiplatform.utils.CalculationUtil
 import io.github.aakira.napier.Napier
-import org.jetbrains.kotlinx.multik.api.linalg.dot
-import org.jetbrains.kotlinx.multik.api.math.exp
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ones
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import org.jetbrains.kotlinx.multik.ndarray.data.get
-import org.jetbrains.kotlinx.multik.ndarray.operations.div
-import org.jetbrains.kotlinx.multik.ndarray.operations.plus
-import org.jetbrains.kotlinx.multik.ndarray.operations.times
+import org.jetbrains.kotlinx.multik.ndarray.operations.joinToString
 
 
 class MLInference {
 	//internal var inferHistory: MutableList<String> = ArrayList()
-	var thetaClass = HashMap<String, D2Array<Float>>()
+	var thetaClass = mutableMapOf<String, D2Array<Float>>()
+	private val calculationUtil = CalculationUtil()
 
 	internal fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
 		thetaClass.clear()
@@ -32,9 +30,9 @@ class MLInference {
 			.reshape(testFeatures.shape[1] + 1, testFeatures.shape[0])
 			.transpose()
 
-		val outputs = HashMap<String, D2Array<Float>>()
+		val outputs = mutableMapOf<String, D2Array<Float>>()
 		thetaClass.forEach { (k, v) ->
-			outputs[k] = calculateOutput(features, v)
+			outputs[k] = calculationUtil.calculateOutput(features, v)
 		}
 
 		//Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
@@ -75,9 +73,9 @@ class MLInference {
 			.reshape(testFeatures.second.shape[1] + 1, testFeatures.second.shape[0])
 			.transpose()
 
-		val outputs = calculateOutput(features, thetaClass[name]!!)
+		val outputs = calculationUtil.calculateOutput(features, thetaClass[name]!!)
 
-		val result = HashMap<String, Float>()
+		val result = mutableMapOf<String, Float>()
 
 		for (i in 0 until outputs.shape[0]) {
 			result[testFeatures.first[i]] = outputs.asD2Array()[i, 0]
@@ -105,7 +103,7 @@ class MLInference {
 			.reshape(testFeatures.shape[1] + 1, testFeatures.shape[0])
 			.transpose()
 
-		val outputs = calculateOutput(features, thetaClass[name]!!)
+		val outputs = calculationUtil.calculateOutput(features, thetaClass[name]!!)
 
 		var result = 0.0f
 
@@ -131,29 +129,10 @@ class MLInference {
 		} else {
 			thetaClass.keys.first()
 		}
-		val result = HashMap<String, Float>()
+		val result = mutableMapOf<String, Float>()
 		testFeatures.forEach { (k, v) ->
 			result[k] = predictLabelScoreMulLines1Item(v, name)
 		}
 		return result
 	}
-
-	private fun calculateOutput(X: D2Array<Float>, theta: D2Array<Float>): D2Array<Float> {
-		val z = X.dot(theta)
-		return sigmoid(z)
-	}
-
-//	internal fun clearHistory() {
-//		inferHistory.clear()
-//	}
-
-	private fun sigmoid(Z: D2Array<Float>): D2Array<Float> {
-		// S(Z) = 1 / ( 1 - e ^ (-Z))
-		return 1.0f.div(
-			Z.times(-1.0f)
-				.exp()
-				.plus(1.0f)
-		)
-	}
-
 }
