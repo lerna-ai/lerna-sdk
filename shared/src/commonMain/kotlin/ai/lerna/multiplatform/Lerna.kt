@@ -42,7 +42,7 @@ class Lerna(context: KMMContext, token: String) {
 							storageService.putABTest(Random.nextFloat() < it)
 							storageService.putABTestPer(it)
 							Napier.d(
-								"I am choosing ${if (storageService.getABTest()) "" else "non"} randomly ABTest",
+								"I am choosing ${if (storageService.getABTest()) "" else "non "}randomly ABTest",
 								null,
 								"Lerna"
 							)
