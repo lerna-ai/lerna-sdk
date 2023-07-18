@@ -18,7 +18,7 @@ actual class PeriodicRunner actual constructor() {
 				delay(initDelay)
 				while (runPeriodicFlag) {
 					runPeriodic()
-					delay(2000)
+					delay(500)
 				}
 			}
 		}
