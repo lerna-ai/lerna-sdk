@@ -12,5 +12,5 @@ internal object LernaConfig {
 
 	internal val UPLOAD_PREFIX: String = "public/kmm/debug/"
 
-	internal val LOG_SENSOR_DATA: Boolean = true
+	internal val LOG_SENSOR_DATA: Boolean = false
 }

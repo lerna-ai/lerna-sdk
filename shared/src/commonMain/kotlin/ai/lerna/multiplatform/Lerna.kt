@@ -36,7 +36,8 @@ class Lerna(context: KMMContext, token: String) {
 					response.mpcServerUri?.let { storageService.putMPCServer(it) }
 					response.flServerUri?.let { storageService.putFLServer(it) }
 					response.uploadPrefix?.let { storageService.putUploadPrefix(it) }
-					response.logSensorData.let { storageService.putUploadDataEnabled(it) }
+					response.uploadSensorData.let { storageService.putUploadDataEnabled(it) }
+					response.logSensorData.let { storageService.putLog(it) }
 					response.abTest.let {
 						if (storageService.getABTestPer() != it) {
 							storageService.putABTest(Random.nextFloat() < it)

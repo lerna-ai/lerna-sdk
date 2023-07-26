@@ -10,6 +10,8 @@ class LernaAppConfig {
 
 	var uploadPrefix: String? = null
 
+	var uploadSensorData: Boolean = true
+
 	var logSensorData: Boolean = true
 
 	var abTest: Float = 0.0f

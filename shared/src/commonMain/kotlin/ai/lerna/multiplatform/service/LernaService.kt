@@ -27,6 +27,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private var inferencesInSession = mutableMapOf<String, MutableMap<String, FloatArray>>()
 	private lateinit var mergedInput : MergeInputData
 	private var failsafe = mutableMapOf<String, String>()
+	private val sensorLogEnabled = storageService.getLog()
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
@@ -237,7 +238,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun runPeriodic() {
 		sensors.updateData()
-		if (storageService.getLog()) {
+		if (sensorLogEnabled) {
 			Napier.d("Commit to history: ${storageService.getSessionID()},${DateUtil().now()},${modelData.toCsv()}\n", null, "LernaService")
 		}
 		if(autoInferenceValue!=null){
