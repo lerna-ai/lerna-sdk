@@ -86,7 +86,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 
-	internal fun captureEvent(modelName: String, positionID: String, event: String, elementPos: Int = 0) {
+	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "") {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
@@ -108,7 +108,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					storageService.putClasses(temp)
 				}
 				if (inferencesInSession.containsKey(positionID) && inferencesInSession[positionID]!!.isNotEmpty()) {
-					sessionEnd(modelName, positionID, event, event, storageService.getABTest(), elementPos)
+					sessionEnd(modelName, positionID, event, event, storageService.getABTest(), elementID)
 					inferencesInSession.remove(positionID)
 				} else {
 					Napier.d(
@@ -268,15 +268,30 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		data4Inference.clear()
 	}
 
-	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementPos: Int = 0) {
+	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementID: String = "") {
 		var sessionId = storageService.getSessionID()
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
-		ContextRunner().run(
-			context,
-			mergedInput.historyToCsv(inferencesInSession[positionID]!!.entries.elementAt(elementPos).value, sessionId, successValue),
-			"sensorLog",
-			::commitToFile)
+		if(elementID.isEmpty()) {
+			ContextRunner().run(
+				context,
+				mergedInput.historyToCsv(
+					inferencesInSession[positionID]!!.entries.first().value,
+					sessionId,
+					successValue
+				),
+				"sensorLog",
+				::commitToFile
+			)
+		} else if (inferencesInSession[positionID]!!.containsKey(elementID)){
+			ContextRunner().run(
+				context,
+				mergedInput.historyToCsv(inferencesInSession[positionID]!![elementID]!!, sessionId, successValue),
+				"sensorLog",
+				::commitToFile)
+		} else {
+			Napier.d("ERROR - Session $sessionId ended with wrong elementID: $elementID", null, "LernaService")
+		}
 		Napier.d("Session $sessionId ended", null, "LernaService")
 		if(ABTest)
 			flService.submitOutcome(weights!!.version, mlId, "$modelName-Random", predictValue, successValue, positionID)

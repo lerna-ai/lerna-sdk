@@ -16,6 +16,8 @@
 
 - [Usage](#Usage)
   - [Use Lerna SDK](#use-lerna-sdk)
+    - [Include Lerna SDK from aar file](#include-lerna-sdk-from-aar-file)
+    - [Include Lerna SDK from repository](#include-lerna-sdk-from-repository)
     - [Declare Lerna SDK](#declare-lerna-sdk)
     - [Initialize](#initialize)
     - [Start up Lerna](#start-up-lerna)
@@ -25,6 +27,9 @@
     - [Inform the Library of a success event](#inform-the-library-of-a-success-event)
     - [Trigger on demand inference](#trigger-on-demand-inference)
     - [Enable user data upload](#enable-user-data-upload)
+  - [Use Lerna SDK Recommendation API](#use-lerna-sdk-recommendation-api)
+    - [Get Recommendations](#get-recommendations)
+    - [Submit Event to Recommendation Engine](#submit-event-to-recommendation-engine)
 
 ## Usage
 
@@ -32,9 +37,97 @@
 
 In order to integrate Lerna SDK as Library include library file to your application's dependencies
 
-#### Include Lerna SDK 
+#### Include Lerna SDK from .aar file
 
-TBD
+To include the Lerna library, download the latest `.aar` file and place it in the libs folder of your project.
+
+Update your repositories configuration on the `build.gradle` file by adding `flatDir{dirs 'libs'}` line as following example:
+
+```bash
+    repositories {
+        ...
+        flatDir {
+            dirs 'libs'
+        }
+    }
+```
+
+Finally, add the Lerna entry on your dependencies in your app `build.gradle` file, as below:
+
+```bash
+dependencies {
+    implementation(name:'lerna-kmm-sdk-release', ext:'aar')
+}
+```
+
+and the required dependencies of the library, if they do not already exist, as seen below:
+
+```bash
+dependencies {
+	...
+    implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
+    implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-network:$ktorVersion")
+    implementation("io.ktor:ktor-network-tls:$ktorVersion")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
+    implementation("io.github.aakira:napier:2.6.1")
+    implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
+    runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+}
+```
+
+#### Include Lerna SDK from repository
+
+To include the Lerna library, from our maven repository follow the steps below. This option requires AWS CLI version 2.0.21 and above.
+
+Add Lerna profile on AWS credentials configuration file located in `~/.aws/credentials` by adding the following lines
+
+```bash
+[lerna]
+aws_access_key_id = <your access key>
+aws_secret_access_key = <your secret key>
+```
+
+Update your repositories configuration on the `build.gradle` file by adding our `maven` repository as follows:
+
+```bash
+	repositories {
+		...
+		maven {
+			url 'https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/'
+			credentials {
+				username "aws"
+				password System.env.LERNA_CODEARTIFACT_AUTH_TOKEN
+			}
+		}
+	}
+```
+Get the authorization token to access the repository by running the command
+
+```bash
+export LERNA_CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token \
+	--profile lerna \
+	--domain lerna-dev \
+	--domain-owner 470158444867 \
+	--region us-east-1 \
+	--query authorizationToken \
+	--output text`
+```
+
+Finally, add the Lerna entry on your dependencies in your app's `build.gradle` file, as shown below:
+
+```bash
+dependencies {
+    implementation 'ai.lerna.multiplatform:lerna-kmm-sdk-android:0.0.1'
+}
+```
 
 #### Declare Lerna SDK
 
@@ -48,14 +141,10 @@ private lateinit var lerna: Lerna
 
 To initialize Lerna SDK ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for single activity apps, you can add it on top of your onCreate method of your main activity class.
 
-You can also include custom features on your ML by adding the number of columns as `customFeaturesSize`. Default value is `0`
-
 ```bash
 lerna = Lerna(
 	applicationContext, 
-	"your-application-token", 
-	customFeaturesSize = "number of custom features as integer",
-	autoInference = "flag to enable/disable auto inference")
+	"your-application-token")
 ```
 
 > NOTE:
@@ -146,13 +235,7 @@ lerna.updateFeature(features)
 Use the following line to submit a success event to the Library:
 
 ```bash
-lerna.captureEvent()
-```
-
-The Library provides different success events, which are identified by positive integers with the following call:
-
-```bash
-lerna.captureEvent("event number as integer")
+lerna.captureEvent(modelName, positionID, successVal, elementID (optional))
 ```
 
 #### Trigger on demand inference
@@ -160,7 +243,7 @@ lerna.captureEvent("event number as integer")
 You can trigger on demand inference process with the following call:
 
 ```bash
-lerna.triggerInference()
+lerna.triggerInference(modelName, positionID (optional), predictionClass (optional), numElements (optional default 1))
 ```
 
 #### Enable user data upload
@@ -170,6 +253,77 @@ You can enable user data uploading for debug purposes. By default this functiona
 ```bash
 lerna.enableUserDataUpload(true)
 ```
+
+### Use Lerna SDK Recommendation API
+
+In order to use recommendation API, if enabled, you need to follow the bellow steps
+
+#### Get recommendations
+
+All queries are personalized and use the unique user identifier that was configured with [Setup/Update User Identification](#setupupdate-user-identification) function, or auto generated by Lerna Library.
+
+##### Get recommendations for user
+
+Use the following line to get the recommendation list for the mobile user:
+
+```bash
+lerna.getRecommendations(modelName)
+```
+
+##### Get chosen number of recommendations for user
+
+Use the following line to get the recommendation list with a specific number of items for the mobile user:
+
+```bash
+lerna.getRecommendations(modelName, number)
+```
+
+##### Get recommendations for user with selected criteria
+
+Use the following line to get the recommendation list based on specific criteria:
+
+```bash
+lerna.getRecommendations(modelName, number, blacklistItem, rules)
+```
+###### Query Parameter Specification
+
+The query fields determine what data are matched when returning recommendations.
+
+* number: max number of recommendations to return. There is no guarantee that this number will be returned for every query.
+* blacklistItems: this part of the query specifies individual items to remove from returned recommendations. It can be used to remove duplicates when items are already shown in a specific context. This is called anti-flood in recommender use.
+* rules: optional, array of fields values and biases to use in this query.
+  * name field name for metadata stored in the EventStore.
+  * values an array on one or more values to use in this query. The values will be looked for in the field name.
+  * bias will either boost the importance of this part of the query or use it as a filter. Positive biases are boosts any negative number will filter out any results that do not contain the values in the field name.
+
+> NOTE:
+>
+> The "bias" however picks which of the above types are executed:
+>
+> bias = -1: Include recommended items that match the rest of the Rule\
+> bias = 0: Exclude recommended items that match the rest of the Rule\
+> bias > 0: Boost recommended items that match the rest of the Rule by the bias value. This will cause matching recommendations to be moved upward in ranking of returned results.
+
+The response object in all cases is a list of items with the following format
+
+```
+[
+  {
+    "item": "String",
+    "score": Float,
+    "props": {
+      "Key as String 1": ["value1"],
+      "Key as String 2": ["value2", "value3", "value4"],
+      ...
+    }
+  }
+  ...
+]
+```
+
+#### Submit Event to Recommendation Engine
+
+To submit a success event to Recommendation engine you just use the same call that capture event to library that describes [here](#inform-the-library-of-a-success-event).
 
   <p align="center">
     © All Rights Reserved. Lerna Inc. 2022.

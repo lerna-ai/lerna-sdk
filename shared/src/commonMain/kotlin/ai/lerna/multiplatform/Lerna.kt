@@ -7,6 +7,10 @@ import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
+import ai.lerna.multiplatform.service.actionML.ActionMLService
+import ai.lerna.multiplatform.service.actionML.converter.RecommendationConverter
+import ai.lerna.multiplatform.service.actionML.dto.QueryRules
+import ai.lerna.multiplatform.service.actionML.dto.Result
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
@@ -22,9 +26,11 @@ class Lerna(context: KMMContext, token: String) {
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val flWorker = FLWorkerInterface(_context)
 	private val lernaService = LernaService(_context, _token, uniqueID)
+	private lateinit var actionMLService: ActionMLService
 	private var disabled = false
 	private var started = false
 	private var cleanupThreshold = 50000000L
+	private var recommendationConverter: RecommendationConverter? = null
 
 	init {
 		try {
@@ -64,6 +70,7 @@ class Lerna(context: KMMContext, token: String) {
 				}
 			}
 			if (!disabled) {
+				actionMLService = ActionMLService(storageService.getFLServer(), _token)
 				weightsManager.setupStorage(storageService)
 				runBlocking {
 					weightsManager.updateWeights()
@@ -74,6 +81,10 @@ class Lerna(context: KMMContext, token: String) {
 			Napier.d("The Lerna token cannot be validated, Library disabled with error ${e.message}", e, "Lerna")
 			disabled = true
 		}
+	}
+
+	fun setupRecommendationConverter(_recommendationConverter: RecommendationConverter) {
+		recommendationConverter = _recommendationConverter
 	}
 
 	fun start() {
@@ -105,10 +116,14 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-
-	fun captureEvent(modelName: String, positionID: String, successVal: String, elementPos: Int =0) {
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "") {
 		if (!disabled) {
-			lernaService.captureEvent(modelName, positionID, successVal, elementPos)
+			lernaService.captureEvent(modelName, positionID, successVal, elementID)
+			//ToDo: Enable/disabled functionality
+			runBlocking {
+				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID)
+				Napier.d("Submit event ${resp.comment}", null, "Lerna")
+			}
 		}
 	}
 
@@ -136,11 +151,11 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int =1): String? {
+	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int = 1): String? {
 		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
 	}
 
-	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null, numElements: Int =1): String? {
+	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null, numElements: Int = 1): String? {
 		lernaService.clearInputData(positionID)
 		inputData.forEach { (itemID, values) -> addInputData(itemID, values, positionID) }
 		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
@@ -162,6 +177,45 @@ class Lerna(context: KMMContext, token: String) {
 		if (!disabled) {
 			lernaService.refresh(modelName)
 		}
+	}
+
+	fun getRecommendations(modelName: String): List<Any> {
+		return getRecommendations(
+			modelName = modelName,
+			number = null,
+			blacklistItems = null,
+			rules = null
+		)
+	}
+
+	fun getRecommendations(modelName: String, number: Int?): List<Any> {
+		return getRecommendations(
+			modelName = modelName,
+			number = number,
+			blacklistItems = null,
+			rules = null
+		)
+	}
+
+	fun getRecommendations(modelName: String, number: Int?, blacklistItems: List<String>?, rules: List<QueryRules>?): List<Any> {
+		var response: List<Result> = mutableListOf()
+		runBlocking {
+			actionMLService.getUserItems(
+				engineID = modelName,
+				num = number,
+				user = storageService.getUserIdentifier() ?: uniqueID.toString(),
+				blacklistItems = blacklistItems,
+				rules = rules
+			).result.let {
+				if (!it.isNullOrEmpty()) {
+					response = it
+				}
+			}
+		}
+		if (recommendationConverter != null) {
+			return response.map { recommendationConverter!!.convert(it) }
+		}
+		return response
 	}
 
 	private fun initialize() {
