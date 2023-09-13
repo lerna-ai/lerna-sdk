@@ -61,7 +61,6 @@ class Lerna(context: KMMContext, token: String) {
 						lernaService.initInputSize(it)
 					}
 					response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
-					response.trainingDataThreshold.let { storageService.putTrainingDataThreshold(it) }
 					response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
 					response.cleanupThreshold.let { cleanupThreshold = it.toLong() }
 				} ?: run {

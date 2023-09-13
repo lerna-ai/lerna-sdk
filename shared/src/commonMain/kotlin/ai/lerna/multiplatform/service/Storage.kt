@@ -72,10 +72,6 @@ interface Storage {
 
 	fun putSensorInitialDelay(delay: Int)
 
-	fun getTrainingDataThreshold(): Long
-
-	fun putTrainingDataThreshold(threshold: Int)
-
 	fun getTrainingSessionsThreshold(): Int
 
 	fun putTrainingSessionsThreshold(threshold: Int)

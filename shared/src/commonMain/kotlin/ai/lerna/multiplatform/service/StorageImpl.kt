@@ -229,17 +229,6 @@ class StorageImpl(context: KMMContext) : Storage {
 		sharedPref.put(prefSensorDelay, delay)
 	}
 
-	override fun getTrainingDataThreshold(): Long {
-		if (!sharedPref.contains(prefTrainingDataThreshold)) {
-			return 500000L
-		}
-		return sharedPref.getInt(prefTrainingDataThreshold, 500000).toLong()
-	}
-
-	override fun putTrainingDataThreshold(threshold: Int) {
-		sharedPref.put(prefTrainingDataThreshold, threshold)
-	}
-
 	override fun getTrainingSessionsThreshold(): Int {
 		if (!sharedPref.contains(prefTrainingSessionsThreshold)) {
 			return 10
