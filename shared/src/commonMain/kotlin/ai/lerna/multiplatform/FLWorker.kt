@@ -62,10 +62,9 @@ class FLWorker(_token: String, _uniqueID: Long) {
 		val fileSize = fileUtil.mergeFiles(storage, "mldata.csv", "sensorLog")
 
 		/*
-		 * Check file size and session number to allow FL execution
-		 * fileSize: 500KB -> about 15 minutes of data collection
+		 * Check session number to allow FL execution
 		 */
-		if (fileSize < storage.getTrainingDataThreshold() || storage.getSessionID() < storage.getTrainingSessionsThreshold()) {
+		if (storage.getSessionID() < storage.getTrainingSessionsThreshold()) {
 			Napier.d("Not enough data for training. Total file size: $fileSize, session ${storage.getSessionID()}.", null, "LernaFL")
 			return
 		}

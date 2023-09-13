@@ -22,8 +22,6 @@ class LernaAppConfig {
 
 	var sensorInitialDelay: Int = 0
 
-	val trainingDataThreshold: Int = 500000
-
 	val trainingSessionsThreshold: Int = 10
 
 	val cleanupThreshold: Int = 50000000
