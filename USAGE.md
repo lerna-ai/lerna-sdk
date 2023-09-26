@@ -15,33 +15,37 @@
 ## Table of contents
 
 - [Usage](#Usage)
-  - [Use Lerna SDK](#use-lerna-sdk)
-    - [Include Lerna SDK from aar file](#include-lerna-sdk-from-aar-file)
-    - [Include Lerna SDK from repository](#include-lerna-sdk-from-repository)
-    - [Declare Lerna SDK](#declare-lerna-sdk)
-    - [Initialize](#initialize)
-    - [Start up Lerna](#start-up-lerna)
-    - [Notify that the app was stopped](#notify-that-the-app-was-stopped)
-    - [Setup/Update User Identification](#setupupdate-user-identification)
-    - [Provide custom features to the Library](#provide-custom-features-to-the-library)
-    - [Inform the Library of a success event](#inform-the-library-of-a-success-event)
-    - [Trigger on demand inference](#trigger-on-demand-inference)
-    - [Enable user data upload](#enable-user-data-upload)
-  - [Use Lerna SDK Recommendation API](#use-lerna-sdk-recommendation-api)
-    - [Get Recommendations](#get-recommendations)
-    - [Submit Event to Recommendation Engine](#submit-event-to-recommendation-engine)
+  - [Usage of Lerna SDK](#usage-of-lerna-sdk)
+    - [Lerna SDK as aar file](#lerna-sdk-as-aar-file)
+    - [Lerna SDK from the repository](#lerna-sdk-from-the-repository)
+    - [Declaring the Lerna SDK instance](#declaring-the-lerna-sdk-instance)
+    - [Initialization](#initialization)
+    - [Lerna start-up](#lerna-start-up)
+    - [Notification that the app has stopped](#notification-that-the-app-has-stopped)
+    - [Setup/Update of User Identification](#setupupdate-of-user-identification)
+    - [Custom features](#custom-features)
+    - [Input item data](#input-item-data)
+    - [Informing the Library of a success event](#informing-the-library-of-a-success-event)
+    - [Configuring auto inference](#configuring-auto-inference)
+    - [Triggering on demand inference](#triggering-on-demand-inference)
+    - [Triggering on demand inference with input data](#triggering-on-demand-inference-with-input-data)
+    - [Refreshing session](#refreshing-session)
+    - [Enabling user data upload](#enabling-user-data-upload)
+  - [Usage of Lerna SDK Recommendation API](#usage-of-lerna-sdk-recommendation-api)
+    - [Getting Recommendations](#getting-recommendations)
+    - [Submitting an Event to the Recommendation Engine](#submitting-an-event-to-the-recommendation-engine)
 
 ## Usage
 
-### Use Lerna SDK
+### Usage of Lerna SDK
 
-In order to integrate Lerna SDK as Library include library file to your application's dependencies
+In order to integrate the Lerna SDK as a Library include the library file to your application's dependencies
 
-#### Include Lerna SDK from .aar file
+#### Lerna SDK as .aar file
 
 To include the Lerna library, download the latest `.aar` file and place it in the libs folder of your project.
 
-Update your repositories configuration on the `build.gradle` file by adding `flatDir{dirs 'libs'}` line as following example:
+Update your repositories configuration on the `build.gradle` file by adding `flatDir{dirs 'libs'}` line as follows:
 
 ```bash
     repositories {
@@ -52,7 +56,7 @@ Update your repositories configuration on the `build.gradle` file by adding `fla
     }
 ```
 
-Finally, add the Lerna entry on your dependencies in your app `build.gradle` file, as below:
+Finally, add the Lerna entry on your app's dependencies in the `build.gradle` file, as shown below:
 
 ```bash
 dependencies {
@@ -83,11 +87,11 @@ dependencies {
 }
 ```
 
-#### Include Lerna SDK from repository
+#### Lerna SDK from the repository
 
-To include the Lerna library, from our maven repository follow the steps below. This option requires AWS CLI version 2.0.21 and above.
+To include the Lerna library from our maven repository follow the steps below. Note that this option requires AWS CLI version 2.0.21 and above.
 
-Add Lerna profile on AWS credentials configuration file located in `~/.aws/credentials` by adding the following lines
+Add the Lerna profile on the AWS credentials configuration file located in `~/.aws/credentials` by adding the following lines
 
 ```bash
 [lerna]
@@ -129,31 +133,31 @@ dependencies {
 }
 ```
 
-#### Declare Lerna SDK
+#### Declaring the Lerna SDK instance
 
-Use the following line to declare the Lerna instance. This declaration should be added in the class that needs to interact with the Library. For example, for single activity apps, you can add it on top of your main activity class.
+Use the following line to declare the Lerna instance. This declaration should be added in the class that needs to interact with the Library. For example, for a single activity apps, you can add it on top of your main activity class.
 
 ```bash
 private lateinit var lerna: Lerna
 ```
 
-#### Initialize
+#### Initialization
 
-To initialize Lerna SDK ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for single activity apps, you can add it on top of your onCreate method of your main activity class.
+To initialize the Lerna SDK, first ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for a single activity apps, you can add it on top of your onCreate method of your main activity class.
 
 ```bash
 lerna = Lerna(
 	applicationContext, 
-	"your-application-token")
+	String application_token)
 ```
 
 > NOTE:
 >
-> You also need to replace `your-application-token` with the application token that you received upon registration.
+> You also need to replace `application_token` with the application token that you received upon registration.
 
-#### Start up Lerna
+#### Lerna start-up 
 
-To start up the Library use the following line:
+To start the Library use the following line:
 
 ```bash
 lerna.start()
@@ -170,9 +174,9 @@ lerna.start()
 > }
 > ```
 
-#### Notify that the app was stopped
+#### Notification that the app has stopped
 
-In order to notify the Library for your application lifecycle end you need to use the following line:
+In order to notify the Library for your application's lifecycle end you need to use the following line:
 
 ```bash
 lerna.stop()
@@ -180,7 +184,7 @@ lerna.stop()
 
 > NOTE:
 >
-> To use the Library inside the activity's lifecycle with foreground service enabled you can add this line inside `onDestroy()` method of the activity.
+> To use the Library inside the activity's lifecycle with foreground service enabled, you can add this line inside `onDestroy()` method of the activity.
 >
 > ```bash
 > override fun onDestroy() {
@@ -189,7 +193,7 @@ lerna.stop()
 > }
 > ```
 >
-> In case you operate without the foreground service, you can add this line in the place that you want to stop the Library. For example, in order to stop the Library when another activity comes into the foreground, add the respective line inside the `onPause()` method of the activity.
+> In case your app does not use the foreground service, you can add this line in the place that you want to stop the Library. For example, in order to stop the Library when another activity comes into the foreground, add the respective line inside the `onPause()` method of the activity.
 >
 > ```bash
 > override fun onPause() {
@@ -198,23 +202,23 @@ lerna.stop()
 > }
 > ```
 
-#### Setup/Update User Identification
+#### Setup/Update of User Identification
 
-You can define a unique ID for each device by running the following command. This should be used if you have a user identification service in order to identify users on received success events.
-
-```bash
-lerna.setUserIdentifier("Unique user identifier as string")
-```
-
-#### Provide custom features to the Library
-
-If you wish to feed custom features to the Library, you have to submit an Array of Float values to the Library every time that you need to update it. To make this update, you need to store the values in an Array of floats that you declare in your activity as shown on the following line:
+You can define a unique ID for each device by running the following command. This should be used if you have a user identification service in order to identify your users when receiving success events.
 
 ```bash
-val features = FloatArray("number of custom features as integer")
+lerna.setUserIdentifier(String userID)
 ```
 
-As a next step, you need to update the Array based on your requirements; for example, you can use the following code for the purpose of a proximity sensor update on place zero of the features array:
+#### Custom features
+
+If you wish to feed your custom features to the Library, you have to submit an Array of Float values to it every time that you need to update them. To do this, you need first to store the values in an Array of floats that you declare in your activity as shown in the following line:
+
+```bash
+val features = FloatArray(int no_custom_features)
+```
+
+Next, you need to update the Array based on your requirements; for example, you can use the following code for the purpose of a proximity sensor update in the first position of the features array:
 
 ```bash
 override fun onSensorChanged(event: SensorEvent?) {
@@ -227,26 +231,99 @@ override fun onSensorChanged(event: SensorEvent?) {
 Finally, you can use the following code to send the updated values to the Library:
 
 ```bash
-lerna.updateFeature(features)
+lerna.updateFeature(Float[] features)
 ```
 
-#### Inform the Library of a success event
+#### Input item data
+
+The Lerna library provides two ways to submit input item data to Lerna. The first option is to use a dedicated call for the input data, and the second is to make a combined call that provides the data and requests the inference.
+In the sequel, we first explain the first option, and then the second one.
+
+As a first step, you need to provide a unique `itemID` of the item that you submit the input data for.
+
+You need to create an array of Float values based on your requirements; for example, you can use the provided converter to convert your own structure to an array of features:
+
+```bash
+val inputData = LernaConverter.convert.apply(myStructure myObject)
+```
+
+You also need to define the `positionID` of the item, this parameter is helpful in case that you have multiple positions in your app's UI.
+
+Finally, you can use the following code to send the input data to the Library:
+
+```bash
+lerna.addInputData(String itemID, Float[] inputData, String positionID)
+```
+
+#### Informing the Library of a success event
 
 Use the following line to submit a success event to the Library:
 
 ```bash
-lerna.captureEvent(modelName, positionID, successVal, elementID (optional))
+lerna.captureEvent(String modelName, String positionID, String successVal, String elementID (optional))
 ```
 
-#### Trigger on demand inference
+#### Configuring auto inference
 
-You can trigger on demand inference process with the following call:
+You can configure the auto inference mechanism for a specific model with some limitations:
+- you cannot have multiple positions, meaning you can have auto inference in general, not for different UI elements
+- you can use the custom features, but not additional metadata tight to an item/position
+
+You can configure the auto inference mechanism with the following call:
 
 ```bash
-lerna.triggerInference(modelName, positionID (optional), predictionClass (optional), numElements (optional default 1))
+lerna.setAutoInference(String modelName, String setting)
 ```
 
-#### Enable user data upload
+The `setting` parameter should be have values `on` or `off`.
+
+> NOTE:
+>
+> The auto inference should be enabled only for one model
+
+#### Triggering on demand inference
+
+You can trigger on demand inference with the following command:
+
+```bash
+lerna.triggerInference(String modelName, String positionID (optional), String predictionClass (optional), int numElements (optional default 1))
+```
+
+> NOTE:
+>
+> The parameters on this call is
+> modelName: The name of the ML model
+> positionId: (Optional) The position of the items, in case that you have multiple positions in your app's UI
+> predictionClass: (Optional) The class that you request the inference for (like, comment, etc.)
+> numElements: (Optional) The number of elements that you need for the position
+
+#### Triggering on demand inference with input data
+
+To use trigger inference while providing the input data at the same time, you need first to create a map with input data as follow:
+
+```bash
+val inputDataMap = mutableMapOf<String, FloatArray>()
+for (myObject in myObjectList) {
+    inputDataMap[myObject.id] = LernaConverter.convert.apply(myStructure myObject)
+}
+
+```
+
+You can trigger the on demand inference with input data with the following call:
+
+```bash
+lerna.triggerInference(Map inputDataMap, String modelName, String positionID (optional), String predictionClass (optional), int numElements (optional default 1))
+```
+
+#### Refreshing session
+
+You need to inform Lerna when the user refreshes the session; for example, when they request more items. You can use the following call:
+
+```bash
+lerna.refresh(String modelName)
+```
+
+#### Enabling user data upload
 
 You can enable user data uploading for debug purposes. By default this functionality is enabled.
 
@@ -254,76 +331,76 @@ You can enable user data uploading for debug purposes. By default this functiona
 lerna.enableUserDataUpload(true)
 ```
 
-### Use Lerna SDK Recommendation API
+### Usage of Lerna SDK Recommendation API
 
-In order to use recommendation API, if enabled, you need to follow the bellow steps
+In order to use the recommendation API, if needed, you need to follow the steps below.
 
-#### Get recommendations
+#### Getting recommendations
 
 All queries are personalized and use the unique user identifier that was configured with [Setup/Update User Identification](#setupupdate-user-identification) function, or auto generated by Lerna Library.
 
-##### Get recommendations for user
+##### Getting recommendations for a user
 
 Use the following line to get the recommendation list for the mobile user:
 
 ```bash
-lerna.getRecommendations(modelName)
+lerna.getRecommendations(String modelName)
 ```
 
-##### Get chosen number of recommendations for user
+##### Getting specific number of recommendations for a user
 
-Use the following line to get the recommendation list with a specific number of items for the mobile user:
+Use the following line to get a specific number of recommendation items for the mobile user:
 
 ```bash
-lerna.getRecommendations(modelName, number)
+lerna.getRecommendations(String modelName, int number)
 ```
 
-##### Get recommendations for user with selected criteria
+[//]: # (##### Get recommendations for a user with selected criteria)
 
-Use the following line to get the recommendation list based on specific criteria:
+[//]: # (Use the following line to get the recommendation list based on specific criteria:)
 
-```bash
-lerna.getRecommendations(modelName, number, blacklistItem, rules)
-```
-###### Query Parameter Specification
+[//]: # (```bash)
+[//]: # (lerna.getRecommendations&#40;String modelName, int number, List blacklistItem, Array rules&#41;)
+[//]: # (```)
 
-The query fields determine what data are matched when returning recommendations.
+[//]: # (###### Query Parameter Specification)
 
-* number: max number of recommendations to return. There is no guarantee that this number will be returned for every query.
-* blacklistItems: this part of the query specifies individual items to remove from returned recommendations. It can be used to remove duplicates when items are already shown in a specific context. This is called anti-flood in recommender use.
-* rules: optional, array of fields values and biases to use in this query.
-  * name field name for metadata stored in the EventStore.
-  * values an array on one or more values to use in this query. The values will be looked for in the field name.
-  * bias will either boost the importance of this part of the query or use it as a filter. Positive biases are boosts any negative number will filter out any results that do not contain the values in the field name.
+[//]: # (The query fields determine what data are matched when returning recommendations.)
+[//]: # (* number: max number of recommendations to return. There is no guarantee that this number will be returned for every query.)
+[//]: # (* blacklistItems: this part of the query specifies individual items to remove from returned recommendations. It can be used to remove duplicates when items are already shown in a specific context. This is called anti-flood in recommender use.)
+[//]: # (* rules: optional, array of fields values and biases to use in this query.)
+[//]: # (  * name field name for metadata stored in the EventStore.)
+[//]: # (  * values an array on one or more values to use in this query. The values will be looked for in the field name.)
+[//]: # (  * bias will either boost the importance of this part of the query or use it as a filter. Positive biases are boosts any negative number will filter out any results that do not contain the values in the field name.)
 
-> NOTE:
->
-> The "bias" however picks which of the above types are executed:
->
-> bias = -1: Include recommended items that match the rest of the Rule\
-> bias = 0: Exclude recommended items that match the rest of the Rule\
-> bias > 0: Boost recommended items that match the rest of the Rule by the bias value. This will cause matching recommendations to be moved upward in ranking of returned results.
+[//]: # (> NOTE:)
+[//]: # (>)
+[//]: # (> The "bias" however picks which of the above types are executed:)
+[//]: # (>)
+[//]: # (> bias = -1: Include recommended items that match the rest of the Rule\)
+[//]: # (> bias = 0: Exclude recommended items that match the rest of the Rule\)
+[//]: # (> bias > 0: Boost recommended items that match the rest of the Rule by the bias value. This will cause matching recommendations to be moved upward in ranking of returned results.)
 
-The response object in all cases is a list of items with the following format
+[//]: # (The response object in all cases is a list of items with the following format)
 
-```
-[
-  {
-    "item": "String",
-    "score": Float,
-    "props": {
-      "Key as String 1": ["value1"],
-      "Key as String 2": ["value2", "value3", "value4"],
-      ...
-    }
-  }
-  ...
-]
-```
+[//]: # (```)
+[//]: # ([)
+[//]: # (  {)
+[//]: # (    "item": "String",)
+[//]: # (    "score": Float,)
+[//]: # (    "props": {)
+[//]: # (      "Key as String 1": ["value1"],)
+[//]: # (      "Key as String 2": ["value2", "value3", "value4"],)
+[//]: # (      ...)
+[//]: # (    })
+[//]: # (  })
+[//]: # (  ...)
+[//]: # (])
+[//]: # (```)
 
-#### Submit Event to Recommendation Engine
+#### Submitting an Event to the Recommendation Engine
 
-To submit a success event to Recommendation engine you just use the same call that capture event to library that describes [here](#inform-the-library-of-a-success-event).
+To submit a success event to the Recommendation engine you use the same call that captures the event in the library as described [here](#inform-the-library-of-a-success-event).
 
   <p align="center">
     © All Rights Reserved. Lerna Inc. 2022.
