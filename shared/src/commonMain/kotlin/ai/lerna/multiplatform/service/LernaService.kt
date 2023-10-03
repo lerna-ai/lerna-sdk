@@ -10,7 +10,6 @@ import io.github.aakira.napier.Napier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
-import kotlin.random.Random
 
 
 class LernaService(private val context: KMMContext, _token: String, uniqueID: Long) {
@@ -28,6 +27,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private lateinit var mergedInput : MergeInputData
 	private var failsafe = mutableMapOf<String, String>()
 	private val sensorLogEnabled = storageService.getLog()
+	private val autoInferenceCounterDefaultValue = 4 // Get auto inference every 2 seconds with cycle of 500ms
+	private var autoInferenceCounter = autoInferenceCounterDefaultValue
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
@@ -241,8 +242,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		if (sensorLogEnabled) {
 			Napier.d("Commit to history: ${storageService.getSessionID()},${DateUtil().now()},${modelData.toCsv()}\n", null, "LernaService")
 		}
-		if(autoInferenceValue!=null){
-			triggerInference(autoInferenceValue!!, null, null)
+		if (autoInferenceValue != null) {
+			autoInferenceCounter--
+			if (autoInferenceCounter == 0) {
+				autoInferenceCounter = autoInferenceCounterDefaultValue
+				triggerInference(autoInferenceValue!!, null, null)
+			}
 		}
 	}
 
