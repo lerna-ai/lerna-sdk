@@ -14,34 +14,33 @@
 
 ## Table of contents
 
-- [Usage](#Usage)
-  - [Usage of Lerna SDK](#usage-of-lerna-sdk)
-    - [Lerna SDK as aar file](#lerna-sdk-as-aar-file)
-    - [Lerna SDK from the repository](#lerna-sdk-from-the-repository)
-    - [Declaring the Lerna SDK instance](#declaring-the-lerna-sdk-instance)
-    - [Initialization](#initialization)
-    - [Lerna start-up](#lerna-start-up)
-    - [Notification that the app has stopped](#notification-that-the-app-has-stopped)
-    - [Setup/Update of User Identification](#setupupdate-of-user-identification)
-    - [Custom features](#custom-features)
-    - [Input item data](#input-item-data)
-    - [Informing the Library of a success event](#informing-the-library-of-a-success-event)
-    - [Configuring auto inference](#configuring-auto-inference)
-    - [Triggering on demand inference](#triggering-on-demand-inference)
-    - [Triggering on demand inference with input data](#triggering-on-demand-inference-with-input-data)
-    - [Refreshing session](#refreshing-session)
-    - [Enabling user data upload](#enabling-user-data-upload)
-  - [Usage of Lerna SDK Recommendation API](#usage-of-lerna-sdk-recommendation-api)
-    - [Getting Recommendations](#getting-recommendations)
-    - [Submitting an Event to the Recommendation Engine](#submitting-an-event-to-the-recommendation-engine)
+- [Usage of Lerna SDK](#usage-of-lerna-sdk)
+  - [Lerna SDK as aar file](#lerna-sdk-as-aar-file)
+  - [Lerna SDK from the repository](#lerna-sdk-from-the-repository)
+  - [Declaring the Lerna SDK instance](#declaring-the-lerna-sdk-instance)
+  - [Initialization](#initialization)
+  - [Lerna start-up](#lerna-start-up)
+  - [Notification that the app has stopped](#notification-that-the-app-has-stopped)
+  - [Setup/Update of User Identification](#setupupdate-of-user-identification)
+  - [Custom features](#custom-features)
+  - [Input item data](#input-item-data)
+  - [Informing the Library of a success event](#informing-the-library-of-a-success-event)
+  - [Configuring auto inference](#configuring-auto-inference)
+  - [Triggering on demand inference](#triggering-on-demand-inference)
+  - [Triggering on demand inference with input data](#triggering-on-demand-inference-with-input-data)
+  - [Refreshing session](#refreshing-session)
+  - [Enabling user data upload](#enabling-user-data-upload)
+- [Usage of Lerna SDK Recommendation API](#usage-of-lerna-sdk-recommendation-api)
+  - [Getting Recommendations](#getting-recommendations)
+  - [Submitting an Event to the Recommendation Engine](#submitting-an-event-to-the-recommendation-engine)
 
-## Usage
+<div style="page-break-after: always;"></div>
 
-### Usage of Lerna SDK
+## Usage of Lerna SDK
 
 In order to integrate the Lerna SDK as a Library include the library file to your application's dependencies
 
-#### Lerna SDK as .aar file
+### Lerna SDK as .aar file
 
 To include the Lerna library, download the latest `.aar` file and place it in the libs folder of your project.
 
@@ -87,7 +86,7 @@ dependencies {
 }
 ```
 
-#### Lerna SDK from the repository
+### Lerna SDK from the repository
 
 To include the Lerna library from our maven repository follow the steps below. Note that this option requires AWS CLI version 2.0.21 and above.
 
@@ -133,7 +132,7 @@ dependencies {
 }
 ```
 
-#### Declaring the Lerna SDK instance
+### Declaring the Lerna SDK instance
 
 Use the following line to declare the Lerna instance. This declaration should be added in the class that needs to interact with the Library. For example, for a single activity apps, you can add it on top of your main activity class.
 
@@ -141,7 +140,7 @@ Use the following line to declare the Lerna instance. This declaration should be
 private lateinit var lerna: Lerna
 ```
 
-#### Initialization
+### Initialization
 
 To initialize the Lerna SDK, first ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for a single activity apps, you can add it on top of your onCreate method of your main activity class.
 
@@ -155,7 +154,7 @@ lerna = Lerna(
 >
 > You also need to replace `application_token` with the application token that you received upon registration.
 
-#### Lerna start-up 
+### Lerna start-up 
 
 To start the Library use the following line:
 
@@ -174,7 +173,7 @@ lerna.start()
 > }
 > ```
 
-#### Notification that the app has stopped
+### Notification that the app has stopped
 
 In order to notify the Library for your application's lifecycle end you need to use the following line:
 
@@ -202,7 +201,7 @@ lerna.stop()
 > }
 > ```
 
-#### Setup/Update of User Identification
+### Setup/Update of User Identification
 
 You can define a unique ID for each device by running the following command. This should be used if you have a user identification service in order to identify your users when receiving success events.
 
@@ -210,7 +209,7 @@ You can define a unique ID for each device by running the following command. Thi
 lerna.setUserIdentifier(String userID)
 ```
 
-#### Custom features
+### Custom features
 
 If you wish to feed your custom features to the Library, you have to submit an Array of Float values to it every time that you need to update them. To do this, you need first to store the values in an Array of floats that you declare in your activity as shown in the following line:
 
@@ -234,7 +233,7 @@ Finally, you can use the following code to send the updated values to the Librar
 lerna.updateFeature(Float[] features)
 ```
 
-#### Input item data
+### Input item data
 
 The Lerna library provides two ways to submit input item data to Lerna. The first option is to use a dedicated call for the input data, and the second is to make a combined call that provides the data and requests the inference.
 In the sequel, we first explain the first option, and then the second one.
@@ -255,7 +254,7 @@ Finally, you can use the following code to send the input data to the Library:
 lerna.addInputData(String itemID, Float[] inputData, String positionID)
 ```
 
-#### Informing the Library of a success event
+### Informing the Library of a success event
 
 Use the following line to submit a success event to the Library:
 
@@ -263,7 +262,7 @@ Use the following line to submit a success event to the Library:
 lerna.captureEvent(String modelName, String positionID, String successVal, String elementID (optional))
 ```
 
-#### Configuring auto inference
+### Configuring auto inference
 
 You can configure the auto inference mechanism for a specific model with some limitations:
 - you cannot have multiple positions, meaning you can have auto inference in general, not for different UI elements
@@ -281,7 +280,7 @@ The `setting` parameter should be have values `on` or `off`.
 >
 > The auto inference should be enabled only for one model
 
-#### Triggering on demand inference
+### Triggering on demand inference
 
 You can trigger on demand inference with the following command:
 
@@ -297,7 +296,7 @@ lerna.triggerInference(String modelName, String positionID (optional), String pr
 > predictionClass: (Optional) The class that you request the inference for (like, comment, etc.)
 > numElements: (Optional) The number of elements that you need for the position
 
-#### Triggering on demand inference with input data
+### Triggering on demand inference with input data
 
 To use trigger inference while providing the input data at the same time, you need first to create a map with input data as follow:
 
@@ -314,8 +313,8 @@ You can trigger the on demand inference with input data with the following call:
 ```bash
 lerna.triggerInference(Map inputDataMap, String modelName, String positionID (optional), String predictionClass (optional), int numElements (optional default 1))
 ```
-
-#### Refreshing session
+<div style="page-break-after: always;"></div>
+### Refreshing session
 
 You need to inform Lerna when the user refreshes the session; for example, when they request more items. You can use the following call:
 
@@ -323,7 +322,7 @@ You need to inform Lerna when the user refreshes the session; for example, when 
 lerna.refresh(String modelName)
 ```
 
-#### Enabling user data upload
+### Enabling user data upload
 
 You can enable user data uploading for debug purposes. By default this functionality is enabled.
 
@@ -331,15 +330,16 @@ You can enable user data uploading for debug purposes. By default this functiona
 lerna.enableUserDataUpload(true)
 ```
 
-### Usage of Lerna SDK Recommendation API
+<div style="page-break-after: always;"></div>
+## Usage of Lerna SDK Recommendation API
 
 In order to use the recommendation API, if needed, you need to follow the steps below.
 
-#### Getting recommendations
+### Getting recommendations
 
 All queries are personalized and use the unique user identifier that was configured with [Setup/Update User Identification](#setupupdate-user-identification) function, or auto generated by Lerna Library.
 
-##### Getting recommendations for a user
+#### Getting recommendations for a user
 
 Use the following line to get the recommendation list for the mobile user:
 
@@ -347,7 +347,7 @@ Use the following line to get the recommendation list for the mobile user:
 lerna.getRecommendations(String modelName)
 ```
 
-##### Getting specific number of recommendations for a user
+#### Getting specific number of recommendations for a user
 
 Use the following line to get a specific number of recommendation items for the mobile user:
 
@@ -355,7 +355,7 @@ Use the following line to get a specific number of recommendation items for the 
 lerna.getRecommendations(String modelName, int number)
 ```
 
-[//]: # (##### Get recommendations for a user with selected criteria)
+[//]: # (#### Get recommendations for a user with selected criteria)
 
 [//]: # (Use the following line to get the recommendation list based on specific criteria:)
 
@@ -363,7 +363,7 @@ lerna.getRecommendations(String modelName, int number)
 [//]: # (lerna.getRecommendations&#40;String modelName, int number, List blacklistItem, Array rules&#41;)
 [//]: # (```)
 
-[//]: # (###### Query Parameter Specification)
+[//]: # (#### Query Parameter Specification)
 
 [//]: # (The query fields determine what data are matched when returning recommendations.)
 [//]: # (* number: max number of recommendations to return. There is no guarantee that this number will be returned for every query.)
@@ -398,10 +398,11 @@ lerna.getRecommendations(String modelName, int number)
 [//]: # (])
 [//]: # (```)
 
-#### Submitting an Event to the Recommendation Engine
+### Submitting an Event to the Recommendation Engine
 
 To submit a success event to the Recommendation engine you use the same call that captures the event in the library as described [here](#inform-the-library-of-a-success-event).
 
+<div style="height: 400px"></div>
   <p align="center">
-    © All Rights Reserved. Lerna Inc. 2022.
+    © All Rights Reserved. Lerna Inc. 2023.
   </p>
