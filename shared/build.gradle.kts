@@ -1,15 +1,17 @@
-import com.codingfeline.buildkonfig.compiler.FieldSpec
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.android.library")
     id("maven-publish")
-    id("com.codingfeline.buildkonfig") version "0.13.3"
 }
 
+group = "ai.lerna.multiplatform"
+version = "0.0.5"
+
 kotlin {
-    android()
+    android {
+        publishLibraryVariants("release", "debug")
+    }
 
     listOf(
         iosX64(),
@@ -23,7 +25,7 @@ kotlin {
     }
 
     sourceSets {
-        val ktorVersion = "2.2.4"
+        val ktorVersion = "2.3.0"
         val korioVersion = "3.4.0"
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
@@ -62,7 +64,7 @@ kotlin {
                 implementation("junit:junit:$junitVersion")
                 implementation("androidx.test:core:1.5.0")
                 implementation("androidx.test.ext:junit:1.1.5")
-                implementation("org.robolectric:robolectric:4.2.1")
+                implementation("org.robolectric:robolectric:4.10")
                 implementation("org.testng:testng:7.4.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
             }
@@ -89,6 +91,39 @@ kotlin {
             iosSimulatorArm64Test.dependsOn(this)
         }
     }
+
+    publishing {
+        repositories {
+            maven {
+                url = uri("https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/")
+                credentials {
+                    username = "aws"
+                    // to generate password run `aws codeartifact get-authorization-token --region=us-east-1 --domain lerna-dev --query authorizationToken --output text`
+                    password = "update-password-here"
+                }
+            }
+        }
+        publications {
+            withType<MavenPublication> {
+                pom {
+                    packaging = "aar"
+                    name.set("Lerna MultiPlatform SDK")
+                    description.set("A multiplatform native implementation of Lerna SDK")
+                    url.set("https://lerna.ai")
+                    licenses {
+                        license {
+                            name.set("The Lerna license")
+                            url.set("https://lerna.ai/library/license")
+                        }
+                    }
+                    organization {
+                        name.set("Lerna Inc")
+                        url.set("https://lerna.ai/")
+                    }
+                }
+            }
+        }
+    }
 }
 
 android {
@@ -96,12 +131,17 @@ android {
     namespace = "ai.lerna.multiplatform"
     compileSdk = 33
     defaultConfig {
-        minSdk = 26
+        minSdk = 23
     }
-
+    compileOptions {
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            proguardFiles(
+                "proguard-rules.pro"
+            )
         }
         getByName("debug") {
             isMinifyEnabled = false
@@ -109,24 +149,5 @@ android {
     }
 }
 dependencies {
-    androidTestImplementation(project(mapOf("path" to ":shared")))
-}
-
-buildkonfig {
-    packageName = "ai.lerna.multiplatform"
-    objectName = "LernaConfig"
-    // exposeObjectWithName = "YourAwesomePublicConfig"
-
-    defaultConfigs {
-        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:3443/")
-        buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:7357/api/v2/")
-        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/debug/")
-        buildConfigField(FieldSpec.Type.BOOLEAN, "LOG_SENSOR_DATA", "true")
-    }
-    defaultConfigs("release") {
-        buildConfigField(FieldSpec.Type.STRING, "MPC_SERVER", "https://api.dev.lerna.ai:8081/")
-        buildConfigField(FieldSpec.Type.STRING, "FL_SERVER", "https://api.dev.lerna.ai:8080/api/v2/")
-        buildConfigField(FieldSpec.Type.STRING, "UPLOAD_PREFIX", "public/kmm/")
-        buildConfigField(FieldSpec.Type.BOOLEAN, "LOG_SENSOR_DATA", "false")
-    }
+    androidTestImplementation(project(mapOf("path" to ":lerna-kmm-sdk")))
 }

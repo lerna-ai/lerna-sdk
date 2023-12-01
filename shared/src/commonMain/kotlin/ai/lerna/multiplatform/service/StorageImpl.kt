@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.KMMPreference
 import ai.lerna.multiplatform.service.converter.DLArrayConverter
@@ -21,8 +22,49 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
 	private val preABTestEnabled = "LernaABTestEnabled"
+	private val preABTestPercent = "LernaABTestPercent"
+	private val prefMPCServer = "LernaMPC"
+	private val prefFLServer = "LernaFL"
+	private val prefUploadPrefix = "LernaUploadPrefix"
+	private val prefLogData = "LernaLog"
+	private val prefSensorDelay = "LernaSensorDelay"
+	private val prefTrainingDataThreshold = "LernaTrainingDataThreshold"
+	private val prefTrainingSessionsThreshold = "LernaTrainingSessionsThreshold"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
+
+	override fun getMPCServer(): String {
+		if (!sharedPref.contains(prefMPCServer)) {
+			return LernaConfig.MPC_SERVER
+		}
+		return sharedPref.getString(prefMPCServer)?:LernaConfig.MPC_SERVER
+	}
+
+	override fun putMPCServer(MPCServer: String) {
+		sharedPref.put(prefMPCServer, MPCServer)
+	}
+
+	override fun getFLServer(): String {
+		if (!sharedPref.contains(prefFLServer)) {
+			return LernaConfig.FL_SERVER
+		}
+		return sharedPref.getString(prefFLServer)?:LernaConfig.FL_SERVER
+	}
+
+	override fun putFLServer(FLServer: String) {
+		sharedPref.put(prefFLServer, FLServer)
+	}
+
+	override fun getUploadPrefix(): String {
+		if (!sharedPref.contains(prefUploadPrefix)) {
+			return LernaConfig.UPLOAD_PREFIX
+		}
+		return sharedPref.getString(prefUploadPrefix)?:LernaConfig.UPLOAD_PREFIX
+	}
+
+	override fun putUploadPrefix(uploadPrefix: String) {
+		sharedPref.put(prefUploadPrefix, uploadPrefix)
+	}
 
 	override fun getWeights(): GlobalTrainingWeights? {
 		if (!sharedPref.contains(prefWeightsID)) {
@@ -150,7 +192,51 @@ class StorageImpl(context: KMMContext) : Storage {
 		return sharedPref.getBool(preABTestEnabled, false)
 	}
 
+	override fun putABTestPer(abtestper: Float) {
+		sharedPref.put(preABTestPercent, abtestper)
+	}
+
+	override fun getABTestPer(): Float? {
+		if (!sharedPref.contains(preABTestPercent)) {
+			return null
+		}
+		return sharedPref.getFloat(preABTestPercent, 0.0f)
+	}
+
 	override fun putABTest(enabled: Boolean) {
 		sharedPref.put(preABTestEnabled, enabled)
+	}
+
+	override fun getLog(): Boolean {
+		if (!sharedPref.contains(prefLogData)) {
+			return LernaConfig.LOG_SENSOR_DATA
+		}
+		return sharedPref.getBool(prefLogData, LernaConfig.LOG_SENSOR_DATA)
+	}
+
+	override fun putLog(enabled: Boolean) {
+		sharedPref.put(prefLogData, enabled)
+	}
+
+	override fun getSensorInitialDelay(): Long {
+		if (!sharedPref.contains(prefSensorDelay)) {
+			return 0
+		}
+		return sharedPref.getInt(prefSensorDelay, 0).toLong()
+	}
+
+	override fun putSensorInitialDelay(delay: Int) {
+		sharedPref.put(prefSensorDelay, delay)
+	}
+
+	override fun getTrainingSessionsThreshold(): Int {
+		if (!sharedPref.contains(prefTrainingSessionsThreshold)) {
+			return 10
+		}
+		return sharedPref.getInt(prefTrainingSessionsThreshold, 10)
+	}
+
+	override fun putTrainingSessionsThreshold(threshold: Int) {
+		sharedPref.put(prefTrainingSessionsThreshold, threshold.toInt())
 	}
 }

@@ -1,6 +1,7 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
+import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
 import io.github.aakira.napier.Napier
 import io.ktor.util.date.*
@@ -18,6 +19,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	private val taskIdentifier = "ai.lerna.kmm.fl"
 
 	private val context = _context
+	private val uploadPrefix = StorageImpl(_context).getUploadPrefix()
 	private lateinit var flWorker: FLWorker
 	private var token = ""
 	private var uniqueID = -1L
@@ -60,7 +62,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 			printScheduledTasks()
 		} catch (e: Exception) {
 			Napier.e("=== Scheduler setup failed ===", throwable = e)
-			runBlocking {LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_scheduler.txt", e.stackTraceToString())}
+			runBlocking {LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, uploadPrefix,"error_scheduler.txt", e.stackTraceToString())}
 			runWorker(null)
 		}
 	}
@@ -75,7 +77,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 				scheduleRefreshTask()
 			} catch (e: Exception) {
 				Napier.d("=== Worker task failed ===")
-				LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString())
+				LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, uploadPrefix, "error_worker.txt", e.stackTraceToString())
 				bgTask?.setTaskCompletedWithSuccess(false)
 				scheduleRefreshTask()
 			}

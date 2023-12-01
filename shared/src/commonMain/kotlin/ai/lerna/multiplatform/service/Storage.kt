@@ -4,6 +4,18 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 
 interface Storage {
 
+	fun getMPCServer(): String
+
+	fun putMPCServer(MPCServer: String)
+
+	fun getFLServer(): String
+
+	fun putFLServer(FLServer: String)
+
+	fun getUploadPrefix(): String
+
+	fun putUploadPrefix(uploadPrefix: String)
+
 	fun getWeights(): GlobalTrainingWeights?
 
 	fun putWeights(trainingWeights: GlobalTrainingWeights?)
@@ -47,5 +59,21 @@ interface Storage {
 	fun getABTest(): Boolean
 
 	fun putABTest(enabled: Boolean)
+
+	fun getABTestPer(): Float?
+
+	fun putABTestPer(abtestper: Float)
+
+	fun getLog(): Boolean
+
+	fun putLog(enabled: Boolean)
+
+	fun getSensorInitialDelay(): Long
+
+	fun putSensorInitialDelay(delay: Int)
+
+	fun getTrainingSessionsThreshold(): Int
+
+	fun putTrainingSessionsThreshold(threshold: Int)
 
 }

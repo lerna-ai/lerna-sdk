@@ -18,6 +18,7 @@ class FLPeriodicWorker(_context: Context, workerParams: WorkerParameters) :
 	private val token = inputData.getString("token") ?: ""
 	private val context = _context
 	private val uniqueID = inputData.getLong("ID", 0L)
+	private val uploadPrefix = inputData.getString("uploadPrefix") ?: LernaConfig.UPLOAD_PREFIX
 	private val flWorker = FLWorker(token, uniqueID)
 	override fun startWork(): ListenableFuture<Result> {
 		return CallbackToFutureAdapter.getFuture { completer ->
@@ -30,7 +31,7 @@ class FLPeriodicWorker(_context: Context, workerParams: WorkerParameters) :
 				} catch (e: Exception) {
 					Napier.e("Lerna Worker - Failed $e")
 					withAndroidContext(context) {
-						LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, "error_worker.txt", e.stackTraceToString())
+						LogAwsUploaderImpl(token, FLWorker.FL_WORKER_VERSION).uploadFile(uniqueID, uploadPrefix,"error_worker.txt", e.stackTraceToString())
 					}
 					completer.set(Result.failure())
 				}

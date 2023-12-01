@@ -2,99 +2,224 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.UserID
+import ai.lerna.multiplatform.service.ConfigService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
+import ai.lerna.multiplatform.service.actionML.ActionMLService
+import ai.lerna.multiplatform.service.actionML.converter.RecommendationConverter
+import ai.lerna.multiplatform.service.actionML.dto.QueryRules
+import ai.lerna.multiplatform.service.actionML.dto.Result
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
-class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, ABTest: Double = 0.0) {
+class Lerna(context: KMMContext, token: String) {
 	private val _context = context
-	private val _customFeaturesSize = customFeaturesSize
-	private var _inputDataSize = 0
+	private var customFeaturesSize = 0
+	private var inputDataSize = 0
 	private var _token = token
 	private val uniqueID = UserID().getUniqueId(_context).toLong()
 	private val storageService = StorageImpl(_context)
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val flWorker = FLWorkerInterface(_context)
 	private val lernaService = LernaService(_context, _token, uniqueID)
+	private lateinit var actionMLService: ActionMLService
+	private var disabled = false
+	private var started = false
+	private var cleanupThreshold = 50000000L
+	private var recommendationConverter: RecommendationConverter? = null
 
 	init {
-		Napier.base(DebugAntilog())
-		Napier.d("Initialize library", null, "Lerna")
-		weightsManager.setupStorage(storageService)
-		storageService.putABTest(Random.nextFloat()<ABTest)
-		runBlocking {
-			weightsManager.updateWeights()
+		try {
+			Napier.base(DebugAntilog())
+			Napier.d("Initialize library", null, "Lerna")
+			disabled = false //just to be safe...
+			runBlocking {
+				ConfigService(_token, uniqueID).requestConfig()?.let { response ->
+					response.mpcServerUri?.let { storageService.putMPCServer(it) }
+					response.flServerUri?.let { storageService.putFLServer(it) }
+					response.uploadPrefix?.let { storageService.putUploadPrefix(it) }
+					response.uploadSensorData.let { storageService.putUploadDataEnabled(it) }
+					response.logSensorData.let { storageService.putLog(it) }
+					response.abTest.let {
+						if (storageService.getABTestPer() != it) {
+							storageService.putABTest(Random.nextFloat() < it)
+							storageService.putABTestPer(it)
+							Napier.d(
+								"I am choosing ${if (storageService.getABTest()) "" else "non "}randomly ABTest",
+								null,
+								"Lerna"
+							)
+						}
+					}
+					response.customFeaturesSize.let { customFeaturesSize = it }
+					response.inputDataSize.let {
+						inputDataSize = it
+						lernaService.initInputSize(it)
+					}
+					response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
+					response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
+					response.cleanupThreshold.let { cleanupThreshold = it.toLong() }
+				} ?: run {
+					Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
+					disabled = true
+				}
+			}
+			if (!disabled) {
+				actionMLService = ActionMLService(storageService.getFLServer(), _token)
+				weightsManager.setupStorage(storageService)
+				runBlocking {
+					weightsManager.updateWeights()
+				}
+				runFL()
+			}
+		} catch (e: Exception) {
+			Napier.d("The Lerna token cannot be validated, Library disabled with error ${e.message}", e, "Lerna")
+			disabled = true
 		}
-		runFL()
 	}
 
-	fun setInputSize(size: Int) {
-		if (_inputDataSize != 0) {
-			throw IllegalArgumentException("The input size already set.")
-		}
-		if (size <= 0) {
-			throw IllegalArgumentException("Invalid input size.")
-		}
-		_inputDataSize = size
-		lernaService.initInputSize(size)
+	fun setupRecommendationConverter(_recommendationConverter: RecommendationConverter) {
+		recommendationConverter = _recommendationConverter
 	}
 
 	fun start() {
-		runCleanUp()
-		initialize()
+		if (started) {
+			Napier.d("Start library error. Lerna already started!", null, "Lerna")
+			return
+		}
+		if (!disabled) {
+			runCleanUp()
+			initialize()
+			started = true
+		}
 	}
 
 	fun stop() {
-		lernaService.stop()
+		if (!started) {
+			Napier.d("Stop library error. Lerna already stopped!", null, "Lerna")
+			return
+		}
+		if (!disabled) {
+			lernaService.stop()
+			started = false
+		}
 	}
 
 	fun setUserIdentifier(userID: String) {
-		storageService.putUserIdentifier(userID)
+		if (!disabled) {
+			storageService.putUserIdentifier(userID)
+		}
 	}
 
-
-	fun captureEvent(modelName:String, positionID: String, successVal: String) {
-		lernaService.captureEvent(modelName, positionID, successVal)
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "") {
+		if (!disabled) {
+			lernaService.captureEvent(modelName, positionID, successVal, elementID)
+			//ToDo: Enable/disabled functionality
+			runBlocking {
+				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID)
+				Napier.d("Submit event ${resp.comment}", null, "Lerna")
+			}
+		}
 	}
 
 	fun updateFeature(values: FloatArray) {
-		if (values.size != _customFeaturesSize) {
-			throw IllegalArgumentException("Incorrect feature size")
+		if (!disabled) {
+			if (values.size != customFeaturesSize) {
+				Napier.d("Update feature error, Incorrect feature size", null, "Lerna")
+				return
+			}
+			lernaService.updateFeatures(values)
 		}
-		lernaService.updateFeatures(values)
 	}
 
 	fun addInputData(itemID: String, values: FloatArray, positionID: String) {
-		if (values.size != _inputDataSize) {
-			throw IllegalArgumentException("Incorrect input data size")
+		if (!disabled) {
+			if (values.size != inputDataSize) {
+				Napier.d("Add input data error, Incorrect input data size", null, "Lerna")
+				return
+			}
+			if (itemID.contains("|")) {
+				Napier.d("Add input data error, itemID should not contains vertical bar character (|)", null, "Lerna")
+				return
+			}
+			lernaService.addInputData(itemID, values, positionID, disabled)
 		}
-		lernaService.addInputData(itemID, values, positionID)
 	}
 
-	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null): String? {
-		return lernaService.triggerInference(modelName, positionID, predictionClass)
+	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int = 1): String? {
+		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
+	}
+
+	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null, numElements: Int = 1): String? {
+		lernaService.clearInputData(positionID)
+		inputData.forEach { (itemID, values) -> addInputData(itemID, values, positionID) }
+		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
 	}
 
 	fun setAutoInference(modelName: String, setting: String) {
-		lernaService.setAutoInference(modelName, setting)
+		if (!disabled) {
+			lernaService.setAutoInference(modelName, setting)
+		}
 	}
 
 	fun enableUserDataUpload(enable: Boolean) {
-		storageService.putUploadDataEnabled(enable)
+		if (!disabled) {
+			storageService.putUploadDataEnabled(enable)
+		}
 	}
 
-	fun refresh(modelName:String) {
-		lernaService.refresh(modelName)
+	fun refresh(modelName: String) {
+		if (!disabled) {
+			lernaService.refresh(modelName)
+		}
+	}
+
+	fun getRecommendations(modelName: String): List<Any> {
+		return getRecommendations(
+			modelName = modelName,
+			number = null,
+			blacklistItems = null,
+			rules = null
+		)
+	}
+
+	fun getRecommendations(modelName: String, number: Int?): List<Any> {
+		return getRecommendations(
+			modelName = modelName,
+			number = number,
+			blacklistItems = null,
+			rules = null
+		)
+	}
+
+	fun getRecommendations(modelName: String, number: Int?, blacklistItems: List<String>?, rules: List<QueryRules>?): List<Any> {
+		var response: List<Result> = mutableListOf()
+		runBlocking {
+			actionMLService.getUserItems(
+				engineID = modelName,
+				num = number,
+				user = storageService.getUserIdentifier() ?: uniqueID.toString(),
+				blacklistItems = blacklistItems,
+				rules = rules
+			).result.let {
+				if (!it.isNullOrEmpty()) {
+					response = it
+				}
+			}
+		}
+		if (recommendationConverter != null) {
+			return response.map { recommendationConverter!!.convert(it) }
+		}
+		return response
 	}
 
 	private fun initialize() {
-		if (_customFeaturesSize > 0) {
-			lernaService.initCustomFeatureSize(_customFeaturesSize)
+		if (customFeaturesSize > 0) {
+			lernaService.initCustomFeatureSize(customFeaturesSize)
 		}
 		lernaService.start()
 	}
@@ -108,6 +233,6 @@ class Lerna(context: KMMContext, token: String, customFeaturesSize: Int = 0, ABT
 	}
 
 	private suspend fun runCleanUpWithContext() {
-		FileUtil().cleanUp(storageService.getSessionID())
+		FileUtil().cleanUp(storageService.getSessionID(), cleanupThreshold)
 	}
 }
