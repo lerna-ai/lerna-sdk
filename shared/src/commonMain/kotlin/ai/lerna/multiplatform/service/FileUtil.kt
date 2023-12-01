@@ -7,7 +7,7 @@ import com.soywiz.korio.stream.writeString
 import io.github.aakira.napier.Napier
 
 class FileUtil {
-	private val LIN_ACCELARATOR_STD_COLUMN = 19
+	private val LIN_ACCELARATOR_STD_COLUMN = 2
 
 	private fun isNotValidLogs(lines: List<String>): Boolean {
 		return try {

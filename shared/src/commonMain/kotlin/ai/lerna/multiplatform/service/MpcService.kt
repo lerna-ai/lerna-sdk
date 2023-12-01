@@ -20,6 +20,7 @@ class MpcService(host: String, _token: String) {
 			json(Json {
 				prettyPrint = true
 				isLenient = true
+				ignoreUnknownKeys = true
 			})
 		}
 	}

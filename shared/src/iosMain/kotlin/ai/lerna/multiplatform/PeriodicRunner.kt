@@ -10,13 +10,13 @@ import kotlin.reflect.KSuspendFunction0
 
 actual class PeriodicRunner actual constructor() {
 	private var runPeriodicFlag = false
-	actual fun run(context: KMMContext, runPeriodic: KSuspendFunction0<Unit>) {
+	actual fun run(context: KMMContext, initDelay: Long, runPeriodic: KSuspendFunction0<Unit>) {
 		runPeriodicFlag = true
 		CoroutineScope(Dispatchers.Default).launch {
-			delay(2000)
+			delay(initDelay)
 			while (runPeriodicFlag) {
 				runPeriodic()
-				delay(2000)
+				delay(500)
 			}
 		}
 	}
