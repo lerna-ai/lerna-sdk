@@ -345,4 +345,252 @@ internal class ModelDataTest {
 					"5,2023-03-01_14.57.54,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,54.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1\n" +
 					"5,2023-03-01_14.57.55,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,55.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1\n", resultWithMetaData)
 	}
+
+	@Test
+	fun arrayDeque_getStd() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getStd(array)
+		// Then
+		assertEquals(1.4142135f, result)
+	}
+
+	@Test
+	fun arrayDeque_getStd_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getStd(array)
+		// Then
+		assertEquals(0f, result)
+	}
+
+	@Test
+	fun arrayDeque_getMad() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getMad(array)
+		// Then
+		assertEquals(3f, result.first)
+		assertEquals(0f, result.second)
+	}
+
+	@Test
+	fun arrayDeque_getMad_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getMad(array)
+		// Then
+		assertEquals(0f, result.first)
+		assertEquals(0f, result.second)
+	}
+
+	@Test
+	fun arrayDeque_getEnergy() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getEnergy(array)
+		// Then
+		assertEquals(11f, result)
+	}
+
+	@Test
+	fun arrayDeque_getEnergy_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getEnergy(array)
+		// Then
+		assertEquals(Float.NaN, result)
+	}
+
+	@Test
+	fun arrayDeque_getRange() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getRange(array)
+		// Then
+		assertEquals(4f, result)
+	}
+
+	@Test
+	fun arrayDeque_getRange_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getRange(array)
+		// Then
+		assertEquals(0f, result)
+	}
+
+	@Test
+	fun arrayDeque_getIqr() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getIqr(array)
+		// Then
+		assertEquals(2f, result)
+	}
+
+	@Test
+	fun arrayDeque_getIqr_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getIqr(array)
+		// Then
+		assertEquals(0f, result)
+	}
+
+	@Test
+	fun arrayDeque_getSkewnessKurtosis() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getSkewnessKurtosis(array)
+		// Then
+		assertEquals(0f, result.first)
+		assertEquals(10.624999f, result.second)
+	}
+
+	@Test
+	fun arrayDeque_getSkewnessKurtosis_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getSkewnessKurtosis(array)
+		// Then
+		assertEquals(0f, result.first)
+		assertEquals(0f, result.second)
+	}
+
+	@Test
+	fun arrayDeque_getFft() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getFft(array)
+		// Then
+		assertEquals(array.size, result.size)
+		assertEquals(ArrayDeque(listOf(15.0F, 9.042651F, 3.6055512F, 2.8688755F, 3.0F)), result)
+	}
+
+	@Test
+	fun arrayDeque_getFft_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getFft(array)
+		// Then
+		assertEquals(0, result.size)
+		assertEquals(ArrayDeque<Float>(0), result)
+	}
+
+	@Test
+	fun arrayDeque_getNumPeaks() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getNumPeaks(array)
+		// Then
+		assertEquals(0, result)
+	}
+
+	@Test
+	fun arrayDeque_getNumPeaks_withTwoPeaks() {
+		// Given
+		val array = ArrayDeque(listOf(1F, 2F, 1F, 4F, 3F))
+		// When
+		val result = modelData.getNumPeaks(array)
+		// Then
+		assertEquals(2, result)
+	}
+
+	@Test
+	fun arrayDeque_getNumPeaks_empty() {
+		// Given
+		val array = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getNumPeaks(array)
+		// Then
+		assertEquals(0, result)
+	}
+
+	@Test
+	fun getAverageResultant() {
+		// Given
+		val x = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val y = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val z = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getAverageResultant(x, y, z)
+		// Then
+		assertEquals(5.196152f, result)
+	}
+
+	@Test
+	fun getAverageResultant_different_arraySize() {
+		// Given
+		val x = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val y = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F, 6F))
+		val z = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getAverageResultant(x, y, z)
+		// Then
+		assertEquals(5.196152f, result)
+	}
+
+	@Test
+	fun getAverageResultant_empty() {
+		// Given
+		val x = ArrayDeque<Float>(0)
+		val y = ArrayDeque<Float>(0)
+		val z = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getAverageResultant(x, y, z)
+		// Then
+		assertEquals(0f, result)
+	}
+
+	@Test
+	fun getSMA() {
+		// Given
+		val x = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val y = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val z = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getSMA(x, y, z)
+		// Then
+		assertEquals(9.0f, result)
+	}
+
+	@Test
+	fun getSMA_different_arraySize() {
+		// Given
+		val x = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		val y = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F, 6F))
+		val z = ArrayDeque(listOf(1F, 2F, 3F, 4F, 5F))
+		// When
+		val result = modelData.getSMA(x, y, z)
+		// Then
+		assertEquals(9.5f, result)
+	}
+
+	@Test
+	fun getSMA_empty() {
+		// Given
+		val x = ArrayDeque<Float>(0)
+		val y = ArrayDeque<Float>(0)
+		val z = ArrayDeque<Float>(0)
+		// When
+		val result = modelData.getSMA(x, y, z)
+		// Then
+		assertEquals(0f, result)
+	}
 }
