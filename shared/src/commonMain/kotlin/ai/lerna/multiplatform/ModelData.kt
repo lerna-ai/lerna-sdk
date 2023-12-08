@@ -206,6 +206,9 @@ class ModelData(_historySize: Int = 1) {
 	}
 
 	private fun ArrayDeque<Float>.std(): Float {
+		if (this.size == 0) {
+			return 0.0f
+		}
 		val mean = this.average().toFloat()
 		return this.fold(0.0) { accumulator, next -> accumulator + (next - mean) * (next - mean) }
 			.let { sqrt(it / this.size).toFloat() }
@@ -260,11 +263,11 @@ class ModelData(_historySize: Int = 1) {
 		return (this.maxOrNull() ?: 0.0f) - (this.minOrNull() ?: 0.0f)
 	}
 
-	private fun getAverageResultant(x: ArrayDeque<Float>, y: ArrayDeque<Float>, z: ArrayDeque<Float>): Float {
+	internal fun getAverageResultant(x: ArrayDeque<Float>, y: ArrayDeque<Float>, z: ArrayDeque<Float>): Float {
 		if (x.size == 0 || y.size == 0 || z.size == 0) {
 			return 0.0f
 		}
-		val n = x.size
+		val n = listOf(x.size, y.size, z.size).min()
 		var sum = 0.0
 
 		for (i in 0 until n) {
@@ -282,7 +285,7 @@ class ModelData(_historySize: Int = 1) {
 	/**
 	 * Compute Signal magnitude area equivalent to sum of absolute value mean across three axis
 	 */
-	private fun getSMA(x: ArrayDeque<Float>, y: ArrayDeque<Float>, z: ArrayDeque<Float>): Float {
+	internal fun getSMA(x: ArrayDeque<Float>, y: ArrayDeque<Float>, z: ArrayDeque<Float>): Float {
 		if (x.size == 0 || y.size == 0 || z.size == 0) {
 			return 0.0f
 		}
@@ -311,10 +314,13 @@ class ModelData(_historySize: Int = 1) {
 	 * and unbiased estimator formulae
 	 */
 	private fun ArrayDeque<Float>.skewnessKurtosis(): Pair<Float, Float> {
+		if (this.size < 4) {
+			return Pair(0.0f, 0.0f)
+		}
 		val mean = this.average().toFloat()
 		val std = this.std()
 		val size = this.size
-		if (std.equals(0.0f) || size < 4) {
+		if (std.equals(0.0f)) {
 			return Pair(0.0f, 0.0f)
 		}
 		val skewness =
@@ -328,6 +334,9 @@ class ModelData(_historySize: Int = 1) {
 	}
 
 	private fun ArrayDeque<Float>.fft(): ArrayDeque<Float> {
+		if (this.size == 0) {
+			return this
+		}
 		return fft.fftReal(this)
 	}
 
@@ -355,45 +364,48 @@ class ModelData(_historySize: Int = 1) {
 	}
 
 	internal fun setHistory(time: String = DateUtil().now()) {
-		linAccelerationHistoryX.addBoxed(linAcceleration[0])
-		linAccelerationHistoryY.addBoxed(linAcceleration[1])
-		linAccelerationHistoryZ.addBoxed(linAcceleration[2])
+		try {
+			linAccelerationHistoryX.addBoxed(linAcceleration[0])
+			linAccelerationHistoryY.addBoxed(linAcceleration[1])
+			linAccelerationHistoryZ.addBoxed(linAcceleration[2])
 
-		gyroscopeHistoryX.addBoxed(gyroscope[0])
-		gyroscopeHistoryY.addBoxed(gyroscope[1])
-		gyroscopeHistoryZ.addBoxed(gyroscope[2])
+			gyroscopeHistoryX.addBoxed(gyroscope[0])
+			gyroscopeHistoryY.addBoxed(gyroscope[1])
+			gyroscopeHistoryZ.addBoxed(gyroscope[2])
 
-		magneticFieldHistoryX.addBoxed(magneticField[0])
-		magneticFieldHistoryY.addBoxed(magneticField[1])
-		magneticFieldHistoryZ.addBoxed(magneticField[2])
+			magneticFieldHistoryX.addBoxed(magneticField[0])
+			magneticFieldHistoryY.addBoxed(magneticField[1])
+			magneticFieldHistoryZ.addBoxed(magneticField[2])
 
-		if (magneticFieldHistoryX.isNotEmpty()) {
-			magneticFieldMean = arrayOf(
-				magneticFieldHistoryX.average().toFloat(),
-				magneticFieldHistoryY.average().toFloat(),
-				magneticFieldHistoryZ.average().toFloat()
-			)
-			magneticFieldStd = arrayOf(
-				magneticFieldHistoryX.std(),
-				magneticFieldHistoryY.std(),
-				magneticFieldHistoryZ.std()
-			)
+			if (magneticFieldHistoryX.isNotEmpty()) {
+				magneticFieldMean = arrayOf(
+					magneticFieldHistoryX.average().toFloat(),
+					magneticFieldHistoryY.average().toFloat(),
+					magneticFieldHistoryZ.average().toFloat()
+				)
+				magneticFieldStd = arrayOf(
+					magneticFieldHistoryX.std(),
+					magneticFieldHistoryY.std(),
+					magneticFieldHistoryZ.std()
+				)
+			}
+
+			ambientLightHistory.addBoxed(ambientLight)
+			if (ambientLightHistory.isNotEmpty()) {
+				ambientLightMean = ambientLightHistory.average().toFloat()
+				ambientLightStd = ambientLightHistory.std()
+			}
+
+			linAccelerationHistoryXFft = linAccelerationHistoryX.fft()
+			linAccelerationHistoryYFft = linAccelerationHistoryY.fft()
+			linAccelerationHistoryZFft = linAccelerationHistoryZ.fft()
+			gyroscopeHistoryXFft = gyroscopeHistoryX.fft()
+			gyroscopeHistoryYFft = gyroscopeHistoryY.fft()
+			gyroscopeHistoryZFft = gyroscopeHistoryZ.fft()
+
+			modelDataHistory.addBoxed("$time,${toCsv()}")
+		} catch (_: Exception) {
 		}
-
-		ambientLightHistory.addBoxed(ambientLight)
-		if (ambientLightHistory.isNotEmpty()) {
-			ambientLightMean = ambientLightHistory.average().toFloat()
-			ambientLightStd = ambientLightHistory.std()
-		}
-
-		linAccelerationHistoryXFft = linAccelerationHistoryX.fft()
-		linAccelerationHistoryYFft = linAccelerationHistoryY.fft()
-		linAccelerationHistoryZFft = linAccelerationHistoryZ.fft()
-		gyroscopeHistoryXFft = gyroscopeHistoryX.fft()
-		gyroscopeHistoryYFft = gyroscopeHistoryY.fft()
-		gyroscopeHistoryZFft = gyroscopeHistoryZ.fft()
-
-		modelDataHistory.addBoxed("$time,${toCsv()}")
 	}
 
 	internal fun historyToCsv(): String {
@@ -420,41 +432,46 @@ class ModelData(_historySize: Int = 1) {
 		val doubleArray: MutableList<Float> = ArrayList()
 		//doubleArray.add(proximity)
 
-		val historyDeques = listOf(
-			linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ,
-			gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ,
-			linAccelerationHistoryXFft, linAccelerationHistoryYFft, linAccelerationHistoryZFft,
-			gyroscopeHistoryXFft, gyroscopeHistoryYFft, gyroscopeHistoryZFft
-		)
+		try {
+			val historyDeques = listOf(
+				linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ,
+				gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ,
+				linAccelerationHistoryXFft, linAccelerationHistoryYFft, linAccelerationHistoryZFft,
+				gyroscopeHistoryXFft, gyroscopeHistoryYFft, gyroscopeHistoryZFft
+			)
 
-		// NEW: Total Num of features for Accelerometer + Gyroscope now = 12*12 + 6 = 150
-		for (deque in historyDeques) {
+			// NEW: Total Num of features for Accelerometer + Gyroscope now = 12*12 + 6 = 150
+			for (deque in historyDeques) {
 
-			// Return Median and Median Absolute Deviation as Pair<Float, Float> for efficiency
-			val (median, mad) = deque.mad()
-			val (skewness, kurtosis) = deque.skewnessKurtosis()
+				// Return Median and Median Absolute Deviation as Pair<Float, Float> for efficiency
+				val (median, mad) = deque.mad()
+				val (skewness, kurtosis) = deque.skewnessKurtosis()
 
-			doubleArray.add(if (deque.size == 0) 0.0f else deque.average().toFloat())
-			doubleArray.add(if (deque.size == 0) 0.0f else deque.std())
-			doubleArray.add(deque.minOrNull() ?: 0.0f)
-			doubleArray.add(deque.maxOrNull() ?: 0.0f)
-			doubleArray.add(deque.range())
-			doubleArray.add(median)
-			doubleArray.add(mad)
-			doubleArray.add(deque.numPeaks().toFloat())
-			doubleArray.add(deque.iqr())
-			doubleArray.add(if (deque.size == 0) 0.0f else deque.energy())
-			doubleArray.add(skewness)
-			doubleArray.add(kurtosis)
+				doubleArray.add(if (deque.size == 0) 0.0f else deque.average().toFloat())
+				doubleArray.add(if (deque.size == 0) 0.0f else deque.std())
+				doubleArray.add(deque.minOrNull() ?: 0.0f)
+				doubleArray.add(deque.maxOrNull() ?: 0.0f)
+				doubleArray.add(deque.range())
+				doubleArray.add(median)
+				doubleArray.add(mad)
+				doubleArray.add(deque.numPeaks().toFloat())
+				doubleArray.add(deque.iqr())
+				doubleArray.add(if (deque.size == 0) 0.0f else deque.energy())
+				doubleArray.add(skewness)
+				doubleArray.add(kurtosis)
+			}
+
+			doubleArray.add(getSMA(linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ))
+			doubleArray.add(getAverageResultant(linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ))
+			doubleArray.add(getSMA(linAccelerationHistoryXFft, linAccelerationHistoryYFft, linAccelerationHistoryZFft))
+
+			doubleArray.add(getSMA(gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ))
+			doubleArray.add(getAverageResultant(gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ))
+			doubleArray.add(getSMA(gyroscopeHistoryXFft, gyroscopeHistoryYFft, gyroscopeHistoryZFft))
+		} catch (_: Exception) {
+			// If any calculation failed, fill the rest values with zero
+			for (i in doubleArray.size..149) doubleArray.add(0.0f)
 		}
-
-		doubleArray.add(getSMA(linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ))
-		doubleArray.add(getAverageResultant(linAccelerationHistoryX, linAccelerationHistoryY, linAccelerationHistoryZ))
-		doubleArray.add(getSMA(linAccelerationHistoryXFft, linAccelerationHistoryYFft, linAccelerationHistoryZFft))
-
-		doubleArray.add(getSMA(gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ))
-		doubleArray.add(getAverageResultant(gyroscopeHistoryX, gyroscopeHistoryY, gyroscopeHistoryZ))
-		doubleArray.add(getSMA(gyroscopeHistoryXFft, gyroscopeHistoryYFft, gyroscopeHistoryZFft))
 
 
 		doubleArray.add(magneticField[0])
@@ -503,4 +520,14 @@ class ModelData(_historySize: Int = 1) {
 	internal fun isHistoryNonEmpty(): Boolean {
 		return modelDataHistory.isNotEmpty()
 	}
+
+	// Help methods for test purposes
+	internal fun getStd(array: ArrayDeque<Float>): Float = array.std()
+	internal fun getMad(array: ArrayDeque<Float>): Pair<Float, Float> = array.mad()
+	internal fun getEnergy(array: ArrayDeque<Float>): Float = array.energy()
+	internal fun getRange(array: ArrayDeque<Float>): Float = array.range()
+	internal fun getIqr(array: ArrayDeque<Float>): Float = array.iqr()
+	internal fun getSkewnessKurtosis(array: ArrayDeque<Float>): Pair<Float, Float> = array.skewnessKurtosis()
+	internal fun getFft(array: ArrayDeque<Float>): ArrayDeque<Float> = array.fft()
+	internal fun getNumPeaks(array: ArrayDeque<Float>): Int = array.numPeaks()
 }
