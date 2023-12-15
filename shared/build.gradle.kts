@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ai.lerna.multiplatform"
-version = "0.0.5"
+version = "0.0.6"
 
 kotlin {
     android {
