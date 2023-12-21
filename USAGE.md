@@ -314,6 +314,7 @@ You can trigger the on demand inference with input data with the following call:
 lerna.triggerInference(Map inputDataMap, String modelName, String positionID (optional), String predictionClass (optional), int numElements (optional default 1))
 ```
 <div style="page-break-after: always;"></div>
+
 ### Refreshing session
 
 You need to inform Lerna when the user refreshes the session; for example, when they request more items. You can use the following call:
