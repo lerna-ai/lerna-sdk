@@ -134,7 +134,7 @@ dependencies {
 
 ### Declaring the Lerna SDK instance
 
-Use the following line to declare the Lerna instance. This declaration should be added in the class that needs to interact with the Library. For example, for a single activity apps, you can add it on top of your main activity class.
+Use the following line to declare the Lerna instance. This declaration should be added in the class that needs to interact with the Library. For example, for single activity apps, you can add it on top of your main activity class.
 
 ```bash
 private lateinit var lerna: Lerna
@@ -142,7 +142,7 @@ private lateinit var lerna: Lerna
 
 ### Initialization
 
-To initialize the Lerna SDK, first ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for a single activity apps, you can add it on top of your onCreate method of your main activity class.
+To initialize the Lerna SDK, first ensure that you have a valid token for an ML Application. Add the following lines on the entry point of your respective class. For example, for single activity apps, you can add it on top of your onCreate method of your main activity class.
 
 ```bash
 lerna = Lerna(
@@ -274,7 +274,7 @@ You can configure the auto inference mechanism with the following call:
 lerna.setAutoInference(String modelName, String setting)
 ```
 
-The `setting` parameter should be have values `on` or `off`.
+The `setting` parameter should have either the value `on` or `off`.
 
 > NOTE:
 >
