@@ -197,6 +197,9 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun getRecommendations(modelName: String, number: Int?, blacklistItems: List<String>?, rules: List<QueryRules>?): List<Any> {
+		if (disabled) {
+			return listOf()
+		}
 		var response: List<Result> = mutableListOf()
 		runBlocking {
 			actionMLService.getUserItems(
