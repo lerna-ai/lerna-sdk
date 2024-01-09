@@ -37,22 +37,22 @@ kotlin {
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
-                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-                implementation("io.ktor:ktor-network:$ktorVersion")
-                implementation("io.ktor:ktor-network-tls:$ktorVersion")
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                implementation("io.github.aakira:napier:2.6.1")
-                implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
-                implementation("com.soywiz.korlibs.krypto:krypto:$korioVersion")
-                runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
+                implementation(libs.multik.core)
+                implementation(libs.multik.kotlin)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.network)
+                implementation(libs.ktor.network.tls)
+                implementation(libs.kotlin.stdlib.common)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.napier)
+                implementation(libs.korio)
+                implementation(project(":advancedml"))
+                runtimeOnly(libs.ktor.utils)
             }
         }
         val commonTest by getting {
@@ -62,20 +62,19 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("androidx.work:work-runtime-ktx:2.8.1")
-                implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.androidx.work.runtime.ktx)
+                implementation(libs.androidx.concurrent.futures.ktx)
             }
         }
         val androidUnitTest by getting {
-            val junitVersion = "4.13.2"
             dependencies {
-                implementation("junit:junit:$junitVersion")
-                implementation("androidx.test:core:1.5.0")
-                implementation("androidx.test.ext:junit:1.1.5")
-                implementation("org.robolectric:robolectric:4.10")
-                implementation("org.testng:testng:7.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+                implementation(libs.junit)
+                implementation(libs.androidx.core)
+                implementation(libs.androidx.junit)
+                implementation(libs.robolectric.v410)
+                implementation(libs.testng)
+                implementation(libs.kotlinx.coroutines.android)
             }
         }
         val iosX64Main by getting
@@ -87,7 +86,7 @@ kotlin {
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
-                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+                implementation(libs.ktor.client.darwin)
             }
         }
         val iosX64Test by getting
@@ -165,5 +164,5 @@ android {
     }
 }
 dependencies {
-    androidTestImplementation(project(mapOf("path" to ":lerna-kmm-sdk")))
+    implementation(project(":advancedml"))
 }

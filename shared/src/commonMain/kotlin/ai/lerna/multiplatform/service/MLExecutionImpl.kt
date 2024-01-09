@@ -3,7 +3,7 @@ package ai.lerna.multiplatform.service
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import ai.lerna.multiplatform.utils.CalculationUtil
-import com.soywiz.korio.file.std.tempVfs
+import korlibs.io.file.std.tempVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.stat.abs

@@ -1,0 +1,65 @@
+[versions]
+agp = "8.2.2"
+concurrentFuturesKtx = "1.1.0"
+core = "1.5.0"
+coroutinesVersion = "1.6.4"
+junit = "1.1.5"
+junitVersion = "4.13.2"
+korioVersion = "4.0.10"
+kotlin = "1.9.10"
+compose = "1.5.4"
+compose-compiler = "1.5.3"
+compose-material3 = "1.1.2"
+androidx-activityCompose = "1.8.0"
+kotlinStdlibCommon = "1.9.22"
+kotlinxSerializationJson = "1.4.1"
+ktorVersion = "2.3.0"
+multikKotlin = "0.2.3"
+kotlinxDatetime = "0.6.0"
+napier = "2.7.1"
+robolectric = "4.10"
+robolectric-robolectric = "4.10"
+testng = "7.4.0"
+workRuntimeKtx = "2.8.1"
+
+[libraries]
+androidx-concurrent-futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "concurrentFuturesKtx" }
+androidx-core = { module = "androidx.test:core", version.ref = "core" }
+androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junit" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+junit = { module = "junit:junit", version.ref = "junitVersion" }
+korio = { module = "com.soywiz.korlibs.korio:korio", version.ref = "korioVersion" }
+kotlin-stdlib-common = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlinStdlibCommon" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
+compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
+compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutinesVersion" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesVersion" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorVersion" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorVersion" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorVersion" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktorVersion" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorVersion" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktorVersion" }
+ktor-network-tls = { module = "io.ktor:ktor-network-tls", version.ref = "ktorVersion" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorVersion" }
+ktor-utils = { module = "io.ktor:ktor-utils", version.ref = "ktorVersion" }
+multik-core = { module = "org.jetbrains.kotlinx:multik-core", version.ref = "multikKotlin" }
+multik-kotlin = { module = "org.jetbrains.kotlinx:multik-kotlin", version.ref = "multikKotlin" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+napier = { module = "io.github.aakira:napier", version.ref = "napier" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+robolectric-v410 = { module = "org.robolectric:robolectric", version.ref = "robolectric-robolectric" }
+testng = { module = "org.testng:testng", version.ref = "testng" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }

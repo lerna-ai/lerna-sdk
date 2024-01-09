@@ -2,7 +2,7 @@ package ai.lerna.multiplatform.service
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.soywiz.korio.android.withAndroidContext
+import korlibs.io.android.withAndroidContext
 import kotlinx.coroutines.runBlocking
 import org.junit.runner.RunWith
 import kotlin.test.Test

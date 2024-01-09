@@ -13,6 +13,8 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Lerna_KMM_SDK"
-include(":shared")
+rootProject.name = "Lerna_SDK"
+include(":shared", ":advancedml")
 project(":shared").name = "lerna-kmm-sdk"
+
+project(":advancedml").projectDir = File(settingsDir, "../kotlindnn/advancedml")

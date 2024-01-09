@@ -10,4 +10,6 @@ class GlobalTrainingWeightsItem {
 	var mlName // database lerna_ml.model
 			: String? = null
 	var accuracy: Float? = null
+
+	var weightsMultiKv2: Map<String, AdvancedMLItem>? = null
 }
