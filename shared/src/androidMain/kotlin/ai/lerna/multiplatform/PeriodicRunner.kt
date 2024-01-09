@@ -1,7 +1,7 @@
 package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
-import com.soywiz.korio.android.withAndroidContext
+import korlibs.io.android.withAndroidContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

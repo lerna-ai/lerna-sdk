@@ -6,7 +6,7 @@ import ai.lerna.multiplatform.service.actionML.dto.ItemRequest
 import ai.lerna.multiplatform.service.actionML.dto.QueryResponse
 import ai.lerna.multiplatform.service.actionML.dto.QueryRules
 import ai.lerna.multiplatform.service.actionML.dto.UserRequest
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

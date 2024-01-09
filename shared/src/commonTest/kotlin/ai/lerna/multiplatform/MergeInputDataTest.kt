@@ -1,6 +1,6 @@
 package ai.lerna.multiplatform
 
-import com.soywiz.kds.toFloatList
+import korlibs.datastructure.toFloatList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals

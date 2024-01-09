@@ -1,9 +1,9 @@
 package ai.lerna.multiplatform.service
 
-import com.soywiz.korio.file.VfsOpenMode
-import com.soywiz.korio.file.std.tempVfs
-import com.soywiz.korio.lang.FileNotFoundException
-import com.soywiz.korio.stream.writeString
+import korlibs.io.file.VfsOpenMode
+import korlibs.io.file.std.tempVfs
+import korlibs.io.lang.FileNotFoundException
+import korlibs.io.stream.writeString
 import io.github.aakira.napier.Napier
 
 class FileUtil {
