@@ -9,8 +9,9 @@ group = "ai.lerna.multiplatform"
 version = "0.0.6"
 
 kotlin {
-    android {
+    androidTarget {
         publishLibraryVariants("release", "debug")
+        withSourcesJar(publish = false)
     }
 
     listOf(
@@ -95,6 +96,12 @@ kotlin {
     publishing {
         repositories {
             maven {
+                if (project.hasProperty("repoURL")) {
+                        println(project.properties["repoURL"])
+                }
+                // Release Repo
+                //url = uri("https://lerna-ai-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/release/")
+                // Development Repo
                 url = uri("https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/")
                 credentials {
                     username = "aws"
