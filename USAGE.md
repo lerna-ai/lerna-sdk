@@ -104,7 +104,7 @@ Update your repositories configuration on the `build.gradle` file by adding our 
 	repositories {
 		...
 		maven {
-			url 'https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/'
+			url 'https://lerna-ai-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/release/'
 			credentials {
 				username "aws"
 				password System.env.LERNA_CODEARTIFACT_AUTH_TOKEN
@@ -117,7 +117,7 @@ Get the authorization token to access the repository by running the command
 ```bash
 export LERNA_CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token \
 	--profile lerna \
-	--domain lerna-dev \
+	--domain lerna-ai \
 	--domain-owner 470158444867 \
 	--region us-east-1 \
 	--query authorizationToken \
