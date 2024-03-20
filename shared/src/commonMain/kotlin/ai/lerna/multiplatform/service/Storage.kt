@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.LernaConfig
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 
 interface Storage {
@@ -75,5 +76,13 @@ interface Storage {
 	fun getTrainingSessionsThreshold(): Int
 
 	fun putTrainingSessionsThreshold(threshold: Int)
+
+	fun getActionMLEncryption(): Boolean
+
+	fun putActionMLEncryption(enabled: Boolean)
+
+	fun getEncryptionKey(): String?
+
+	fun putEncryptionKey(encryptionKey: String)
 
 }
