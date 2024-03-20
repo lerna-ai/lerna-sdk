@@ -25,4 +25,6 @@ class LernaAppConfig {
 	val trainingSessionsThreshold: Int = 10
 
 	val cleanupThreshold: Int = 50000000
+
+	var actionMLEncryption: Boolean = false
 }

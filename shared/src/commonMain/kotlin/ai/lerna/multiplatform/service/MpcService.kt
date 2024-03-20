@@ -1,5 +1,6 @@
 package ai.lerna.multiplatform.service
 
+import ai.lerna.multiplatform.service.dto.MpcEncryption
 import ai.lerna.multiplatform.service.dto.MpcRequest
 import ai.lerna.multiplatform.service.dto.MpcResponse
 import io.github.aakira.napier.Napier
@@ -49,6 +50,23 @@ class MpcService(host: String, _token: String) {
 			return MpcResponse()
 		}
 		Napier.d("LernaFLService - MPC Response: ${response.bodyAsText()}", null, "Lerna")
+		return response.body()
+	}
+
+	suspend fun getEncryptionKey(): MpcEncryption {
+		val response = client.get("$mpcHost/mpc/encryptionKey?token=$token")
+		if (response.status != HttpStatusCode.OK) {
+			Napier.d(
+				"LernaMPCService - MPC Encryption Response error: ${response.bodyAsText()}",
+				null,
+				"Lerna"
+			)
+			return MpcEncryption()
+		}
+		if (response.bodyAsText().isEmpty()) {
+			Napier.d("LernaMPCService - MPC Encryption Response empty body", null, "Lerna")
+			return MpcEncryption()
+		}
 		return response.body()
 	}
 }
