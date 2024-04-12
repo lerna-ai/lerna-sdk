@@ -1,10 +1,11 @@
 package ai.lerna.multiplatform.service
 
 import korlibs.io.file.VfsOpenMode
-import korlibs.io.file.std.tempVfs
-import korlibs.io.lang.FileNotFoundException
+import korlibs.io.file.std.applicationDataVfs
 import korlibs.io.stream.writeString
 import io.github.aakira.napier.Napier
+//import korlibs.io.lang.FileNotFoundException
+import korlibs.io.lang.IOException
 
 class FileUtil {
 	private val LIN_ACCELARATOR_STD_COLUMN = 2
@@ -18,17 +19,18 @@ class FileUtil {
 	}
 
 	suspend fun mergeFiles(storage: Storage, fileName: String, filesPrefix: String): Long {
+
 		var fileSize = 0L
 		try {
 			val osw = try {
-				tempVfs[fileName].open(VfsOpenMode.WRITE)
-			} catch (e: FileNotFoundException) {
-				tempVfs[fileName].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+				applicationDataVfs[fileName].open(VfsOpenMode.APPEND)
+			} catch (e: IOException) {
+				applicationDataVfs[fileName].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 			}
 			osw.setPosition(osw.size())
 			for (i in 0 .. storage.getSessionID()) {
 				try {
-					val sensorFile = tempVfs["$filesPrefix$i.csv"]
+					val sensorFile = applicationDataVfs["$filesPrefix$i.csv"]
 					//ToDo: Should be optimized to avoid convert all items to list
 					val lines = sensorFile.readLines().filter { it.isNotEmpty() }.toList().takeLast(100)
 					if (isNotValidLogs(lines)) {
@@ -39,7 +41,7 @@ class FileUtil {
 						osw.writeString("$line\n")
 					}
 					sensorFile.delete()
-				} catch (e: FileNotFoundException) {
+				} catch (e: IOException) {
 					Napier.d("File not found: $filesPrefix$i.csv", null, "LernaFL")
 					continue
 				}
@@ -55,9 +57,9 @@ class FileUtil {
 
 	suspend fun commitToFile(sessionID: Int, filesPrefix: String, record: String) {
 		val sensorFile = try {
-			tempVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.WRITE)
-		} catch (e: FileNotFoundException) {
-			tempVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
+			applicationDataVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.APPEND)
+		} catch (e: IOException) {
+			applicationDataVfs["$filesPrefix$sessionID.csv"].open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		}
 		sensorFile.setPosition(sensorFile.size())
 		sensorFile.writeString(record)
@@ -67,29 +69,29 @@ class FileUtil {
 	suspend fun cleanUp(sessionId: Int, threshold: Long = 50000000L) {
 		var totalSize = 0L
 		var fileDeleted = false
-		if (tempVfs["sensorLog$sessionId.csv"].exists()) {
+		if (applicationDataVfs["sensorLog$sessionId.csv"].exists()) {
 			Napier.d("Cleaning unfinished log file sensorLog$sessionId.csv", null, "Lerna")
-			tempVfs["sensorLog$sessionId.csv"].delete()
+			applicationDataVfs["sensorLog$sessionId.csv"].delete()
 		}
 		for (i in sessionId - 1 downTo 0) {
 			try {
-				totalSize += tempVfs["sensorLog$i.csv"].size()
+				totalSize += applicationDataVfs["sensorLog$i.csv"].size()
 				if (totalSize > threshold) {
-					tempVfs["sensorLog$i.csv"].delete()
+					applicationDataVfs["sensorLog$i.csv"].delete()
 					fileDeleted = true
 				}
-			} catch (e: FileNotFoundException) {
+			} catch (e: IOException) {
 				continue
 			}
 		}
 
 		try {
-			totalSize += tempVfs["mldata.csv"].size()
+			totalSize += applicationDataVfs["mldata.csv"].size()
 			if (totalSize > threshold) {
-				tempVfs["mldata.csv"].delete()
+				applicationDataVfs["mldata.csv"].delete()
 				fileDeleted = true
 			}
-		} catch (_: FileNotFoundException) {
+		} catch (_: IOException) {
 		}
 		Napier.d("Internal file size: $totalSize", null, "Lerna")
 		if (fileDeleted) {

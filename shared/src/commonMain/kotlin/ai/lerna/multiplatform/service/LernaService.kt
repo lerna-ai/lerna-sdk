@@ -7,8 +7,10 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 
@@ -33,6 +35,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
+		Napier.d("commitToFile()", null, "LernaService")
 		fileUtil.commitToFile(storageService.getSessionID(), filesPrefix, record)
 	}
 
@@ -94,7 +97,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
-			runBlocking {
+			CoroutineScope(Dispatchers.Default).launch {
 				val classes = storageService.getClasses()
 				if (classes != null) {
 					if (classes.containsKey(modelName)) {
@@ -147,12 +150,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	//if predictionClass == null, choose best class
-	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false, numElements: Int = 1) : String? {
+	internal suspend fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false, numElements: Int = 1) : String? {
 		if(!disabled) {
 			if ((weights?.version
 					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 			) { if(predictionClass==null || inferenceTasks[weights?.trainingWeights?.find { it.mlName == modelName }?.mlId]?.thetaClass!!.containsKey(predictionClass)) {
-				runBlocking {
+				//CoroutineScope(Dispatchers.Default).launch {
 					//if we have a specific prediction to make (e.g., like, comment, ...)
 					if (predictionClass != null) {
 						//then we must have a position for the output of this position, i.e., object metadata
@@ -219,7 +222,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 							)
 						}
 					}
-				}
+				//}
 				return storageService.getTempInference() //make sure that every path writes the tempInference
 			} else {
 				Napier.d("No prediction class $predictionClass for $modelName", null, "LernaService")

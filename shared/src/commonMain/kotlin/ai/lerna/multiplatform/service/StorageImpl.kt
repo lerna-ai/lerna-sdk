@@ -6,7 +6,7 @@ import ai.lerna.multiplatform.config.KMMPreference
 import ai.lerna.multiplatform.service.converter.DLArrayConverter
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsApi
-import kotlinx.serialization.decodeFromString
+import com.russhwolf.settings.contains
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -36,104 +36,98 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefActionMLEnabled = "LernaActionMLEnabled"
 	private val prefActionMLEncryptionPrefix = "LernaActionMLEncryptionPrefix"
 	private val prefEncryptionKeyPrefix = "LernaEncryptionKeyPrefix"
-	private val sharedPref: KMMPreference = KMMPreference(context)
+	private val sharedPref = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
 	override fun getMPCServer(): String {
 		if (!sharedPref.contains(prefMPCServer)) {
 			return LernaConfig.MPC_SERVER
 		}
-		return sharedPref.getString(prefMPCServer)?:LernaConfig.MPC_SERVER
+		return sharedPref.getStringOrNull(prefMPCServer)?:LernaConfig.MPC_SERVER
 	}
 
 	override fun putMPCServer(MPCServer: String) {
-		sharedPref.put(prefMPCServer, MPCServer)
+		sharedPref.putString(prefMPCServer, MPCServer)
 	}
 
 	override fun getFLServer(): String {
 		if (!sharedPref.contains(prefFLServer)) {
 			return LernaConfig.FL_SERVER
 		}
-		return sharedPref.getString(prefFLServer)?:LernaConfig.FL_SERVER
+		return sharedPref.getStringOrNull(prefFLServer)?:LernaConfig.FL_SERVER
 	}
 
 	override fun putFLServer(FLServer: String) {
-		sharedPref.put(prefFLServer, FLServer)
+		sharedPref.putString(prefFLServer, FLServer)
 	}
 
 	override fun getUploadPrefix(): String {
 		if (!sharedPref.contains(prefUploadPrefix)) {
 			return LernaConfig.UPLOAD_PREFIX
 		}
-		return sharedPref.getString(prefUploadPrefix)?:LernaConfig.UPLOAD_PREFIX
+		return sharedPref.getStringOrNull(prefUploadPrefix)?:LernaConfig.UPLOAD_PREFIX
 	}
 
 	override fun putUploadPrefix(uploadPrefix: String) {
-		sharedPref.put(prefUploadPrefix, uploadPrefix)
+		sharedPref.putString(prefUploadPrefix, uploadPrefix)
 	}
 
 	override fun getWeights(): GlobalTrainingWeights? {
 		if (!sharedPref.contains(prefWeightsID)) {
 			return null
 		}
-		val weights = sharedPref.getString(prefWeightsID) ?: "{}"
+		val weights = sharedPref.getStringOrNull(prefWeightsID) ?: "{}"
 		val weightsObj = Json.decodeFromString<GlobalTrainingWeightsApi>(weights)
 		return dlArrayConverter.convert(weightsObj)
 	}
 
 	override fun putWeights(trainingWeights: GlobalTrainingWeights?) {
 		if (trainingWeights == null) {
-			sharedPref.put(prefWeightsID, "")
+			sharedPref.putString(prefWeightsID, "")
 			return
 		}
 		val weightsApi = dlArrayConverter.convert(trainingWeights)
 		val weights = Json.encodeToString(weightsApi)
-		sharedPref.put(prefWeightsID, weights)
+		sharedPref.putString(prefWeightsID, weights)
 	}
 
 	override fun getClasses(): MutableMap<String, MutableList<String>>? {
 		return if (!sharedPref.contains(prefClasses)) {
 			null
 		} else {
-			Json.decodeFromString<MutableMap<String, MutableList<String>>>(sharedPref.getString(prefClasses)!!)
+			Json.decodeFromString<MutableMap<String, MutableList<String>>>(sharedPref.getStringOrNull(prefClasses)!!)
 		}
 	}
 
 	override fun putClasses(classes: MutableMap<String, MutableList<String>>) {
-		sharedPref.put(prefClasses, Json.encodeToString(classes))
+		sharedPref.putString(prefClasses, Json.encodeToString(classes))
 	}
 
 	override fun getSessionID(): Int {
-		if (!sharedPref.contains(prefSessionID)) {
-			return 0
-		}
 		return sharedPref.getInt(prefSessionID, 0)
 	}
 
 	override fun putSessionID(session: Int) {
-		sharedPref.put(prefSessionID, session)
+		sharedPref.putInt(prefSessionID, session)
 	}
 
 	override fun getSize(): Int {
-		if (!sharedPref.contains(prefSize)) {
-			return 0
-		}
 		return sharedPref.getInt(prefSize, 0)
 	}
 
 	override fun putSize(fileSize: Int) {
-		sharedPref.put(prefSize, fileSize)
+		sharedPref.putInt(prefSize, fileSize)
 	}
 
 	override fun getLatestInference(): String? {
 		if (!sharedPref.contains(prefLastInference)) {
 			return ""
 		}
-		return sharedPref.getString(prefLastInference)
+		return sharedPref.getStringOrNull(prefLastInference)
 	}
 
 	override fun putLatestInference(lastInference: String) {
-		sharedPref.put(prefLastInference, lastInference)
+		sharedPref.putString(prefLastInference, lastInference)
 	}
 
 	override fun getConfidenceThreshold(): Float {
@@ -151,66 +145,54 @@ class StorageImpl(context: KMMContext) : Storage {
 		if (!sharedPref.contains(prefInference)) {
 			return ""
 		}
-		return sharedPref.getString(prefInference)
+		return sharedPref.getStringOrNull(prefInference)
 	}
 
 	override fun putTempInference(lastInference: String) {
-		sharedPref.put(prefInference, lastInference)
+		sharedPref.putString(prefInference, lastInference)
 	}
 
 	override fun getVersion(): Int {
-		if (!sharedPref.contains(prefVersion)) {
-			return 0
-		}
 		return sharedPref.getInt(prefVersion, 0)
 	}
 
 	override fun putVersion(version: Int) {
-		sharedPref.put(prefVersion, version)
+		sharedPref.putInt(prefVersion, version)
 	}
 
 	override fun getLastTraining(): Int {
-		if (!sharedPref.contains(prefTraining)) {
-			return 0
-		}
 		return sharedPref.getInt(prefTraining, 0)
 	}
 
 	override fun putLastTraining(trainingNumber: Int) {
-		sharedPref.put(prefTraining, trainingNumber)
+		sharedPref.putInt(prefTraining, trainingNumber)
 	}
 
 	override fun getUserIdentifier(): String? {
-		if (!sharedPref.contains(prefUserIdentifier)) {
-			return null
-		}
-		return sharedPref.getString(prefUserIdentifier)
+		return sharedPref.getStringOrNull(prefUserIdentifier)
 	}
 
 	override fun putUserIdentifier(deviceToken: String) {
-		sharedPref.put(prefUserIdentifier, deviceToken)
+		sharedPref.putString(prefUserIdentifier, deviceToken)
 	}
 
 	override fun getUploadDataEnabled(): Boolean {
-		if (!sharedPref.contains(preUploadDataEnabled)) {
-			return true
-		}
-		return sharedPref.getBool(preUploadDataEnabled, true)
+		return sharedPref.getBoolean(preUploadDataEnabled, true)
 	}
 
 	override fun putUploadDataEnabled(enabled: Boolean) {
-		sharedPref.put(preUploadDataEnabled, enabled)
+		sharedPref.putBoolean(preUploadDataEnabled, enabled)
 	}
 
 	override fun getABTest(): Boolean {
 		if (!sharedPref.contains(preABTestEnabled)) {
 			return false
 		}
-		return sharedPref.getBool(preABTestEnabled, false)
+		return sharedPref.getBoolean(preABTestEnabled, false)
 	}
 
 	override fun putABTestPer(abtestper: Float) {
-		sharedPref.put(preABTestPercent, abtestper)
+		sharedPref.putFloat(preABTestPercent, abtestper)
 	}
 
 	override fun getABTestPer(): Float? {
@@ -221,18 +203,18 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putABTest(enabled: Boolean) {
-		sharedPref.put(preABTestEnabled, enabled)
+		sharedPref.putBoolean(preABTestEnabled, enabled)
 	}
 
 	override fun getLog(): Boolean {
 		if (!sharedPref.contains(prefLogData)) {
 			return LernaConfig.LOG_SENSOR_DATA
 		}
-		return sharedPref.getBool(prefLogData, LernaConfig.LOG_SENSOR_DATA)
+		return sharedPref.getBoolean(prefLogData, LernaConfig.LOG_SENSOR_DATA)
 	}
 
 	override fun putLog(enabled: Boolean) {
-		sharedPref.put(prefLogData, enabled)
+		sharedPref.putBoolean(prefLogData, enabled)
 	}
 
 	override fun getSensorInitialDelay(): Long {
@@ -243,7 +225,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putSensorInitialDelay(delay: Int) {
-		sharedPref.put(prefSensorDelay, delay)
+		sharedPref.putInt(prefSensorDelay, delay)
 	}
 
 	override fun getCustomFeaturesSize(): Int {
@@ -254,7 +236,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putCustomFeaturesSize(customFeaturesSize: Int) {
-		sharedPref.put(prefCustomFeaturesSize, customFeaturesSize)
+		sharedPref.putInt(prefCustomFeaturesSize, customFeaturesSize)
 	}
 
 	override fun getInputDataSize(): Int {
@@ -265,7 +247,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putInputDataSize(inputDataSize: Int) {
-		sharedPref.put(prefInputDataSize, inputDataSize)
+		sharedPref.putInt(prefInputDataSize, inputDataSize)
 	}
 
 	override fun getCleanupThreshold(): Int {
@@ -276,7 +258,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putCleanupThreshold(cleanupThreshold: Int) {
-		sharedPref.put(prefCleanupThreshold, cleanupThreshold)
+		sharedPref.putInt(prefCleanupThreshold, cleanupThreshold)
 	}
 
 	override fun getTrainingSessionsThreshold(): Int {
@@ -287,40 +269,40 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putTrainingSessionsThreshold(threshold: Int) {
-		sharedPref.put(prefTrainingSessionsThreshold, threshold.toInt())
+		sharedPref.putInt(prefTrainingSessionsThreshold, threshold.toInt())
 	}
 
 	override fun getActionMLEnabled(): Boolean {
 		if (!sharedPref.contains(prefActionMLEnabled)) {
 			return false
 		}
-		return sharedPref.getBool(prefActionMLEnabled, false)
+		return sharedPref.getBoolean(prefActionMLEnabled, false)
 	}
 
 	override fun putActionMLEnabled(enabled: Boolean) {
-		sharedPref.put(prefActionMLEnabled, enabled)
+		sharedPref.putBoolean(prefActionMLEnabled, enabled)
 	}
 
 	override fun getActionMLEncryption(): Boolean {
 		if (!sharedPref.contains(prefActionMLEncryptionPrefix)) {
 			return LernaConfig.LOG_RECOMMENDATION_ENCRYPTION
 		}
-		return sharedPref.getBool(prefActionMLEncryptionPrefix, LernaConfig.LOG_RECOMMENDATION_ENCRYPTION)
+		return sharedPref.getBoolean(prefActionMLEncryptionPrefix, LernaConfig.LOG_RECOMMENDATION_ENCRYPTION)
 	}
 
 	override fun putActionMLEncryption(enabled: Boolean) {
-		sharedPref.put(prefActionMLEncryptionPrefix, enabled)
+		sharedPref.putBoolean(prefActionMLEncryptionPrefix, enabled)
 	}
 
 	override fun getEncryptionKey(): String? {
 		if (!sharedPref.contains(prefEncryptionKeyPrefix)) {
 			return null
 		}
-		return sharedPref.getString(prefEncryptionKeyPrefix)
+		return sharedPref.getStringOrNull(prefEncryptionKeyPrefix)
 	}
 
 	override fun putEncryptionKey(encryptionKey: String) {
-		sharedPref.put(prefEncryptionKeyPrefix, encryptionKey)
+		sharedPref.putString(prefEncryptionKeyPrefix, encryptionKey)
 	}
 
 

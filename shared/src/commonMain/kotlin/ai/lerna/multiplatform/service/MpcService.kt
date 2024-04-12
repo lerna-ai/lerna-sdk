@@ -32,7 +32,7 @@ class MpcService(host: String, _token: String) {
 		request.user = userID
 		request.size = size
 
-		val response = client.post("$mpcHost/mpc/call?token=$token") {
+		val response = client.post(mpcHost + "mpc/call?token=$token") {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}

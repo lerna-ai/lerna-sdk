@@ -17,15 +17,15 @@ fun <T> reshapeList(inputList: MutableList<T>, shape: List<Int>): List<MutableLi
 
 class BinaryCELossCalculator : LossCalculator {
     override fun calculateLoss(output: DenseNDArray, outputGold: DenseNDArray): DenseNDArray {
-        val groundTruth = outputGold.toDoubleArray()[0]
-        return if (groundTruth == 1.0) -output.ln()
-        else (-(-output.sum(-1.0)).ln())
+        val groundTruth = outputGold.toFloatArray()[0]
+        return if (groundTruth == 1.0f) -output.ln()
+        else (-(-output.sum(-1.0f)).ln())
     }
 
     override fun calculateErrors(output: DenseNDArray, outputGold: DenseNDArray): DenseNDArray {
-        val groundTruth = outputGold.toDoubleArray()[0]
+        val groundTruth = outputGold.toFloatArray()[0]
         val numeratorTerm = output.sum(-groundTruth)
-        val denominatorTerm = output.prod(-output.sum(-1.0))
+        val denominatorTerm = output.prod(-output.sum(-1.0f))
         val errors = numeratorTerm.div(denominatorTerm)
         return errors
     }

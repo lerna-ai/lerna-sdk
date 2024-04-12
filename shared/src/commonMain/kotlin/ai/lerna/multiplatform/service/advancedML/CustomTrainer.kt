@@ -82,7 +82,7 @@ class CustomTrainer<NDArrayType: NDArray<NDArrayType>>(
 
     private val modelType = model
 
-    private val lastLosses: MutableList<Double> = mutableListOf()
+    private val lastLosses: MutableList<Float> = mutableListOf()
 
     private var examplesCount = 0
 
@@ -124,7 +124,7 @@ class CustomTrainer<NDArrayType: NDArray<NDArrayType>>(
     }
 
 
-    fun evaluate(examples: List<SimpleExample>) : Double {
+    fun evaluate(examples: List<SimpleExample>) : Float {
         this.metrics.reset()
         examples.forEach{
             val prediction = this.neuralProcessor.forward(it)[0]

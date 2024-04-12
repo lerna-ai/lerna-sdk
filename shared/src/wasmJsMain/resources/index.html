@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Compose App</title>
+    <script type="module">
+        import Lerna from "./composeLerna.mjs";
+        console.log(Lerna);
+        const start = Date.now()
+        console.log('Pre call.')
+        await Lerna.init("fa488e9e-0c85-467d-8752-a4d43bb1f8d1");
+        console.log('Duration:', Date.now() - start)
+        Lerna.setUserIdentifier("1234");
+        Lerna.start();
+        //Lerna.setAutoInference("LR - Review your stay", "on")
+        Lerna.enableUserDataUpload(true);
+        //Lerna.refresh("LR - next app category6")
+        let features = [1.02, 1.25, 2.50, 1.27];
+        Lerna.updateFeature(features);
+
+        let inputData = [1.11, 2.22, 3.33, 4.44];
+        Lerna.addInputData("111", inputData, "Top");
+        Lerna.addInputData("222", inputData, "Top");
+        Lerna.addInputData("333", inputData, "Top");
+
+        //Lerna.captureEvent("LR - Review your stay", "Top", "success", "123");
+
+        let inference = await Lerna.triggerInference("LR - Review your stay", "Top", "success", 2);
+        console.log("inference: " + inference);
+
+
+       //Lerna.stop();
+
+        function enableAutoInference() {
+            console.log("setAutoInference()");
+            Lerna.setAutoInference("LR - Review your stay", "on")
+        }
+
+        function captureEvent() {
+            console.log("captureEvent()");
+            Lerna.captureEvent("LR - Review your stay", "Top", "success");
+        }
+
+        function refreshEvent() {
+            console.log("refreshEvent()");
+            Lerna.refresh("LR - Review your stay")
+        }
+
+        function stopLerna() {
+            console.log("stopLerna()");
+            Lerna.stop();
+        }
+
+        window.enableAutoInference = enableAutoInference;
+        window.captureEvent = captureEvent;
+        window.refreshEvent = refreshEvent;
+        window.stopLerna = stopLerna;
+    </script>
+</head>
+<body>
+<!--<canvas id="ComposeTarget"></canvas>-->
+<button onclick="captureEvent()">Success</button><br />
+<button onclick="refreshEvent()">Refresh</button><br />
+<button onclick="stopLerna()">Stop Lerna</button>
+</body>
+</html>

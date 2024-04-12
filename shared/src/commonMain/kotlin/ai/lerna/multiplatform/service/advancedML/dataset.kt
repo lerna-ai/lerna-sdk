@@ -9,9 +9,9 @@ interface Example
 
 data class SimpleExample(
     val categFeatures: MutableList<Int>? = null,
-    val numericalFeatures: MutableMap<Int, Double>? = null,
+    val numericalFeatures: MutableMap<Int, Float>? = null,
     val multiHotFeatures: List<MutableMap<Int, Int>>? = null,
-    val sensors: D2Array<Double>? = null,
+    val sensors: D2Array<Float>? = null,
     var outputGold: DenseNDArray?
 ) : Example {
     /**
@@ -35,9 +35,9 @@ data class SimpleExample(
 
     companion object {
         operator fun invoke(
-            categoricalIndex: MutableList<Int>?, numericalIndex: MutableList<Int>?, numericalValues: MutableList<Double>?,
-            multiHotFeaturesIndex: List<MutableList<Int>>?, multiHotFeaturesValues: List<MutableList<Double>>?,
-            sensorData: DoubleArray?, label: Int?) = SimpleExample(
+            categoricalIndex: MutableList<Int>?, numericalIndex: MutableList<Int>?, numericalValues: MutableList<Float>?,
+            multiHotFeaturesIndex: List<MutableList<Int>>?, multiHotFeaturesValues: List<MutableList<Float>>?,
+            sensorData: FloatArray?, label: Int?) = SimpleExample(
             categFeatures = categoricalIndex,
 
             numericalFeatures = numericalIndex?.let { keys ->
@@ -45,7 +45,7 @@ data class SimpleExample(
                     if (keys.size != values.size) {
                         throw IllegalArgumentException("Numerical index and values sizes do not match")
                     } else {
-                        mutableMapOf<Int, Double>().apply {
+                        mutableMapOf<Int, Float>().apply {
                             for (i in keys.indices) {
                                 put(keys[i], values[i])
                             }
@@ -76,11 +76,11 @@ data class SimpleExample(
             sensors = sensorData?.let { mk.ndarray(sensorData, sensorData.size, 1)},
 
 
-            outputGold = label?.let {DenseNDArray(storage= mk.ndarray(mk[mk[label.toDouble()]]))}
+            outputGold = label?.let {DenseNDArray(storage= mk.ndarray(mk[mk[label.toFloat()]]))}
         )
     }
 
-    fun addLabels(input:Double){
+    fun addLabels(input:Float){
         outputGold = DenseNDArray(storage= mk.ndarray(mk[mk[input]]))
     }
 }

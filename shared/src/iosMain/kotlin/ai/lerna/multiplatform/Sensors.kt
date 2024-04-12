@@ -2,6 +2,7 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.utils.DateUtil
+import io.ktor.util.date.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -23,7 +24,7 @@ import platform.UIKit.UIDeviceOrientationIsLandscape
 import platform.UIKit.UIScreen
 import kotlin.math.PI
 
-
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelData) : SensorInterface {
 
     private var _data = Channel<SensorDataInterface?>(Channel.BUFFERED)
