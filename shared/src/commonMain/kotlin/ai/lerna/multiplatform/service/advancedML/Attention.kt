@@ -14,7 +14,6 @@ import com.kotlinnlp.simplednn.core.optimizer.ParamsErrorsList
 import com.kotlinnlp.simplednn.deeplearning.attention.multihead.MultiHeadAttentionNetwork
 import com.kotlinnlp.simplednn.deeplearning.attention.multihead.MultiHeadAttentionParameters
 import com.kotlinnlp.simplednn.simplemath.ndarray.dense.DenseNDArray
-import korlibs.io.lang.assert
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
@@ -54,7 +53,7 @@ class Attention(
 
     val errorsAccumulator = ParamsErrorsAccumulator()
 
-    val embeddingProcessor = LernaEmbeddingsProcessor<Int>(embeddingTable, dropout = 0.0)
+    val embeddingProcessor = LernaEmbeddingsProcessor<Int>(embeddingTable, dropout = 0.0f)
 
     val attentionLayerParams = MultiHeadAttentionParameters(
         inputSize = embeddingSize, attentionSize = 32, attentionOutputSize = 32,
@@ -86,7 +85,7 @@ class Attention(
 
     val sensorLayer: FeedforwardNeuralProcessor<DenseNDArray>? = if (sensorLayerParameters != null)
     {
-        FeedforwardNeuralProcessor(model = sensorLayerParameters, dropout = 0.0, propagateToInput = false)
+        FeedforwardNeuralProcessor(model = sensorLayerParameters, dropout = 0.0f, propagateToInput = false)
     }
     else null
 
@@ -104,7 +103,7 @@ class Attention(
 
     val finalLayer = FeedforwardNeuralProcessor<DenseNDArray>(
         model = finalLayerParams,
-        dropout = 0.0,
+        dropout = 0.0f,
         propagateToInput = true
     )
 
@@ -112,7 +111,7 @@ class Attention(
     override fun forward(input: SimpleExample): DenseNDArray {
         val embedding: List<DenseNDArray> = embeddingProcessor.forward(input.categFeatures, input.numericalFeatures, input.multiHotFeatures).map { it as DenseNDArray }
 
-        val concatInput: D2Array<Double> = if (embedding.isNotEmpty())
+        val concatInput: D2Array<Float> = if (embedding.isNotEmpty())
         {
             val attentionOutput = attentionLayer.forward(embedding)
             val flatArray = mk.ndarray(mk[attentionOutput.map { it.storage.toList()}]).reshape(numEmbeddings * embeddingSize, 1)
@@ -124,7 +123,7 @@ class Attention(
             // If sensor data is provided, then pass it through the sensor layer and concatenate it with the attention output
             else
             {
-                assert (input.sensors.shape[0] == sensorDim) {"The input sensor data size must match the sensorDim provided in the model constructor."}
+                if (input.sensors.shape[0] != sensorDim) {throw AssertionError("The input sensor data size must match the sensorDim provided in the model constructor.")}
                 val sensorOutput = sensorLayer!!.forward(DenseNDArray(storage = input.sensors))
                 mk.ndarray(mk[flatArray.toList() + sensorOutput.storage.toList()]).transpose(1, 0)
             }
@@ -132,8 +131,8 @@ class Attention(
 
         // If no embedding is provided, then the input is the sensor data
         else
-        {   assert(input.sensors != null) {"No input provided in the example. Please provide either categorical, numerical, multi-hot features or sensor data"}
-            assert (input.sensors!!.shape[0] == sensorDim) {"The input sensor data size must match the sensorDim provided in the model constructor."}
+        {   if(input.sensors == null) {throw AssertionError("No input provided in the example. Please provide either categorical, numerical, multi-hot features or sensor data")}
+            if (input.sensors.shape[0] != sensorDim) {throw AssertionError("The input sensor data size must match the sensorDim provided in the model constructor.")}
             val sensorOutput = sensorLayer!!.forward(DenseNDArray(storage = input.sensors))
             sensorOutput.storage
         }
@@ -161,7 +160,7 @@ class Attention(
                 // separate the gradients of dim (sensorDim) for backpropagation into the sensor layer
                 val endIndex = concatErrors.storage.shape[0]
                 val sensorErrors = concatErrors.storage[numEmbeddings * embeddingSize until endIndex].reshape(sensorEmbeddingDim, 1)
-                sensorLayer!!.backward(DenseNDArray(storage = sensorErrors as D2Array<Double>))
+                sensorLayer!!.backward(DenseNDArray(storage = sensorErrors as D2Array<Float>))
                 this.errorsAccumulator.accumulate(sensorLayer.getParamsErrors(copy = false))
             }
 
@@ -193,16 +192,16 @@ class Attention(
     fun getWeights() : AdvancedMLItem {
         val weights = AdvancedMLItem()
 
-        // Return the embedding table weights of type Map<Int, D2Array<Double>>
-        weights.embedding = embeddingTable.getParams() //as Map<Int, D2Array<Double>>
+        // Return the embedding table weights of type Map<Int, D2Array<Float>>
+        weights.embedding = embeddingTable.getParams() //as Map<Int, D2Array<Float>>
 
-        // Return the Sensor layer weights of type List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        // Return the Sensor layer weights of type List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         if (sensorDim > 0)
             weights.sensors = sensorLayerParameters?.getParams()
-        // Return the Attention layer weights of type List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        // Return the Attention layer weights of type List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         weights.attention = attentionLayerParams.getParams()
 
-        // Return the final layer weights of type List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        // Return the final layer weights of type List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         weights.lastlayer = finalLayerParams.getParams()
         return weights
     }
@@ -212,15 +211,15 @@ class Attention(
         if(embeddingWeights!=null)
             embeddingTable.setParams(embeddingWeights)
 
-        val sensorsParams = modelWeights.sensors// as List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        val sensorsParams = modelWeights.sensors// as List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         if(sensorsParams!=null)
             sensorLayerParameters?.setParams(sensorsParams)
 
-        val attentionParams = modelWeights.attention// as List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        val attentionParams = modelWeights.attention// as List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         if(attentionParams!=null)
             attentionLayerParams.setParams(attentionParams)
 
-        val layerParams = modelWeights.lastlayer// as List<Pair<List<D2Array<Double>>, List<D2Array<Double>>>>
+        val layerParams = modelWeights.lastlayer// as List<Pair<List<D2Array<Float>>, List<D2Array<Float>>>>
         if(layerParams!=null)
             finalLayerParams.setParams(layerParams)
     }

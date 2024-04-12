@@ -4,7 +4,7 @@ import com.kotlinnlp.simplednn.core.neuralprocessor.feedforward.FeedforwardNeura
 import com.kotlinnlp.simplednn.core.optimizer.ParamsErrorsAccumulator
 import com.kotlinnlp.simplednn.core.optimizer.ParamsErrorsList
 import com.kotlinnlp.simplednn.simplemath.ndarray.dense.DenseNDArray
-import korlibs.io.lang.format
+import korlibs.util.format
 
 class BatchProcessor(override val propagateToInput: Boolean = true, override val id: Int = 0) :
     NeuralProcessor<List<SimpleExample>, List<DenseNDArray>, List<DenseNDArray>, DenseNDArray>

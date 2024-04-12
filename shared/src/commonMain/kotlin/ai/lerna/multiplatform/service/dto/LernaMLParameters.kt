@@ -12,4 +12,6 @@ class LernaMLParameters {
     var dimensions = 0
 
     var dataSplit: Float? = null
+
+    var method: String? = null
 }

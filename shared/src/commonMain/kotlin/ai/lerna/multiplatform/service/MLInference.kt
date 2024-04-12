@@ -108,7 +108,7 @@ class MLInference(_confidence: Float) {
 
 		for (i in 0 until outputs.shape[0]) {
 			//Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
-			result += outputs.asD2Array()[i, 0]/outputs.shape[0]
+			result += outputs.asD2Array()[i, 0] / outputs.shape[0]
 		}
 
 		return result

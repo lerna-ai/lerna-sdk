@@ -4,13 +4,15 @@ import ai.lerna.multiplatform.service.advancedML.CustomTrainer
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import com.kotlinnlp.simplednn.core.functionalities.updatemethods.adam.ADAMMethod
 import com.kotlinnlp.simplednn.simplemath.ndarray.dense.DenseNDArray
-import korlibs.io.file.std.tempVfs
+import korlibs.io.file.std.applicationDataVfs
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import ai.lerna.multiplatform.service.advancedML.BinaryCELossCalculator
 import ai.lerna.multiplatform.service.advancedML.SimpleExample
 import ai.lerna.multiplatform.service.dto.AdvancedMLItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import io.github.aakira.napier.Napier
+import org.jetbrains.kotlinx.multik.api.mk
+import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
 import kotlin.math.ceil
@@ -22,27 +24,27 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
     private lateinit var trainLabels: Array<String>
     private lateinit var testLabels: Array<String>
     var thetaClass = mutableMapOf<String, CustomTrainer<DenseNDArray>?>()
-    private lateinit var nextFeatures: List<DoubleArray>
-    private lateinit var nextLabels: List<Pair<Double, String>>
+    private lateinit var nextFeatures: List<FloatArray>
+    private lateinit var nextLabels: List<Pair<Float, String>>
     private val task = _task
 
 
 
     override suspend fun loadData(filename: String, deleteAfter: Boolean){
-        val mlData = tempVfs[filename].readLines().toList()
+        val mlData = applicationDataVfs[filename].readLines().toList()
             .filter { it.isNotEmpty() }
 
         nextFeatures=mlData
             .map { line -> line.split(",").dropLast(1)
                 .filter { !it.contains("_") }
-                .map { it.toDouble() }
-                .toDoubleArray() }
+                .map { it.toFloat() }
+                .toFloatArray() }
 
         nextLabels=mlData
-            .map { line -> Pair(line.split(",").first().toDouble(), line.split(",").last())
+            .map { line -> Pair(line.split(",").first().toFloat(), line.split(",").last())
             }
         if(deleteAfter)
-            tempVfs[filename].delete()
+            applicationDataVfs[filename].delete()
     }
 
     override fun prepareData(ml_id: Int, featureSize: Int): Boolean {
@@ -50,8 +52,8 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
         val samples = ceil(task.trainingTasks!![ml_id].lernaMLParameters!!.dataSplit!!.toFloat() / 100.0 * list.size.toFloat()).toInt()
         val sessions = list.asSequence().shuffled().take(samples).toList()
 
-        val trainDataFeatures = mutableListOf<DoubleArray>()
-        val testDataFeatures = mutableListOf<DoubleArray>()
+        val trainDataFeatures = mutableListOf<FloatArray>()
+        val testDataFeatures = mutableListOf<FloatArray>()
         val trainDataLabels = mutableListOf<String>()
         val testDataLabels = mutableListOf<String>()
 
@@ -115,26 +117,30 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
 
     override fun localML(ml_id: Int): Long {
 
+        val epoch = task.trainingTasks?.get(ml_id)?.lernaMLParameters!!.iterations
+        val lr = task.trainingTasks?.get(ml_id)?.lernaMLParameters!!.learningRate
+        val dimensions = task.trainingTasks?.get(ml_id)?.lernaMLParameters!!.dimensions
+        val method = task.trainingTasks?.get(ml_id)?.lernaMLParameters!!.method
+
         thetaClass.forEach { (key, _) ->
             var numLabels = filterClassLabels(trainLabels, key)
             trainFeatures.forEachIndexed{ i,it -> it.addLabels(numLabels[i])}
             numLabels = filterClassLabels(testLabels, key)
             testFeatures.forEachIndexed{ i,it -> it.addLabels(numLabels[i])}
-            //println(testFeatures.toList())
             thetaClass[key] = CustomTrainer(
-                model = "Attention",
-                updateMethod = ADAMMethod(stepSize = 0.001),
+                model = method?:"LR",
+                updateMethod = ADAMMethod(stepSize = lr ?: 0.001f),
                 lossCalculator = BinaryCELossCalculator(),
                 examples = trainFeatures,
-                epochs = 10,
+                epochs = epoch,
                 batchSize = 1,
                 testExamples = testFeatures,
-                totalFeatures = 11,
-                verbose = true)
+                totalFeatures = dimensions,
+                verbose = false)
             println("Start model $key training...")
             thetaClass[key]?.train()
         }
-        //val ckptWeights = addNoise(0.03, 1, "test")//this.trainer.getWeights()
+
         val ckptWeights = mutableMapOf<String, AdvancedMLItem?>()
         thetaClass.forEach { (key, _) ->
             ckptWeights[key]= thetaClass[key]?.getWeights()
@@ -158,23 +164,23 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
         return 0
     }
 
-    private fun filterClassLabels(labels: Array<String>, label: String): List<Double> {
+    private fun filterClassLabels(labels: Array<String>, label: String): List<Float> {
         //returns an array with zeros where labels[i]!=label and ones where labels[i]==label
-        val classn: List<Double> = labels.map { if ( it != label) 0.0 else 1.0}
+        val classn: List<Float> = labels.map { if ( it != label) 0.0f else 1.0f}
         return classn
     }
 
     override fun addNoise(share: Float, scaling: Int, prediction: String): AdvancedMLItem {
         val ckptWeights = this.thetaClass[prediction]?.getWeights()
-        val embedding = ckptWeights?.embedding?.mapValues { it.value.times(scaling.toDouble()).plus(share.toDouble()) }
+        val embedding = ckptWeights?.embedding?.mapValues { it.value.times(scaling.toFloat()).plus(share) }
         val sensors = ckptWeights?.sensors?.map {
-            return@map Pair(it.first.map{it2 -> it2.times(scaling.toDouble()).plus(share.toDouble())}.toList(), it.second.map{it3 -> it3.times(scaling.toDouble()).plus(share.toDouble())}.toList())
+            return@map Pair(it.first.map{it2 -> it2.times(scaling.toFloat()).plus(share)}.toList(), it.second.map{it3 -> it3.times(scaling.toFloat()).plus(share)}.toList())
         }?.toList()
         val attention = ckptWeights?.attention?.map {
-            return@map Pair(it.first.map{it2 -> it2.times(scaling.toDouble()).plus(share.toDouble())}.toList(), it.second.map{it3 -> it3.times(scaling.toDouble()).plus(share.toDouble())}.toList())
+            return@map Pair(it.first.map{it2 -> it2.times(scaling.toFloat()).plus(share)}.toList(), it.second.map{it3 -> it3.times(scaling.toFloat()).plus(share)}.toList())
         }?.toList()
         val lastlayer = ckptWeights?.lastlayer?.map {
-            return@map Pair(it.first.map{it2 -> it2.times(scaling.toDouble()).plus(share.toDouble())}.toList(), it.second.map{it3 -> it3.times(scaling.toDouble()).plus(share.toDouble())}.toList())
+            return@map Pair(it.first.map{it2 -> it2.times(scaling.toFloat()).plus(share)}.toList(), it.second.map{it3 -> it3.times(scaling.toFloat()).plus(share)}.toList())
         }?.toList()
         val newWeights = AdvancedMLItem()
         newWeights.embedding = embedding
@@ -186,8 +192,24 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
 
 
     override fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
+
+        val epoch = trainingWeights.epochs
+        val lr = trainingWeights.lr
+        val dimensions = trainingWeights.dimentions
+        val method = trainingWeights.method
+
         thetaClass.clear()
         trainingWeights.weightsMultiKv2!!.forEach { (k, v) ->
+            this.thetaClass[k] = CustomTrainer(
+                model = method?:"LR",
+                updateMethod = ADAMMethod(stepSize = lr?:0.001f),
+                lossCalculator = BinaryCELossCalculator(),
+                examples = listOf(SimpleExample(null,null,null, if(v.sensors!=null) mk.ndarray(arrayOf(FloatArray(v.sensors!!.first().first.first().shape[1]){0.0f})) else null,null)),
+                epochs = epoch?:10,
+                batchSize = 1,
+                testExamples = listOf(SimpleExample(null,null,null,null,null)),
+                totalFeatures = dimensions?:0,
+                verbose = false)
             this.thetaClass[k]?.reset()
             this.thetaClass[k]?.setWeights(v)
         }
@@ -201,17 +223,17 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
         val predictedLabels = predictLabels(testFeatures)
         //println("Original: "+testLabels.toList())
         //println("Predicted: "+predictedLabels.toList())
-        val correctSamples: Double = countCorrectSamples(testLabels, predictedLabels)
-        val accuracy = correctSamples / testLabels.size.toDouble()
+        val correctSamples: Float = countCorrectSamples(testLabels, predictedLabels)
+        val accuracy = correctSamples / testLabels.size.toFloat()
         Napier.d("LernaML - Correct samples: $correctSamples")
         Napier.d("LernaML - Accuracy: " + accuracy * 100 + "%")
         return accuracy.toFloat()
     }
 
     private fun predictLabels(examples: List<SimpleExample>): Array<String> {
-        val outputs = mutableMapOf<String, Array<Double>>()
+        val outputs = mutableMapOf<String, Array<Float>>()
         thetaClass.forEach { (k, v) ->
-            val predictedLabels = Array(examples.size){-1.0}
+            val predictedLabels = Array(examples.size){-1.0f}
             var i=0
             examples.forEach{
                 predictedLabels[i] = v!!.neuralProcessor.forward(it)[0]
@@ -223,10 +245,10 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
 
         for (i in 0 until outputs.values.toList()[0].size) {
             //Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
-            var max = 0.0 //if more than 1 class, always pick the most probable one even if the probability is very low
+            var max = 0.0f //if more than 1 class, always pick the most probable one even if the probability is very low
             var value = "failure"
             if(thetaClass.size==1)
-                max = 0.5 //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
+                max = 0.5f //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
             outputs.forEach { (k, _) ->
                 if (outputs[k]!![i] > max) {
                     max = outputs[k]!![i]
@@ -240,14 +262,14 @@ class MLExecutionNewModel(_task: TrainingTasks): IMLExecution {
         return result
     }
 
-    private fun countCorrectSamples(labels: Array<String>, predictedLabels: Array<String>): Double {
+    private fun countCorrectSamples(labels: Array<String>, predictedLabels: Array<String>): Float {
         var correctSamples = 0
         for (i in labels.indices) {
             if (labels[i] == predictedLabels[i]) {
                 correctSamples++
             }
         }
-        return correctSamples.toDouble()
+        return correctSamples.toFloat()
     }
 
 }

@@ -12,15 +12,15 @@ import ai.lerna.multiplatform.service.actionML.ActionMLService
 import ai.lerna.multiplatform.service.actionML.converter.RecommendationConverter
 import ai.lerna.multiplatform.service.actionML.dto.QueryRules
 import ai.lerna.multiplatform.service.actionML.dto.Result
-import com.soywiz.klock.DateTime
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.runBlocking
+import korlibs.time.DateTime
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import korlibs.io.async.runBlockingNoJs
 
 class Lerna(context: KMMContext, token: String) {
 	private val _context = context
@@ -45,7 +45,7 @@ class Lerna(context: KMMContext, token: String) {
 			Napier.base(DebugAntilog())
 			Napier.d("Initialize library", null, "Lerna")
 			disabled = false //just to be safe...
-			runBlocking {
+			runBlockingNoJs {
 				disabled = !ConfigService(_context, _token, uniqueID).updateConfig()
 			}
 			lernaService = LernaService(_context, _token, uniqueID)
@@ -63,7 +63,7 @@ class Lerna(context: KMMContext, token: String) {
 				actionMLService = ActionMLService(storageService.getFLServer(), _token)
 				storageService.getActionMLEnabled().let { actionMLDisabled = !it }
 				weightsManager.setupStorage(storageService)
-				runBlocking {
+				runBlockingNoJs {
 					weightsManager.updateWeights()
 				}
 				runFL()
@@ -111,7 +111,7 @@ class Lerna(context: KMMContext, token: String) {
 		if (!disabled) {
 			lernaService.captureEvent(modelName, positionID, successVal, elementID, captureOnce)
 			if (!actionMLDisabled && !storageService.getActionMLEncryption()) {
-				runBlocking {
+				runBlockingNoJs {
 					val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
 					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID, eventDateTime)
 					Napier.d("Submit event ${resp.comment}", null, "Lerna")
@@ -126,7 +126,7 @@ class Lerna(context: KMMContext, token: String) {
 				Napier.w("Recommendation encryption is disabled, use captureEvent() method to submit events", null, "Lerna")
 				return
 			}
-			runBlocking {
+			runBlockingNoJs {
 				val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
 				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID), eventDateTime)
 				Napier.d("Submit encrypted event ${resp.comment}", null, "Lerna")
@@ -161,13 +161,13 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int = 1): String? {
-		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
+		return runBlockingNoJs { lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements) }
 	}
 
 	fun triggerInference(inputData: Map<String, FloatArray>, modelName: String, positionID: String, predictionClass: String? = null, numElements: Int = 1): String? {
 		lernaService.clearInputData(positionID)
 		inputData.forEach { (itemID, values) -> addInputData(itemID, values, positionID) }
-		return lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements)
+		return runBlockingNoJs { lernaService.triggerInference(modelName, positionID, predictionClass, disabled, numElements) }
 	}
 
 	fun setAutoInference(modelName: String, setting: String) {
@@ -211,7 +211,7 @@ class Lerna(context: KMMContext, token: String) {
 			return listOf()
 		}
 		var response: List<Result> = mutableListOf()
-		runBlocking {
+		runBlockingNoJs {
 			actionMLService.getUserItems(
 				engineID = modelName,
 				num = number,

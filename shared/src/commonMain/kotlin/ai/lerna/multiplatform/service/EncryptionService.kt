@@ -3,7 +3,7 @@ package ai.lerna.multiplatform.service
 import korlibs.crypto.AES.Companion.decryptAesEcb
 import korlibs.crypto.AES.Companion.encryptAesEcb
 import korlibs.crypto.Padding
-import korlibs.crypto.encoding.Hex
+import korlibs.encoding.Hex
 import korlibs.io.lang.toByteArray
 
 class EncryptionService(key: String) {

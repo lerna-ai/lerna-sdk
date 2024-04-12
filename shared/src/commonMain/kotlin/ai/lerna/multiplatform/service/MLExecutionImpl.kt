@@ -3,7 +3,7 @@ package ai.lerna.multiplatform.service
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingTasks
 import ai.lerna.multiplatform.utils.CalculationUtil
-import korlibs.io.file.std.tempVfs
+import korlibs.io.file.std.applicationDataVfs
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.stat.abs
@@ -197,7 +197,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
 
 
     override suspend fun loadData(filename: String, deleteAfter: Boolean){
-        val mlData = tempVfs[filename].readLines().toList()
+        val mlData = applicationDataVfs[filename].readLines().toList()
             .filter { it.isNotEmpty() }
 
         nextFeatures=mlData
@@ -210,7 +210,7 @@ class MLExecution(_task: TrainingTasks) : IMLExecution {
             .map { line -> Pair(line.split(",").first().toFloat(), line.split(",").last())
             }
         if(deleteAfter)
-            tempVfs[filename].delete()
+            applicationDataVfs[filename].delete()
     }
 
     private fun filterClassLabels(labels: Array<String>, label: String): D2Array<Float> {

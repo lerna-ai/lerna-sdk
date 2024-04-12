@@ -18,6 +18,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.charsets.Charsets
 import kotlinx.serialization.json.Json
 
 class ActionMLService(host: String, _token: String) {
@@ -41,7 +42,7 @@ class ActionMLService(host: String, _token: String) {
 		request.blacklistItems = blacklistItems
 		request.rules = rules
 
-		val response = client.post("$FL_API_URL/recommendation/queries?token=$token") {
+		val response = client.post(FL_API_URL +"recommendation/queries?token=$token") {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}
@@ -63,6 +64,37 @@ class ActionMLService(host: String, _token: String) {
 		return response.body()
 	}
 
+	suspend fun getUserItemsAsJsonText(engineID: String, num: Int?, user: String?, blacklistItems: List<String>?, rules: List<QueryRules>?): String {
+		val request = UserRequest()
+		request.engineId = engineID
+		request.num = num
+		request.user = user
+		request.blacklistItems = blacklistItems
+		request.rules = rules
+
+		val response = client.post(FL_API_URL +"recommendation/queries?token=$token") {
+			contentType(ContentType.Application.Json)
+			setBody(request)
+		}
+		Napier.d("ActionMLService - Response: ${response.status}", null, "Lerna")
+		if (response.status != HttpStatusCode.OK
+			&& response.status != HttpStatusCode.Created
+			&& response.status != HttpStatusCode.Accepted
+		) {
+			Napier.d(
+				"ActionMLService - Response error: ${response.bodyAsText()}",
+				null,
+				"Lerna"
+			)
+			return ""
+		}
+		if (response.bodyAsText().isEmpty()) {
+			Napier.d("ActionMLService - Response empty body", null, "Lerna")
+			return ""
+		}
+		return response.bodyAsText(Charsets.UTF_8)
+	}
+
 	suspend fun getItems(engineID: String, item: String?, itemSet: List<String>?, rules: List<QueryRules>?): QueryResponse {
 		val request = ItemRequest()
 		request.engineId = engineID
@@ -70,7 +102,7 @@ class ActionMLService(host: String, _token: String) {
 		request.itemSet = itemSet
 		request.rules = rules
 
-		val response = client.post("$FL_API_URL/recommendation/queries?token=$token") {
+		val response = client.post(FL_API_URL +"recommendation/queries?token=$token") {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}
@@ -102,7 +134,7 @@ class ActionMLService(host: String, _token: String) {
 		request.targetEntityId = target
 		request.eventTime = eventTime
 
-		val response = client.post("$FL_API_URL/recommendation/events?token=$token") {
+		val response = client.post(FL_API_URL +"recommendation/events?token=$token") {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}

@@ -1,21 +1,12 @@
 package ai.lerna.multiplatform.service.advancedML
-import com.kotlinnlp.simplednn.core.functionalities.activations.Softmax
-import com.kotlinnlp.simplednn.core.functionalities.losses.SoftmaxCrossEntropyCalculator
 import com.kotlinnlp.simplednn.core.functionalities.losses.LossCalculator
 import com.kotlinnlp.simplednn.core.functionalities.updatemethods.UpdateMethod
-import com.kotlinnlp.simplednn.core.layers.StackedLayersParameters
-import com.kotlinnlp.simplednn.core.neuralprocessor.feedforward.FeedforwardNeuralProcessor
 import com.kotlinnlp.simplednn.core.optimizer.ParamsOptimizer
 import com.kotlinnlp.simplednn.helpers.Trainer
-import com.kotlinnlp.simplednn.core.neuralprocessor.NeuralProcessor
-import com.kotlinnlp.simplednn.helpers.Statistics
 import com.kotlinnlp.simplednn.simplemath.ndarray.NDArray
 import com.kotlinnlp.simplednn.simplemath.ndarray.dense.DenseNDArray
 import com.kotlinnlp.utils.Shuffler
 import com.kotlinnlp.utils.Timer
-import korlibs.io.lang.format
-import kotlinx.coroutines.runBlocking
-
 
 
 /**
@@ -57,7 +48,7 @@ internal class BatchTrainer<NDArrayType: NDArray<NDArrayType>>(
 
     private val neuralProcessor = BatchProcessor()
 
-    private val lastLosses: MutableList<Double> = mutableListOf()
+    private val lastLosses: MutableList<Float> = mutableListOf()
 
     private var examplesCount = 0
 
@@ -100,7 +91,7 @@ internal class BatchTrainer<NDArrayType: NDArray<NDArrayType>>(
         val batchLosses: List<DenseNDArray> = batchOutput.zip(examples).map { (output, example) ->
             this.lossCalculator.calculateLoss(output, example.outputGold!!)}
 
-        val batchLoss = batchLosses.map { it[0] }.average()
+        val batchLoss = batchLosses.map { it[0] }.average().toFloat()
         lastLosses.add(batchLoss)
 
         examples.mapIndexed{

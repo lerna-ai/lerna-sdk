@@ -3,13 +3,16 @@ package ai.lerna.multiplatform.service
 import ai.lerna.multiplatform.MergeInputData
 import ai.lerna.multiplatform.ModelData
 import ai.lerna.multiplatform.service.advancedML.SimpleExample
+import ai.lerna.multiplatform.service.dto.AdvancedMLItem
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import org.jetbrains.kotlinx.multik.ndarray.data.get
+import org.jetbrains.kotlinx.multik.ndarray.operations.first
 import org.jetbrains.kotlinx.multik.ndarray.operations.forEach
 import org.jetbrains.kotlinx.multik.ndarray.operations.toFloatArray
+import org.jetbrains.kotlinx.multik.ndarray.operations.toList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,8 +33,8 @@ internal class MLInferenceNewModelTest {
 	@Test
 	fun `predictLabelFrom1Line1Item_failure_without_weights`() {
 		// Given
-		manipulateModelData()
-		val testFeatures = modelData.toArray()
+		//manipulateModelData()
+		val testFeatures = floatArrayOf(1.0f,6.7f,3.0f,5.0f,1.7f)//.toArray().take(5)
 
 		val testExample =
 			SimpleExample(
@@ -41,7 +44,7 @@ internal class MLInferenceNewModelTest {
 				null,null,
 				//listOf(train_multiHot_indexes[it]), listOf(train_multiHot_values[it]),
 				null, null,
-				testFeatures.map { it.toDouble() }.toDoubleArray(),
+				testFeatures.map { it }.toFloatArray(),
 				null
 				//trainLabels[it]
 			)
@@ -53,188 +56,393 @@ internal class MLInferenceNewModelTest {
 		assertEquals("failure", result)
 	}
 
-//	@Test
-//	fun `predictLabelFrom1Line1Item_with_zeros_model_data`() {
-//		// Given
-//		val testFeatures = mk.ndarray(listOf(modelData.toArray().toFloatArray()).toTypedArray())
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f)).toTypedArray()).reshape(178, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f)).toTypedArray()).reshape(178, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		// When
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		val result = mlInference.predictLabelFrom1Line1Item(testFeatures)
-//		// Then
-//		assertEquals("Comment", result)
-//	}
+	@Test
+	fun `predictLabelFrom1Line1Item_with_zeros_model_data`() {
+		// Given
+		val testFeatures = floatArrayOf(0.0f,0.0f,0.0f,0.0f)
 
-//	@Test
-//	fun `predictLabelFrom1Line1Item`() {
-//		// Given
-//		manipulateModelData()
-//		val testFeatures = mk.ndarray(listOf(modelData.toArray().toFloatArray()).toTypedArray())
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f)).toTypedArray()).reshape(178, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f)).toTypedArray()).reshape(178, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		// When
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		val result = mlInference.predictLabelFrom1Line1Item(testFeatures)
-//		// Then
-//		assertEquals("Like", result)
-//	}
+		val testExample =
+			SimpleExample(
+				//train_categIndexes[it],
+				null,
+				//train_numIndexes[it], train_numValues[it],
+				null,null,
+				//listOf(train_multiHot_indexes[it]), listOf(train_multiHot_values[it]),
+				null, null,
+				testFeatures.map { it }.toFloatArray(),
+				null
+				//trainLabels[it]
+			)
+		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
 
-//	@Test
-//	fun `predictLabelFrom1Line1Item_with_custom_features`() {
-//		// Given
-//		manipulateModelData()
-//		modelData.setupCustomFeatureSize(5)
-//		modelData.updateCustomFeatures(floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f))
-//		val testFeatures = mk.ndarray(listOf(modelData.toArray().toFloatArray()).toTypedArray())
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f)).toTypedArray()).reshape(183, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f)).toTypedArray()).reshape(183, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		// When
-//		val result = mlInference.predictLabelFrom1Line1Item(testFeatures)
-//		// Then
-//		assertEquals("Like", result)
-//	}
+		val temp1 = arrayOf(floatArrayOf(0.28293687f, -0.60018724f, -0.24564528f, -0.39238974f),
+			floatArrayOf(0.09881812f, 0.15511145f, -0.3954835f, -0.3896694f),
+			floatArrayOf(-0.081900835f, 0.022636853f, 0.10433076f, 0.865149f),
+			floatArrayOf(0.12928279f, 0.045945443f, -0.29600155f, -0.5850915f),
+			floatArrayOf(-0.7017922f, -0.3070385f, -0.38738438f, -0.38456556f),
+			floatArrayOf(-0.24922022f, 0.080352575f, 0.5312609f, 0.25138387f),
+			floatArrayOf(0.21058288f, 0.18980116f, -0.45036379f, -1.0610094f),
+			floatArrayOf(-0.30883506f, 0.2953443f, 0.22071537f, 1.0275143f),
+			floatArrayOf(0.010458527f, 0.61703485f, -0.12099516f, 0.83198947f),
+			floatArrayOf(0.14396705f, -0.1788505f, -0.04162597f, 0.7813448f),
+			floatArrayOf(0.089264095f, 0.23542914f, -0.4672568f, -0.30023864f),
+			floatArrayOf(-0.2874573f, -0.058466293f, 0.58064735f, 0.82717526f),
+			floatArrayOf(-0.0063175745f, -0.4512875f, 0.5320778f, 0.25277638f),
+			floatArrayOf(-0.17440401f, 0.29698434f, 0.13254249f, 0.7686539f),
+			floatArrayOf(-0.40453136f, -0.485504f, -0.28021175f, 0.41679356f),
+			floatArrayOf(-0.301117f, 0.01747038f, 0.5223835f, 0.8911013f))
 
-//	@Test
-//	fun `predictLabelScoreMulLinesMulItems_class_not_exists`() {
-//		// Given
-//		manipulateModelData()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setupCustomFeatureSize(5)
-//		modelData.updateCustomFeatures(floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f))
-//		val data4Inference = mutableMapOf<String, FloatArray>()
-//		data4Inference["first"] = floatArrayOf(1f, 2f, 3f, 4f, 5f)
-//		data4Inference["second"] = floatArrayOf(6f, 7f, 8f, 9f, 10f)
-//		data4Inference["third"] = floatArrayOf(11f, 12f, 13f, 14f, 15f)
-//		val testFeatures = inferenceData.getMergedInputDataHistory(data4Inference)
-//		val thetaName = "Dislike"
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, 1.4313f, -1.7988f, 0.2193f, 0.5958f, -0.7268f)).toTypedArray()).reshape(51, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.1816f, 1.2985f, -0.8554f, -0.2055f, -0.0658f)).toTypedArray()).reshape(51, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		// When
-//		val result = mlInference.predictLabelScoreMulLinesMulItems(testFeatures, thetaName)
-//		// Then
-//		assertNull(result)
-//	}
-//
-//	@Test
-//	fun `predictLabelScoreMulLinesMulItems`() {
-//		// Given
-//		manipulateModelData()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setupCustomFeatureSize(5)
-//		modelData.updateCustomFeatures(floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f))
-//		val data4Inference = mutableMapOf<String, FloatArray>()
-//		data4Inference["first"] = floatArrayOf(1f, 2f, 3f, 4f, 5f)
-//		data4Inference["second"] = floatArrayOf(6f, 7f, 8f, 9f, 10f)
-//		data4Inference["third"] = floatArrayOf(11f, 12f, 13f, 14f, 15f)
-//		val testFeatures = inferenceData.getMergedInputDataHistory(data4Inference)
-//		val thetaName = "Comment"
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, 1.4313f, -1.7988f, 0.2193f, 0.5958f, -0.7268f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, 1.4313f, -1.7988f, 0.2193f, 0.5958f, -0.7268f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, 1.4313f, -1.7988f, 0.2193f, 0.5958f, -0.7268f, -0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f)).toTypedArray()).reshape(183, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.1816f, 1.2985f, -0.8554f, -0.2055f, -0.0658f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.1816f, 1.2985f, -0.8554f, -0.2055f, -0.0658f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.1816f, 1.2985f, -0.8554f, -0.2055f, -0.0658f, -1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f)).toTypedArray()).reshape(183, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		// When
-//		val result = mlInference.predictLabelScoreMulLinesMulItems(testFeatures, thetaName)
-//		// Then
-//		assertEquals(3, result?.size)
-//		assertEquals(0.93310934f, result?.get("first"))
-//		assertEquals(3.9330442E-4f, result?.get("second"))
-//		assertEquals(1.1097612E-8f, result?.get("third"))
-//	}
-//
-//	@Test
-//	fun `predictLabelScoreMulLinesMulItems_data4Inference_empty`() {
-//		// Given
-//		manipulateModelData()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setupCustomFeatureSize(5)
-//		modelData.updateCustomFeatures(floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f))
-//		val data4Inference = mutableMapOf<String, FloatArray>()
-//		val testFeatures = inferenceData.getMergedInputDataHistory(data4Inference)
-//		val thetaName = "Comment"
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf(
-//			Pair("Comment", mk.ndarray(listOf(floatArrayOf(-0.4156f, -1.2238f, 0.4486f, -1.1574f, 1.0517f, 0.6329f, -0.5608f, 0.0145f, -0.0791f, 0.2121f, -0.8953f, 0.2108f, 0.5131f, -0.1825f, -0.0756f, 1.8212f, -0.6815f, 0.1803f, 0.0780f, -0.8205f, 0.4557f, 1.6921f, -0.3133f, -1.8275f, -0.8802f, -0.4808f, -0.3227f, 0.0013f, -1.2962f, -1.0472f, -0.3855f, 1.0170f, -0.2641f, -0.3861f, -0.5292f, -0.1152f, 0.0938f, -0.1070f, -0.8860f, -0.0360f, 1.9614f, -1.1113f, -0.6554f, 0.6648f, 0.4622f, 1.6860f, 1.4313f, -1.7988f, 0.2193f, 0.5958f, -0.7268f)).toTypedArray()).reshape(51, 1)),
-//			Pair("Like", mk.ndarray(listOf(floatArrayOf(-1.2667f, 0.1534f, -1.3488f, -0.6636f, 0.6352f, 0.0947f, 0.8571f, -0.3698f, -0.6165f, 1.6966f, -1.3589f, 0.5566f, -0.7810f, -0.0150f, 1.4092f, -0.1786f, 0.2859f, -0.7151f, 0.2185f, -0.5758f, -0.3234f, 0.2182f, -2.5444f, -1.2448f, 0.5637f, 0.8383f, 0.8408f, 0.1179f, 0.0190f, -1.1387f, 1.0532f, -0.0253f, 0.8879f, -0.8804f, 2.0893f, 1.4412f, 1.8306f, 1.6181f, 0.8238f, 0.5846f, -0.4266f, 0.0828f, 1.1133f, -0.0257f, -0.4313f, 0.2156f, -1.1816f, 1.2985f, -0.8554f, -0.2055f, -0.0658f)).toTypedArray()).reshape(51, 1))
-//		)
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		// When
-//		val result = mlInference.predictLabelScoreMulLinesMulItems(testFeatures, thetaName)
-//		// Then
-//		assertEquals(0, result?.size)
-//	}
+		val temp2 = arrayOf(floatArrayOf(0.39053836f),
+			floatArrayOf(0.22795086f),
+			floatArrayOf(-0.1747529f),
+			floatArrayOf(0.20733126f),
+			floatArrayOf(-0.77444816f),
+			floatArrayOf(-0.35685515f),
+			floatArrayOf(0.34597397f),
+			floatArrayOf(-0.45244095f),
+			floatArrayOf(-0.039374087f),
+			floatArrayOf(0.06852166f),
+			floatArrayOf(0.18864061f),
+			floatArrayOf(-0.36729428f),
+			floatArrayOf(-0.083617605f),
+			floatArrayOf(-0.26311973f),
+			floatArrayOf(-0.49365738f),
+			floatArrayOf(-0.38360053f))
 
-//	@Test
-//	fun `predictLabelScoreMulLinesMulItems_weights_empty`() {
-//		// Given
-//		manipulateModelData()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setHistory()
-//		modelData.setupCustomFeatureSize(5)
-//		modelData.updateCustomFeatures(floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f))
-//		val data4Inference = mutableMapOf<String, FloatArray>()
-//		data4Inference["first"] = floatArrayOf(1f, 2f, 3f, 4f, 5f)
-//		data4Inference["second"] = floatArrayOf(6f, 7f, 8f, 9f, 10f)
-//		data4Inference["third"] = floatArrayOf(11f, 12f, 13f, 14f, 15f)
-//		val testFeatures = inferenceData.getMergedInputDataHistory(data4Inference)
-//		val thetaName = "Comment"
-//		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
-//		globalTrainingWeightsItem.weights = mapOf()
-//		globalTrainingWeightsItem.mlId = 12
-//		globalTrainingWeightsItem.mlName = "Content"
-//		globalTrainingWeightsItem.accuracy = 0f
-//		mlInference.setWeights(globalTrainingWeightsItem)
-//		// When
-//		val result = mlInference.predictLabelScoreMulLinesMulItems(testFeatures, thetaName)
-//		// Then
-//		assertNull(result)
-//	}
+		val temp3 = arrayOf(floatArrayOf(0.41102463f, 0.2934277f, -0.54024756f, 0.2876497f, -0.37097135f, -0.80739015f, 0.58236825f, -0.85408914f, -0.3172801f, -0.23850179f, 0.31112424f, -0.30624193f, -0.38534912f, -0.55441946f, -0.32359248f, -0.34786958f))
+
+		val temp4 = arrayOf(floatArrayOf(1.405784f))
+
+		val advancedMLmodel1 = AdvancedMLItem()
+		advancedMLmodel1.sensors = listOf(Pair(listOf(mk.ndarray(temp1)),listOf(mk.ndarray(temp2))))
+		advancedMLmodel1.lastlayer = listOf(Pair(listOf(mk.ndarray(temp3)),listOf(mk.ndarray(temp4))))
+
+
+		val temp5 = arrayOf(floatArrayOf(0.32280427f, -0.74212754f, 0.041894704f, -0.056007933f),
+			floatArrayOf(0.13041314f, -0.08284514f, 0.08000189f, 0.22108027f),
+			floatArrayOf(-0.048534222f, 0.2718297f, -0.19723321f, 0.48610875f),
+			floatArrayOf(0.09713495f, -0.16174112f, -0.07333343f, -0.3109811f),
+			floatArrayOf(-0.17190433f, 0.41719598f, -0.29963312f, -0.5081868f),
+			floatArrayOf(-0.21468952f, 0.33534673f, 0.22336203f, -0.1350819f),
+			floatArrayOf(0.3222432f, 0.05549968f, 0.017726578f, -0.52839977f),
+			floatArrayOf(-0.2886347f, 0.5793697f, -0.18101127f, 0.5159879f),
+			floatArrayOf(-0.087542765f, 0.6603381f, -0.36643428f, 0.583144f),
+			floatArrayOf(0.20065024f, 0.09789965f, -0.33513272f, 0.39570123f),
+			floatArrayOf(0.10494686f, 0.039165616f, -0.13155013f, 0.10798334f),
+			floatArrayOf(0.16349413f, 0.57220185f, 0.46927923f, 0.30711746f),
+			floatArrayOf(0.18728882f, -0.03225266f, 0.27123317f, -0.15368906f),
+			floatArrayOf(-0.15862276f, 0.5086391f, -0.13350114f, 0.4479435f),
+			floatArrayOf(-0.07890555f, 0.08536938f, -0.42940268f, 0.08850024f),
+			floatArrayOf(0.096114814f, 0.6005595f, 0.3683523f, 0.3827897f))
+
+		val temp6 = arrayOf(floatArrayOf(0.3591389f),
+			floatArrayOf(0.14375731f),
+			floatArrayOf(-0.0577123f),
+			floatArrayOf(0.10108796f),
+			floatArrayOf(-0.17321983f),
+			floatArrayOf(-0.23616117f),
+			floatArrayOf(0.363372f),
+			floatArrayOf(-0.32391f),
+			floatArrayOf(-0.09379754f),
+			floatArrayOf(0.20814496f),
+			floatArrayOf(0.12090685f),
+			floatArrayOf(0.16879699f),
+			floatArrayOf(0.21330854f),
+			floatArrayOf(-0.17225175f),
+			floatArrayOf(-0.07287551f),
+			floatArrayOf(0.1012205f))
+
+		val temp7 = arrayOf(floatArrayOf(0.43311465f, 0.20825443f, -0.50178003f, 0.097225346f, -1.0966033f, -0.67858416f, 0.414921f, -0.88165766f, -0.38476074f, -0.23564076f, 0.15219902f, -0.22405466f, -0.22715905f, -0.5645844f, -0.8016501f, -0.27251887f))
+
+		val temp8 = arrayOf(floatArrayOf(1.3699387f))
+
+		val advancedMLmodel2 = AdvancedMLItem()
+		advancedMLmodel2.sensors = listOf(Pair(listOf(mk.ndarray(temp5)),listOf(mk.ndarray(temp6))))
+		advancedMLmodel2.lastlayer = listOf(Pair(listOf(mk.ndarray(temp7)),listOf(mk.ndarray(temp8))))
+
+		globalTrainingWeightsItem.weightsMultiKv2 = mapOf(
+			Pair("Iris-setosa", advancedMLmodel1),
+			Pair("Iris-versicolor", advancedMLmodel2)
+		)
+		globalTrainingWeightsItem.mlId = 12
+		globalTrainingWeightsItem.mlName = "Content"
+		globalTrainingWeightsItem.accuracy = 0f
+
+		// When
+		mlInference.setWeights(globalTrainingWeightsItem)
+
+
+		val result = mlInference.predictLabelFrom1Line1Item(testExample)
+		// Then
+		assertEquals("Iris-setosa", result)
+	}
+
+	@Test
+	fun `predictLabelFrom1Line1Item`() {
+		// Given
+		val testFeatures = floatArrayOf(5.7f,2.9f,4.2f,1.3f)
+
+		val testExample =
+			SimpleExample(
+				//train_categIndexes[it],
+				null,
+				//train_numIndexes[it], train_numValues[it],
+				null,null,
+				//listOf(train_multiHot_indexes[it]), listOf(train_multiHot_values[it]),
+				null, null,
+				testFeatures.map { it }.toFloatArray(),
+				null
+				//trainLabels[it]
+			)
+		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
+
+		val temp1 = arrayOf(floatArrayOf(0.28293687f, -0.60018724f, -0.24564528f, -0.39238974f),
+			floatArrayOf(0.09881812f, 0.15511145f, -0.3954835f, -0.3896694f),
+			floatArrayOf(-0.081900835f, 0.022636853f, 0.10433076f, 0.865149f),
+			floatArrayOf(0.12928279f, 0.045945443f, -0.29600155f, -0.5850915f),
+			floatArrayOf(-0.7017922f, -0.3070385f, -0.38738438f, -0.38456556f),
+			floatArrayOf(-0.24922022f, 0.080352575f, 0.5312609f, 0.25138387f),
+			floatArrayOf(0.21058288f, 0.18980116f, -0.45036379f, -1.0610094f),
+			floatArrayOf(-0.30883506f, 0.2953443f, 0.22071537f, 1.0275143f),
+			floatArrayOf(0.010458527f, 0.61703485f, -0.12099516f, 0.83198947f),
+			floatArrayOf(0.14396705f, -0.1788505f, -0.04162597f, 0.7813448f),
+			floatArrayOf(0.089264095f, 0.23542914f, -0.4672568f, -0.30023864f),
+			floatArrayOf(-0.2874573f, -0.058466293f, 0.58064735f, 0.82717526f),
+			floatArrayOf(-0.0063175745f, -0.4512875f, 0.5320778f, 0.25277638f),
+			floatArrayOf(-0.17440401f, 0.29698434f, 0.13254249f, 0.7686539f),
+			floatArrayOf(-0.40453136f, -0.485504f, -0.28021175f, 0.41679356f),
+			floatArrayOf(-0.301117f, 0.01747038f, 0.5223835f, 0.8911013f))
+
+		val temp2 = arrayOf(floatArrayOf(0.39053836f),
+			floatArrayOf(0.22795086f),
+			floatArrayOf(-0.1747529f),
+			floatArrayOf(0.20733126f),
+			floatArrayOf(-0.77444816f),
+			floatArrayOf(-0.35685515f),
+			floatArrayOf(0.34597397f),
+			floatArrayOf(-0.45244095f),
+			floatArrayOf(-0.039374087f),
+			floatArrayOf(0.06852166f),
+			floatArrayOf(0.18864061f),
+			floatArrayOf(-0.36729428f),
+			floatArrayOf(-0.083617605f),
+			floatArrayOf(-0.26311973f),
+			floatArrayOf(-0.49365738f),
+			floatArrayOf(-0.38360053f))
+
+		val temp3 = arrayOf(floatArrayOf(0.41102463f, 0.2934277f, -0.54024756f, 0.2876497f, -0.37097135f, -0.80739015f, 0.58236825f, -0.85408914f, -0.3172801f, -0.23850179f, 0.31112424f, -0.30624193f, -0.38534912f, -0.55441946f, -0.32359248f, -0.34786958f))
+
+		val temp4 = arrayOf(floatArrayOf(1.405784f))
+
+		val advancedMLmodel1 = AdvancedMLItem()
+		advancedMLmodel1.sensors = listOf(Pair(listOf(mk.ndarray(temp1)),listOf(mk.ndarray(temp2))))
+		advancedMLmodel1.lastlayer = listOf(Pair(listOf(mk.ndarray(temp3)),listOf(mk.ndarray(temp4))))
+
+
+		val temp5 = arrayOf(floatArrayOf(0.32280427f, -0.74212754f, 0.041894704f, -0.056007933f),
+			floatArrayOf(0.13041314f, -0.08284514f, 0.08000189f, 0.22108027f),
+			floatArrayOf(-0.048534222f, 0.2718297f, -0.19723321f, 0.48610875f),
+			floatArrayOf(0.09713495f, -0.16174112f, -0.07333343f, -0.3109811f),
+			floatArrayOf(-0.17190433f, 0.41719598f, -0.29963312f, -0.5081868f),
+			floatArrayOf(-0.21468952f, 0.33534673f, 0.22336203f, -0.1350819f),
+			floatArrayOf(0.3222432f, 0.05549968f, 0.017726578f, -0.52839977f),
+			floatArrayOf(-0.2886347f, 0.5793697f, -0.18101127f, 0.5159879f),
+			floatArrayOf(-0.087542765f, 0.6603381f, -0.36643428f, 0.583144f),
+			floatArrayOf(0.20065024f, 0.09789965f, -0.33513272f, 0.39570123f),
+			floatArrayOf(0.10494686f, 0.039165616f, -0.13155013f, 0.10798334f),
+			floatArrayOf(0.16349413f, 0.57220185f, 0.46927923f, 0.30711746f),
+			floatArrayOf(0.18728882f, -0.03225266f, 0.27123317f, -0.15368906f),
+			floatArrayOf(-0.15862276f, 0.5086391f, -0.13350114f, 0.4479435f),
+			floatArrayOf(-0.07890555f, 0.08536938f, -0.42940268f, 0.08850024f),
+			floatArrayOf(0.096114814f, 0.6005595f, 0.3683523f, 0.3827897f))
+
+		val temp6 = arrayOf(floatArrayOf(0.3591389f),
+			floatArrayOf(0.14375731f),
+			floatArrayOf(-0.0577123f),
+			floatArrayOf(0.10108796f),
+			floatArrayOf(-0.17321983f),
+			floatArrayOf(-0.23616117f),
+			floatArrayOf(0.363372f),
+			floatArrayOf(-0.32391f),
+			floatArrayOf(-0.09379754f),
+			floatArrayOf(0.20814496f),
+			floatArrayOf(0.12090685f),
+			floatArrayOf(0.16879699f),
+			floatArrayOf(0.21330854f),
+			floatArrayOf(-0.17225175f),
+			floatArrayOf(-0.07287551f),
+			floatArrayOf(0.1012205f))
+
+		val temp7 = arrayOf(floatArrayOf(0.43311465f, 0.20825443f, -0.50178003f, 0.097225346f, -1.0966033f, -0.67858416f, 0.414921f, -0.88165766f, -0.38476074f, -0.23564076f, 0.15219902f, -0.22405466f, -0.22715905f, -0.5645844f, -0.8016501f, -0.27251887f))
+
+		val temp8 = arrayOf(floatArrayOf(1.3699387f))
+
+		val advancedMLmodel2 = AdvancedMLItem()
+		advancedMLmodel2.sensors = listOf(Pair(listOf(mk.ndarray(temp5)),listOf(mk.ndarray(temp6))))
+		advancedMLmodel2.lastlayer = listOf(Pair(listOf(mk.ndarray(temp7)),listOf(mk.ndarray(temp8))))
+
+		globalTrainingWeightsItem.weightsMultiKv2 = mapOf(
+			Pair("Iris-setosa", advancedMLmodel1),
+			Pair("Iris-versicolor", advancedMLmodel2)
+		)
+		globalTrainingWeightsItem.mlId = 12
+		globalTrainingWeightsItem.mlName = "Content"
+		globalTrainingWeightsItem.accuracy = 0f
+		// When
+		mlInference.setWeights(globalTrainingWeightsItem)
+
+		val result = mlInference.predictLabelFrom1Line1Item(testExample)
+		// Then
+		assertEquals("Iris-versicolor", result)
+	}
+
+
+
+
+	@Test
+	fun `predictLabelScoreMulLinesMulItems`() {
+		// Given
+
+
+		val data4Inference = mutableMapOf<String, FloatArray>()
+		data4Inference["first"] = floatArrayOf(5.7f,2.9f,4.2f,1.3f)
+		data4Inference["second"] = floatArrayOf(4.6f,3.2f,1.4f,0.2f)
+		val globalTrainingWeightsItem = GlobalTrainingWeightsItem()
+
+//		val testFeatures:MutableMap<String, D2Array<Float>>
+//		testFeatures.put("first", mk.ndarray(arrayOf(data4Inference["first"])))
+//		testFeatures.put("second", mk.ndarray(data4Inference["second"]))
+
+		val thetaName = "Iris-versicolor"
+		val test = mutableMapOf<String, List<SimpleExample>>()
+		for (testFeature in data4Inference) {
+			val testExamples: MutableList<SimpleExample> = mutableListOf()
+			for(i in 0..<testFeature.value.size) {
+				testExamples.add(SimpleExample(
+					//test_categIndexes[it],
+					null,
+					//test_numIndexes[it], test_numValues[it],
+					null,null,
+					//listOf(test_multiHot_indexes[it]), listOf(test_multiHot_values[it]),
+					null, null,
+					testFeature.value.map { it }.toFloatArray(),
+					null
+					//testLabels[it]
+				))
+			}
+			test[testFeature.key] = testExamples
+		}
+
+
+		val temp1 = arrayOf(floatArrayOf(0.28293687f, -0.60018724f, -0.24564528f, -0.39238974f),
+			floatArrayOf(0.09881812f, 0.15511145f, -0.3954835f, -0.3896694f),
+			floatArrayOf(-0.081900835f, 0.022636853f, 0.10433076f, 0.865149f),
+			floatArrayOf(0.12928279f, 0.045945443f, -0.29600155f, -0.5850915f),
+			floatArrayOf(-0.7017922f, -0.3070385f, -0.38738438f, -0.38456556f),
+			floatArrayOf(-0.24922022f, 0.080352575f, 0.5312609f, 0.25138387f),
+			floatArrayOf(0.21058288f, 0.18980116f, -0.45036379f, -1.0610094f),
+			floatArrayOf(-0.30883506f, 0.2953443f, 0.22071537f, 1.0275143f),
+			floatArrayOf(0.010458527f, 0.61703485f, -0.12099516f, 0.83198947f),
+			floatArrayOf(0.14396705f, -0.1788505f, -0.04162597f, 0.7813448f),
+			floatArrayOf(0.089264095f, 0.23542914f, -0.4672568f, -0.30023864f),
+			floatArrayOf(-0.2874573f, -0.058466293f, 0.58064735f, 0.82717526f),
+			floatArrayOf(-0.0063175745f, -0.4512875f, 0.5320778f, 0.25277638f),
+			floatArrayOf(-0.17440401f, 0.29698434f, 0.13254249f, 0.7686539f),
+			floatArrayOf(-0.40453136f, -0.485504f, -0.28021175f, 0.41679356f),
+			floatArrayOf(-0.301117f, 0.01747038f, 0.5223835f, 0.8911013f))
+
+		val temp2 = arrayOf(floatArrayOf(0.39053836f),
+			floatArrayOf(0.22795086f),
+			floatArrayOf(-0.1747529f),
+			floatArrayOf(0.20733126f),
+			floatArrayOf(-0.77444816f),
+			floatArrayOf(-0.35685515f),
+			floatArrayOf(0.34597397f),
+			floatArrayOf(-0.45244095f),
+			floatArrayOf(-0.039374087f),
+			floatArrayOf(0.06852166f),
+			floatArrayOf(0.18864061f),
+			floatArrayOf(-0.36729428f),
+			floatArrayOf(-0.083617605f),
+			floatArrayOf(-0.26311973f),
+			floatArrayOf(-0.49365738f),
+			floatArrayOf(-0.38360053f))
+
+		val temp3 = arrayOf(floatArrayOf(0.41102463f, 0.2934277f, -0.54024756f, 0.2876497f, -0.37097135f, -0.80739015f, 0.58236825f, -0.85408914f, -0.3172801f, -0.23850179f, 0.31112424f, -0.30624193f, -0.38534912f, -0.55441946f, -0.32359248f, -0.34786958f))
+
+		val temp4 = arrayOf(floatArrayOf(1.405784f))
+
+		val advancedMLmodel1 = AdvancedMLItem()
+		advancedMLmodel1.sensors = listOf(Pair(listOf(mk.ndarray(temp1)),listOf(mk.ndarray(temp2))))
+		advancedMLmodel1.lastlayer = listOf(Pair(listOf(mk.ndarray(temp3)),listOf(mk.ndarray(temp4))))
+
+
+		val temp5 = arrayOf(floatArrayOf(0.32280427f, -0.74212754f, 0.041894704f, -0.056007933f),
+			floatArrayOf(0.13041314f, -0.08284514f, 0.08000189f, 0.22108027f),
+			floatArrayOf(-0.048534222f, 0.2718297f, -0.19723321f, 0.48610875f),
+			floatArrayOf(0.09713495f, -0.16174112f, -0.07333343f, -0.3109811f),
+			floatArrayOf(-0.17190433f, 0.41719598f, -0.29963312f, -0.5081868f),
+			floatArrayOf(-0.21468952f, 0.33534673f, 0.22336203f, -0.1350819f),
+			floatArrayOf(0.3222432f, 0.05549968f, 0.017726578f, -0.52839977f),
+			floatArrayOf(-0.2886347f, 0.5793697f, -0.18101127f, 0.5159879f),
+			floatArrayOf(-0.087542765f, 0.6603381f, -0.36643428f, 0.583144f),
+			floatArrayOf(0.20065024f, 0.09789965f, -0.33513272f, 0.39570123f),
+			floatArrayOf(0.10494686f, 0.039165616f, -0.13155013f, 0.10798334f),
+			floatArrayOf(0.16349413f, 0.57220185f, 0.46927923f, 0.30711746f),
+			floatArrayOf(0.18728882f, -0.03225266f, 0.27123317f, -0.15368906f),
+			floatArrayOf(-0.15862276f, 0.5086391f, -0.13350114f, 0.4479435f),
+			floatArrayOf(-0.07890555f, 0.08536938f, -0.42940268f, 0.08850024f),
+			floatArrayOf(0.096114814f, 0.6005595f, 0.3683523f, 0.3827897f))
+
+		val temp6 = arrayOf(floatArrayOf(0.3591389f),
+			floatArrayOf(0.14375731f),
+			floatArrayOf(-0.0577123f),
+			floatArrayOf(0.10108796f),
+			floatArrayOf(-0.17321983f),
+			floatArrayOf(-0.23616117f),
+			floatArrayOf(0.363372f),
+			floatArrayOf(-0.32391f),
+			floatArrayOf(-0.09379754f),
+			floatArrayOf(0.20814496f),
+			floatArrayOf(0.12090685f),
+			floatArrayOf(0.16879699f),
+			floatArrayOf(0.21330854f),
+			floatArrayOf(-0.17225175f),
+			floatArrayOf(-0.07287551f),
+			floatArrayOf(0.1012205f))
+
+		val temp7 = arrayOf(floatArrayOf(0.43311465f, 0.20825443f, -0.50178003f, 0.097225346f, -1.0966033f, -0.67858416f, 0.414921f, -0.88165766f, -0.38476074f, -0.23564076f, 0.15219902f, -0.22405466f, -0.22715905f, -0.5645844f, -0.8016501f, -0.27251887f))
+
+		val temp8 = arrayOf(floatArrayOf(1.3699387f))
+
+		val advancedMLmodel2 = AdvancedMLItem()
+		advancedMLmodel2.sensors = listOf(Pair(listOf(mk.ndarray(temp5)),listOf(mk.ndarray(temp6))))
+		advancedMLmodel2.lastlayer = listOf(Pair(listOf(mk.ndarray(temp7)),listOf(mk.ndarray(temp8))))
+
+		globalTrainingWeightsItem.weightsMultiKv2 = mapOf(
+			Pair("Iris-setosa", advancedMLmodel1),
+			Pair("Iris-versicolor", advancedMLmodel2)
+		)
+		globalTrainingWeightsItem.mlId = 12
+		globalTrainingWeightsItem.mlName = "Content"
+		globalTrainingWeightsItem.accuracy = 0f
+		// When
+		mlInference.setWeights(globalTrainingWeightsItem)
+
+		// When
+		val result = mlInference.predictLabelScoreMulLinesMulItems(test, thetaName)
+		// Then
+		assertEquals(2, result?.size)
+		assertEquals(1.5430856f, result?.get("first"))
+		assertEquals(0.9248515f, result?.get("second"))
+
+	}
+
 
 	@Test
 	fun `predictLabelScoreMulLinesMulItems_no_weights`() {
 		// Given
-		manipulateModelData()
+		//manipulateModelData()
 		modelData.setHistory()
 		modelData.setHistory()
 		modelData.setHistory()
@@ -257,7 +465,7 @@ internal class MLInferenceNewModelTest {
 					null,null,
 					//listOf(test_multiHot_indexes[it]), listOf(test_multiHot_values[it]),
 					null, null,
-					testFeature.value[i].toFloatArray().map { it.toDouble() }.toDoubleArray(),
+					testFeature.value[i].toFloatArray().map { it }.toFloatArray(),
 					null
 					//testLabels[it]
 				))
@@ -270,22 +478,5 @@ internal class MLInferenceNewModelTest {
 		assertNull(result)
 	}
 
-	private fun manipulateModelData() {
-		modelData.setLinAcceleration(2F, 3F, 4F)
-		modelData.setGyroscope(5F, 6F, 7F)
-		modelData.setMagneticField(8F, 9F, 10F)
-		modelData.setDateTime(9, 3)
-		modelData.setPhones(true)
-		modelData.setOrientation(12F)
-		modelData.setBatteryChargingState(2)
-		modelData.setAudioActivity(
-			volume = 13F,
-			isBtScoOn = true,
-			isMusicActive = false,
-			isSpeakerOn = true,
-			isHeadsetOn = false
-		)
-		modelData.setLight(17F)
-		modelData.setWifiConnected(true)
-	}
+
 }
