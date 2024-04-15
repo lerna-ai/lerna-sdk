@@ -189,6 +189,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 									"LernaService"
 								)
 							}
+						} else {
+							Napier.d(
+								"Cannot run inference when there is no specific prediction for this position",
+								null,
+								"LernaService"
+							)
 						}
 					}
 				}

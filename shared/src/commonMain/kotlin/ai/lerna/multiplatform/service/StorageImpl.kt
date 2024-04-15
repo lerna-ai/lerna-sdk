@@ -30,6 +30,8 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefSensorDelay = "LernaSensorDelay"
 	private val prefTrainingDataThreshold = "LernaTrainingDataThreshold"
 	private val prefTrainingSessionsThreshold = "LernaTrainingSessionsThreshold"
+	private val prefActionMLEncryptionPrefix = "LernaActionMLEncryptionPrefix"
+	private val prefEncryptionKeyPrefix = "LernaEncryptionKeyPrefix"
 	private val sharedPref: KMMPreference = KMMPreference(context)
 	private val dlArrayConverter = DLArrayConverter()
 
@@ -239,4 +241,28 @@ class StorageImpl(context: KMMContext) : Storage {
 	override fun putTrainingSessionsThreshold(threshold: Int) {
 		sharedPref.put(prefTrainingSessionsThreshold, threshold.toInt())
 	}
+
+	override fun getActionMLEncryption(): Boolean {
+		if (!sharedPref.contains(prefActionMLEncryptionPrefix)) {
+			return LernaConfig.LOG_RECOMMENDATION_ENCRYPTION
+		}
+		return sharedPref.getBool(prefActionMLEncryptionPrefix, LernaConfig.LOG_RECOMMENDATION_ENCRYPTION)
+	}
+
+	override fun putActionMLEncryption(enabled: Boolean) {
+		sharedPref.put(prefActionMLEncryptionPrefix, enabled)
+	}
+
+	override fun getEncryptionKey(): String? {
+		if (!sharedPref.contains(prefEncryptionKeyPrefix)) {
+			return null
+		}
+		return sharedPref.getString(prefEncryptionKeyPrefix)
+	}
+
+	override fun putEncryptionKey(encryptionKey: String) {
+		sharedPref.put(prefEncryptionKeyPrefix, encryptionKey)
+	}
+
+
 }
