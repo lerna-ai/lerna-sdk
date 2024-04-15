@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ai.lerna.multiplatform"
-version = "0.0.6"
+version = "0.0.7"
 
 kotlin {
     androidTarget {
