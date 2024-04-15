@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ai.lerna.multiplatform"
-version = "0.0.6"
+version = "0.0.7"
 
 kotlin {
     androidTarget {
@@ -31,19 +31,20 @@ kotlin {
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
-                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
+                implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
+                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.3")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
                 implementation("io.ktor:ktor-network:$ktorVersion")
                 implementation("io.ktor:ktor-network-tls:$ktorVersion")
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("io.github.aakira:napier:2.6.1")
                 implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
+                implementation("com.soywiz.korlibs.krypto:krypto:$korioVersion")
                 runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
             }
         }

@@ -45,7 +45,6 @@ class ActionMLService(host: String, _token: String) {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}
-		Napier.d("ActionMLService - Response: ${response.status}", null, "Lerna")
 		if (response.status != HttpStatusCode.OK
 			&& response.status != HttpStatusCode.Created
 			&& response.status != HttpStatusCode.Accepted
@@ -61,7 +60,6 @@ class ActionMLService(host: String, _token: String) {
 			Napier.d("ActionMLService - Response empty body", null, "Lerna")
 			return QueryResponse()
 		}
-		Napier.d("ActionMLService - Response: ${response.bodyAsText()}", null, "Lerna")
 		return response.body()
 	}
 
@@ -76,7 +74,6 @@ class ActionMLService(host: String, _token: String) {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}
-		Napier.d("ActionMLService - Response: ${response.status}", null, "Lerna")
 		if (response.status != HttpStatusCode.OK
 			&& response.status != HttpStatusCode.Created
 			&& response.status != HttpStatusCode.Accepted
@@ -92,7 +89,6 @@ class ActionMLService(host: String, _token: String) {
 			Napier.d("ActionMLService - Response empty body", null, "Lerna")
 			return QueryResponse()
 		}
-		Napier.d("ActionMLService - Response: ${response.bodyAsText()}", null, "Lerna")
 		return response.body()
 	}
 
@@ -110,7 +106,6 @@ class ActionMLService(host: String, _token: String) {
 			contentType(ContentType.Application.Json)
 			setBody(request)
 		}
-		Napier.d("ActionMLService - Response: ${response.status}", null, "Lerna")
 		if (response.status != HttpStatusCode.OK
 			&& response.status != HttpStatusCode.Created
 			&& response.status != HttpStatusCode.Accepted
@@ -126,7 +121,6 @@ class ActionMLService(host: String, _token: String) {
 			Napier.d("ActionMLService - Response empty body", null, "Lerna")
 			return EventResponse()
 		}
-		Napier.d("ActionMLService - Response: ${response.bodyAsText()}", null, "Lerna")
 		return response.body()
 	}
 }

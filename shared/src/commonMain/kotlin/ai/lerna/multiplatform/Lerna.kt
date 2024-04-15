@@ -3,8 +3,10 @@ package ai.lerna.multiplatform
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.config.UserID
 import ai.lerna.multiplatform.service.ConfigService
+import ai.lerna.multiplatform.service.EncryptionService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
+import ai.lerna.multiplatform.service.MpcService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.actionML.ActionMLService
@@ -27,6 +29,7 @@ class Lerna(context: KMMContext, token: String) {
 	private val flWorker = FLWorkerInterface(_context)
 	private val lernaService = LernaService(_context, _token, uniqueID)
 	private lateinit var actionMLService: ActionMLService
+	private lateinit var encryptionService: EncryptionService
 	private var disabled = false
 	private var started = false
 	private var cleanupThreshold = 50000000L
@@ -63,6 +66,17 @@ class Lerna(context: KMMContext, token: String) {
 					response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
 					response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
 					response.cleanupThreshold.let { cleanupThreshold = it.toLong() }
+					response.actionMLEncryption.let {
+						storageService.putActionMLEncryption(it)
+						if (it) {
+							MpcService(storageService.getMPCServer(), token).getEncryptionKey().let { encryption ->
+								encryption.key?.let { key ->
+									storageService.putEncryptionKey(key)
+									encryptionService = EncryptionService(key)
+								}
+							}
+						}
+					}
 				} ?: run {
 					Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
 					disabled = true
@@ -119,9 +133,24 @@ class Lerna(context: KMMContext, token: String) {
 		if (!disabled) {
 			lernaService.captureEvent(modelName, positionID, successVal, elementID)
 			//ToDo: Enable/disabled functionality
+			if (!storageService.getActionMLEncryption()) {
+				runBlocking {
+					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID)
+					Napier.d("Submit event ${resp.comment}", null, "Lerna")
+				}
+			}
+		}
+	}
+
+	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String) {
+		if (!disabled) {
+			if (!storageService.getActionMLEncryption()) {
+				Napier.w("Recommendation encryption is disabled, use captureEvent() method to submit events", null, "Lerna")
+				return
+			}
 			runBlocking {
-				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID)
-				Napier.d("Submit event ${resp.comment}", null, "Lerna")
+				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID))
+				Napier.d("Submit encrypted event ${resp.comment}", null, "Lerna")
 			}
 		}
 	}
@@ -218,6 +247,17 @@ class Lerna(context: KMMContext, token: String) {
 			return response.map { recommendationConverter!!.convert(it) }
 		}
 		return response
+	}
+
+	fun decryptRecommendationData(data: String): String {
+		if (disabled) {
+			return data
+		}
+		if (!storageService.getActionMLEncryption()) {
+			Napier.i("Recommendation encryption is disabled.", null, "Lerna")
+			return data
+		}
+		return encryptionService.decrypt(data)
 	}
 
 	private fun initialize() {
