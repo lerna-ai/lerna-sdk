@@ -259,7 +259,12 @@ lerna.addInputData(String itemID, Float[] inputData, String positionID)
 Use the following line to submit a success event to the Library:
 
 ```bash
-lerna.captureEvent(String modelName, String positionID, String successVal, String elementID (optional))
+lerna.captureEvent(
+                   String modelName, 
+                   String positionID, 
+                   String successVal, 
+                   String elementID (optional), 
+                   DateTime eventTime (optional default current timestamp))
 ```
 
 ### Configuring auto inference
