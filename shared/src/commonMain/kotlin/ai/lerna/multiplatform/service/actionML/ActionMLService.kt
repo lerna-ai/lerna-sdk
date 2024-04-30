@@ -92,7 +92,7 @@ class ActionMLService(host: String, _token: String) {
 		return response.body()
 	}
 
-	suspend fun sendEvent(user: String, engineID: String, action: String, target: String): EventResponse {
+	suspend fun sendEvent(user: String, engineID: String, action: String, target: String, eventTime: DateTime): EventResponse {
 		val request = Event()
 		request.engineId = engineID
 		request.event = action
@@ -100,7 +100,7 @@ class ActionMLService(host: String, _token: String) {
 		request.entityId = user
 		request.targetEntityType = "item"
 		request.targetEntityId = target
-		request.eventTime = DateTime.now()
+		request.eventTime = eventTime
 
 		val response = client.post("$FL_API_URL/recommendation/events?token=$token") {
 			contentType(ContentType.Application.Json)

@@ -13,6 +13,7 @@ import ai.lerna.multiplatform.service.actionML.ActionMLService
 import ai.lerna.multiplatform.service.actionML.converter.RecommendationConverter
 import ai.lerna.multiplatform.service.actionML.dto.QueryRules
 import ai.lerna.multiplatform.service.actionML.dto.Result
+import com.soywiz.klock.DateTime
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
@@ -129,27 +130,27 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "") {
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: DateTime = DateTime.now()) {
 		if (!disabled) {
 			lernaService.captureEvent(modelName, positionID, successVal, elementID)
 			//ToDo: Enable/disabled functionality
 			if (!storageService.getActionMLEncryption()) {
 				runBlocking {
-					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID)
+					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID, eventTime)
 					Napier.d("Submit event ${resp.comment}", null, "Lerna")
 				}
 			}
 		}
 	}
 
-	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String) {
+	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String, eventTime: DateTime = DateTime.now()) {
 		if (!disabled) {
 			if (!storageService.getActionMLEncryption()) {
 				Napier.w("Recommendation encryption is disabled, use captureEvent() method to submit events", null, "Lerna")
 				return
 			}
 			runBlocking {
-				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID))
+				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID), eventTime)
 				Napier.d("Submit encrypted event ${resp.comment}", null, "Lerna")
 			}
 		}
