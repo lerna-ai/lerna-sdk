@@ -6,7 +6,6 @@ import ai.lerna.multiplatform.service.ConfigService
 import ai.lerna.multiplatform.service.EncryptionService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.LernaService
-import ai.lerna.multiplatform.service.MpcService
 import ai.lerna.multiplatform.service.StorageImpl
 import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.actionML.ActionMLService
@@ -17,7 +16,6 @@ import com.soywiz.klock.DateTime
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
-import kotlin.random.Random
 
 class Lerna(context: KMMContext, token: String) {
 	private val _context = context
@@ -42,48 +40,19 @@ class Lerna(context: KMMContext, token: String) {
 			Napier.d("Initialize library", null, "Lerna")
 			disabled = false //just to be safe...
 			runBlocking {
-				ConfigService(_token, uniqueID).requestConfig()?.let { response ->
-					response.mpcServerUri?.let { storageService.putMPCServer(it) }
-					response.flServerUri?.let { storageService.putFLServer(it) }
-					response.uploadPrefix?.let { storageService.putUploadPrefix(it) }
-					response.uploadSensorData.let { storageService.putUploadDataEnabled(it) }
-					response.logSensorData.let { storageService.putLog(it) }
-					response.abTest.let {
-						if (storageService.getABTestPer() != it) {
-							storageService.putABTest(Random.nextFloat() < it)
-							storageService.putABTestPer(it)
-							Napier.d(
-								"I am choosing ${if (storageService.getABTest()) "" else "non "}randomly ABTest",
-								null,
-								"Lerna"
-							)
-						}
-					}
-					response.customFeaturesSize.let { customFeaturesSize = it }
-					response.inputDataSize.let {
-						inputDataSize = it
-						lernaService.initInputSize(it)
-					}
-					response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
-					response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
-					response.cleanupThreshold.let { cleanupThreshold = it.toLong() }
-					response.actionMLEncryption.let {
-						storageService.putActionMLEncryption(it)
-						if (it) {
-							MpcService(storageService.getMPCServer(), token).getEncryptionKey().let { encryption ->
-								encryption.key?.let { key ->
-									storageService.putEncryptionKey(key)
-									encryptionService = EncryptionService(key)
-								}
-							}
-						}
-					}
-				} ?: run {
-					Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
-					disabled = true
-				}
+				disabled = !ConfigService(_context, _token, uniqueID).updateConfig()
 			}
-			if (!disabled) {
+			if (disabled) {
+				Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
+			}
+			else {
+				storageService.getEncryptionKey()?.let {encryptionService = EncryptionService(it)}
+				storageService.getCustomFeaturesSize().let { customFeaturesSize = it }
+				storageService.getInputDataSize().let {
+					inputDataSize = it
+					lernaService.initInputSize(it)
+				}
+				storageService.getCleanupThreshold().let { cleanupThreshold = it.toLong() }
 				actionMLService = ActionMLService(storageService.getFLServer(), _token)
 				weightsManager.setupStorage(storageService)
 				runBlocking {
