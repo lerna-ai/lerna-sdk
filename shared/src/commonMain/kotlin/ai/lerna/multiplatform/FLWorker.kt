@@ -2,6 +2,7 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.service.MLExecution
 import ai.lerna.multiplatform.config.KMMContext
+import ai.lerna.multiplatform.service.ConfigService
 import ai.lerna.multiplatform.service.FederatedLearningService
 import ai.lerna.multiplatform.service.FileUtil
 import ai.lerna.multiplatform.service.MpcService
@@ -13,6 +14,7 @@ import ai.lerna.multiplatform.service.dto.MpcResponse
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
 import com.soywiz.korio.file.std.tempVfs
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class FLWorker(_token: String, _uniqueID: Long) {
@@ -41,6 +43,10 @@ class FLWorker(_token: String, _uniqueID: Long) {
 	}
 
 	suspend fun startFLSuspend() = run {
+		if (!ConfigService(context, token, uniqueID).updateConfig()) {
+			Napier.d("The Lerna token cannot be validated, Library disabled", null, "LernaFL")
+			return
+		}
 		Napier.d("App Version: ${storage.getVersion()}", null, "LernaFL")
 		val trainingTask = federatedLearningService.requestNewTraining(storage.getClasses()) ?: return
 
