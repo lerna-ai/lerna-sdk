@@ -39,7 +39,7 @@ class LogAwsUploaderImpl(_token: String, _version: Int) : LogUploader {
             val request = LogData()
             request.path = uploadPrefix
             request.key =
-                uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().now() + "_" + getPlatform().name + "_" + fileNameSuffix
+                uniqueID.toString() + "/" + version.padZero(4) + "_" + DateUtil().nowGMT() + "_" + getPlatform().name + "_" + fileNameSuffix
             request.token = token
             request.data = fileContent
             val response =

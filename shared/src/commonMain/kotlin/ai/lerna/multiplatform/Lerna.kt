@@ -16,6 +16,11 @@ import com.soywiz.klock.DateTime
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 class Lerna(context: KMMContext, token: String) {
 	private val _context = context
@@ -99,27 +104,29 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: DateTime = DateTime.now()) {
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) {
 		if (!disabled) {
 			lernaService.captureEvent(modelName, positionID, successVal, elementID)
 			//ToDo: Enable/disabled functionality
 			if (!storageService.getActionMLEncryption()) {
 				runBlocking {
-					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID, eventTime)
+					val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
+					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID, eventDateTime)
 					Napier.d("Submit event ${resp.comment}", null, "Lerna")
 				}
 			}
 		}
 	}
 
-	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String, eventTime: DateTime = DateTime.now()) {
+	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String, eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) {
 		if (!disabled) {
 			if (!storageService.getActionMLEncryption()) {
 				Napier.w("Recommendation encryption is disabled, use captureEvent() method to submit events", null, "Lerna")
 				return
 			}
 			runBlocking {
-				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID), eventTime)
+				val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
+				val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, encryptionService.encrypt(elementID), eventDateTime)
 				Napier.d("Submit encrypted event ${resp.comment}", null, "Lerna")
 			}
 		}
