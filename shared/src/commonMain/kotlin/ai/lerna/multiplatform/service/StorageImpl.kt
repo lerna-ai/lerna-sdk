@@ -28,7 +28,9 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefUploadPrefix = "LernaUploadPrefix"
 	private val prefLogData = "LernaLog"
 	private val prefSensorDelay = "LernaSensorDelay"
-	private val prefTrainingDataThreshold = "LernaTrainingDataThreshold"
+	private val prefCustomFeaturesSize = "LernaCustomFeaturesSize"
+	private val prefInputDataSize = "LernaInputDataSize"
+	private val prefCleanupThreshold = "LernaCleanupThreshold"
 	private val prefTrainingSessionsThreshold = "LernaTrainingSessionsThreshold"
 	private val prefActionMLEncryptionPrefix = "LernaActionMLEncryptionPrefix"
 	private val prefEncryptionKeyPrefix = "LernaEncryptionKeyPrefix"
@@ -229,6 +231,39 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putSensorInitialDelay(delay: Int) {
 		sharedPref.put(prefSensorDelay, delay)
+	}
+
+	override fun getCustomFeaturesSize(): Int {
+		if (!sharedPref.contains(prefCustomFeaturesSize)) {
+			return 0
+		}
+		return sharedPref.getInt(prefCustomFeaturesSize, 0)
+	}
+
+	override fun putCustomFeaturesSize(customFeaturesSize: Int) {
+		sharedPref.put(prefCustomFeaturesSize, customFeaturesSize)
+	}
+
+	override fun getInputDataSize(): Int {
+		if (!sharedPref.contains(prefInputDataSize)) {
+			return 0
+		}
+		return sharedPref.getInt(prefInputDataSize, 0)
+	}
+
+	override fun putInputDataSize(inputDataSize: Int) {
+		sharedPref.put(prefInputDataSize, inputDataSize)
+	}
+
+	override fun getCleanupThreshold(): Int {
+		if (!sharedPref.contains(prefCleanupThreshold)) {
+			return 10
+		}
+		return sharedPref.getInt(prefCleanupThreshold, 10)
+	}
+
+	override fun putCleanupThreshold(cleanupThreshold: Int) {
+		sharedPref.put(prefCleanupThreshold, cleanupThreshold)
 	}
 
 	override fun getTrainingSessionsThreshold(): Int {

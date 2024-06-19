@@ -73,6 +73,18 @@ interface Storage {
 
 	fun putSensorInitialDelay(delay: Int)
 
+	fun getCustomFeaturesSize(): Int
+
+	fun putCustomFeaturesSize(customFeaturesSize: Int)
+
+	fun getInputDataSize(): Int
+
+	fun putInputDataSize(inputDataSize: Int)
+
+	fun getCleanupThreshold(): Int
+
+	fun putCleanupThreshold(cleanupThreshold: Int)
+
 	fun getTrainingSessionsThreshold(): Int
 
 	fun putTrainingSessionsThreshold(threshold: Int)
