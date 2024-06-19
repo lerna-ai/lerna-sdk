@@ -33,6 +33,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
                 implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
