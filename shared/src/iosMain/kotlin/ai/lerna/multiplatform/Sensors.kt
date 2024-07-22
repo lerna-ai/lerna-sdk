@@ -2,13 +2,14 @@ package ai.lerna.multiplatform
 
 import ai.lerna.multiplatform.config.KMMContext
 import ai.lerna.multiplatform.utils.DateUtil
-import io.github.aakira.napier.Napier
-import io.ktor.util.date.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import platform.AVFAudio.*
 import platform.CoreMotion.CMAcceleration
 import platform.CoreMotion.CMAttitudeReferenceFrameXMagneticNorthZVertical
@@ -106,7 +107,8 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     }
 
     actual override fun updateData() {
-        modelData.setDateTime(GMTDate().hours, GMTDate().dayOfWeek.ordinal)
+		val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        modelData.setDateTime(now.hour, now.dayOfWeek.ordinal)
 
         val currentRoute = audioSession.currentRoute()
         val portDescriptionArray = currentRoute.outputs() as List<AVAudioSessionPortDescription>
