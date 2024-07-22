@@ -19,9 +19,10 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.provider.Settings
-import io.ktor.util.date.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import java.util.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.ln
 
 
@@ -83,7 +84,8 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
     }
 
     actual override fun updateData() {
-        modelData.setDateTime(GMTDate().hours, GMTDate().dayOfWeek.ordinal)
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        modelData.setDateTime(now.hour, now.dayOfWeek.ordinal)
 
         modelData.setPhones(isWiredHeadsetOn())
 

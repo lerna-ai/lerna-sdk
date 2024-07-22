@@ -264,7 +264,7 @@ lerna.captureEvent(
                    String positionID, 
                    String successVal, 
                    String elementID (optional), 
-                   DateTime eventTime (optional default current timestamp))
+                   LocalDateTime eventTime (optional default current timestamp))
 ```
 
 ### Configuring auto inference
