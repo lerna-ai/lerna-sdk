@@ -19,7 +19,8 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	actual fun startFL(token: String, uniqueID: Long) {
 		val flConstraints = Constraints.Builder()
 			.setRequiredNetworkType(NetworkType.UNMETERED)
-			//.setRequiresDeviceIdle(true)
+			.setRequiresDeviceIdle(true)
+			.setRequiresBatteryNotLow(true)
 			.build()
 
 		val inputData = Data.Builder()
@@ -30,7 +31,7 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 		val flWorkRequest: PeriodicWorkRequest =
 			PeriodicWorkRequestBuilder<FLPeriodicWorker>(12, TimeUnit.HOURS)
-				.setInitialDelay(2, TimeUnit.SECONDS)
+				.setInitialDelay(12, TimeUnit.HOURS)
 				.setConstraints(flConstraints)
 				.setInputData(inputData)
 				.build()
