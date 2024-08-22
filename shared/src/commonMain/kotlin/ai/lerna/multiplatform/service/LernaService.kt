@@ -60,12 +60,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	internal fun stop() {
+	internal fun stop(endSession: Boolean = true) {
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
 		this.weights = storageService.getWeights()
 		weights?.trainingWeights?.forEach {
-			it.mlName?.let { modelName -> ContextRunner().runBlocking(context, modelName, ::timeout) }
+			it.mlName?.let { modelName -> ContextRunner().runBlocking(context, modelName, endSession, ::timeout) }
 		}
 		modelData.clearHistory()
 	}
@@ -76,9 +76,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	internal fun addInputData(itemId: String, values: FloatArray, positionID: String, disabled: Boolean = false) {
 		if(!disabled) {
+			if (!inferencesInSession.containsKey(positionID))
+				inferencesInSession[positionID] = mutableMapOf()
 			if (!data4Inference.containsKey(positionID)) {
 				data4Inference[positionID] = mutableMapOf()
-				inferencesInSession[positionID] = mutableMapOf()
+//				inferencesInSession[positionID] = mutableMapOf()
 			}
 			data4Inference[positionID]!![itemId] = values
 		} else {
@@ -87,7 +89,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 
-	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "") {
+	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "", report: Boolean = true) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
@@ -109,7 +111,19 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					storageService.putClasses(temp)
 				}
 				if (inferencesInSession.containsKey(positionID) && inferencesInSession[positionID]!!.isNotEmpty()) {
-					sessionEnd(modelName, positionID, event, event, storageService.getABTest(), elementID)
+					if(inferencesInSession[positionID]!!.containsKey(elementID)||elementID.isEmpty()) {
+						sessionEnd(
+							modelName,
+							positionID,
+							event,
+							event,
+							storageService.getABTest(),
+							elementID,
+							report
+						)
+					} else { //in case they chose an item not in our list
+						sessionEnd(modelName, positionID, "success", "failure", storageService.getABTest(), report = report)
+					}
 					inferencesInSession.remove(positionID)
 				} else {
 					Napier.d(
@@ -257,13 +271,14 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	internal fun refresh(modelName: String) {
+	internal fun refresh(modelName: String, endSession: Boolean = true) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
 			Napier.d("Stop Periodic", null, "LernaService")
 			periodicRunner.stop()
-			ContextRunner().runBlocking(context, modelName, ::timeout)
+			ContextRunner().runBlocking(context, modelName, endSession, ::timeout)
+			//ContextRunner().runBlocking(context, modelName, report, ::timeout)
 			Napier.d("Start Periodic", null, "LernaService")
 			periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
 		} else {
@@ -271,15 +286,17 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	private suspend fun timeout(modelName: String) {
-		inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
-			sessionEnd(modelName, it, "success", "failure", storageService.getABTest()) //it shouldn't matter what we predicted as long as it is different?
+	private suspend fun timeout(modelName: String, endSession: Boolean = true) {
+		if (endSession) {
+			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
+				sessionEnd(modelName, it, "success", "failure", storageService.getABTest()) //it shouldn't matter what we predicted as long as it is different?
+			}
 		}
 		inferencesInSession.clear()
 		data4Inference.clear()
 	}
 
-	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementID: String = "") {
+	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementID: String = "", report: Boolean = true) {
 		var sessionId = storageService.getSessionID()
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
@@ -303,11 +320,28 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		} else {
 			Napier.d("ERROR - Session $sessionId ended with wrong elementID: $elementID", null, "LernaService")
 		}
+
 		Napier.d("Session $sessionId ended", null, "LernaService")
-		if(ABTest)
-			flService.submitOutcome(weights!!.version, mlId, "$modelName-Random", predictValue, successValue, positionID)
-		else
-			flService.submitOutcome(weights!!.version, mlId, modelName, predictValue, successValue, positionID)
+		if(report) {
+			if (ABTest)
+				flService.submitOutcome(
+					weights!!.version,
+					mlId,
+					"$modelName-Random",
+					predictValue,
+					successValue,
+					positionID
+				)
+			else
+				flService.submitOutcome(
+					weights!!.version,
+					mlId,
+					modelName,
+					predictValue,
+					successValue,
+					positionID
+				)
+		}
 		sessionId++
 		storageService.putSessionID(sessionId)
 	}
@@ -459,6 +493,15 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	fun clearInputData(positionID: String) {
 		data4Inference.remove(positionID)
+	}
+
+	fun manualInference(positionID: String, elementID: String, features: FloatArray){
+		if(!inferencesInSession.containsKey(positionID))
+			inferencesInSession[positionID] = mutableMapOf()
+		inferencesInSession[positionID]?.set(
+			elementID,
+			features
+		)
 	}
 
 }
