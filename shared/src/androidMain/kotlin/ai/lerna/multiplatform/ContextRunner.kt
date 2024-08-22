@@ -41,4 +41,10 @@ actual class ContextRunner actual constructor() {
 			}
 		}
 	}
+
+	actual fun runBlocking(context: KMMContext, modelName: String, boolVal: Boolean, runPeriodic: KSuspendFunction2<String, Boolean, Unit>) {
+		runBlocking {
+			runPeriodic(modelName, boolVal)
+		}
+	}
 }

@@ -89,13 +89,13 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun stop() {
+	fun stop(captureFailure: Boolean = true) {
 		if (!started) {
 			Napier.d("Stop library error. Lerna already stopped!", null, "Lerna")
 			return
 		}
 		if (!disabled) {
-			lernaService.stop()
+			lernaService.stop(captureFailure)
 			started = false
 		}
 	}
@@ -179,9 +179,9 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun refresh(modelName: String) {
+	fun refresh(modelName: String, captureFailure: Boolean = true) {
 		if (!disabled) {
-			lernaService.refresh(modelName)
+			lernaService.refresh(modelName, captureFailure)
 		}
 	}
 
@@ -236,6 +236,10 @@ class Lerna(context: KMMContext, token: String) {
 			return data
 		}
 		return encryptionService.decrypt(data)
+	}
+
+	fun manualInference(positionID: String, elementID: String, features: FloatArray) {
+		lernaService.manualInference(positionID, elementID, features)
 	}
 
 	private fun initialize() {
