@@ -89,6 +89,10 @@ interface Storage {
 
 	fun putTrainingSessionsThreshold(threshold: Int)
 
+	fun getActionMLEnabled(): Boolean
+
+	fun putActionMLEnabled(enabled: Boolean)
+
 	fun getActionMLEncryption(): Boolean
 
 	fun putActionMLEncryption(enabled: Boolean)
