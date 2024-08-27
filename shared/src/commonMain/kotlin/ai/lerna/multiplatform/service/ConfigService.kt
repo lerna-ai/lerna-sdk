@@ -51,6 +51,7 @@ class ConfigService(_context: KMMContext, _token: String, _uniqueId: Long) {
 			response.inputDataSize.let {storageService.putInputDataSize(it) }
 			response.sensorInitialDelay.let { storageService.putSensorInitialDelay(it) }
 			response.trainingSessionsThreshold.let { storageService.putTrainingSessionsThreshold(it) }
+			response.confidenceThreshold.let { storageService.putConfidenceThreshold(it) }
 			response.cleanupThreshold.let { storageService.putCleanupThreshold(it) }
 			response.actionMLEnabled.let { storageService.putActionMLEnabled(it) }
 			response.actionMLEncryption.let {

@@ -45,6 +45,10 @@ interface Storage {
 
 	fun putLatestInference(lastInference: String)
 
+	fun getConfidenceThreshold(): Float
+
+	fun putConfidenceThreshold(confidence: Float)
+
 	fun getLastTraining(): Int
 
 	fun putLastTraining(trainingNumber: Int)

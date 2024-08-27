@@ -17,7 +17,7 @@ internal class MLInferenceTest {
 
 	@BeforeTest
 	fun setUp() {
-		mlInference = MLInference()
+		mlInference = MLInference(0.5f)
 		modelData = ModelData(50)
 		inferenceData = MergeInputData(modelData, 5)
 	}
@@ -152,9 +152,9 @@ internal class MLInferenceTest {
 		val result = mlInference.predictLabelScoreMulLinesMulItems(testFeatures, thetaName)
 		// Then
 		assertEquals(3, result?.size)
-		assertEquals(0.93310934f, result?.get("first"))
-		assertEquals(3.9330442E-4f, result?.get("second"))
-		assertEquals(1.1097612E-8f, result?.get("third"))
+		assertEquals(0.93310934f/3, result?.get("first"))
+		assertEquals(3.9330442E-4f/3, result?.get("second"))
+		assertEquals(1.1097612E-8f/3, result?.get("third"))
 	}
 
 	@Test
