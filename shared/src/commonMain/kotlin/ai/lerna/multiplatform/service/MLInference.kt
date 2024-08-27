@@ -7,14 +7,13 @@ import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ones
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 import org.jetbrains.kotlinx.multik.ndarray.data.get
-import org.jetbrains.kotlinx.multik.ndarray.operations.joinToString
 
 
-class MLInference {
+class MLInference(_confidence: Float) {
 	//internal var inferHistory: MutableList<String> = ArrayList()
 	var thetaClass = mutableMapOf<String, D2Array<Float>>()
 	private val calculationUtil = CalculationUtil()
-
+	private val confidence = _confidence
 	internal fun setWeights(trainingWeights: GlobalTrainingWeightsItem) {
 		thetaClass.clear()
 		trainingWeights.weights!!.forEach { (k, v) ->
@@ -39,7 +38,7 @@ class MLInference {
 		var max = 0.0f //if more than 1 class, always pick the most probable one even if the probability is very low
 		var value = "failure"
 		if (thetaClass.size == 1) {
-			max = 0.5f //give success only if confidence is more than 50% (in case we have only 1 class, i.e., success/failure)
+			max = confidence //give success only if confidence is more than X% (in case we have only 1 class, i.e., success/failure)
 		}
 
 		outputs.forEach { (k, _) ->
@@ -109,7 +108,7 @@ class MLInference {
 
 		for (i in 0 until outputs.shape[0]) {
 			//Napier.i("predict "+ outputs["1.0"]!!.get(i,0).toString()+", "+ outputs["2.0"]!!.get(i,0).toString()+", "+ outputs["3.0"]!!.get(i,0).toString())
-			result += outputs.asD2Array()[i, 0]
+			result += outputs.asD2Array()[i, 0]/outputs.shape[0]
 		}
 
 		return result
