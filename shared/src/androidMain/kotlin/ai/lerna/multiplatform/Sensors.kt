@@ -163,15 +163,19 @@ actual class Sensors actual constructor(_context: KMMContext, _modelData: ModelD
         return false
     }
 
-    private fun calcBrightness(light: Float, maxValue: Float): Float {
-        var normalizedLight = light
-        if (light <= 0) {
+    internal fun calcBrightness(light: Float, maxValue: Float): Float {
+        if (light.isNaN() || maxValue.isNaN() || maxValue < 0.0f) {
+            return 0.5f
+        }
+        var normalizedLight = light + 1
+        val normalizedMaxValue = maxValue + 1
+        if (normalizedLight < 1.0) {
             normalizedLight = 1f
         }
-        else if (light > maxValue) {
-            normalizedLight = maxValue
+        else if (normalizedLight > normalizedMaxValue) {
+            normalizedLight = normalizedMaxValue
         }
-        return (ln(normalizedLight.toDouble()) / ln(maxValue.toDouble())).toFloat()
+        return (ln(normalizedLight.toDouble()) / ln(normalizedMaxValue.toDouble())).toFloat()
     }
 
     override fun onSensorChanged(p0: SensorEvent?) {

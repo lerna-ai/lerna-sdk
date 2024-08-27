@@ -34,6 +34,7 @@ class Lerna(context: KMMContext, token: String) {
 	private val lernaService = LernaService(_context, _token, uniqueID)
 	private lateinit var actionMLService: ActionMLService
 	private lateinit var encryptionService: EncryptionService
+	private var actionMLDisabled = true
 	private var disabled = false
 	private var started = false
 	private var cleanupThreshold = 50000000L
@@ -59,6 +60,7 @@ class Lerna(context: KMMContext, token: String) {
 				}
 				storageService.getCleanupThreshold().let { cleanupThreshold = it.toLong() }
 				actionMLService = ActionMLService(storageService.getFLServer(), _token)
+				storageService.getActionMLEnabled().let { actionMLDisabled = !it }
 				weightsManager.setupStorage(storageService)
 				runBlocking {
 					weightsManager.updateWeights()
@@ -107,8 +109,7 @@ class Lerna(context: KMMContext, token: String) {
 	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) {
 		if (!disabled) {
 			lernaService.captureEvent(modelName, positionID, successVal, elementID)
-			//ToDo: Enable/disabled functionality
-			if (!storageService.getActionMLEncryption()) {
+			if (!actionMLDisabled && !storageService.getActionMLEncryption()) {
 				runBlocking {
 					val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
 					val resp = actionMLService.sendEvent(storageService.getUserIdentifier() ?: uniqueID.toString(), modelName, successVal, elementID, eventDateTime)
@@ -119,7 +120,7 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun submitRecommendationEvent(modelName: String, successVal: String, elementID: String, eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) {
-		if (!disabled) {
+		if (!disabled && !actionMLDisabled) {
 			if (!storageService.getActionMLEncryption()) {
 				Napier.w("Recommendation encryption is disabled, use captureEvent() method to submit events", null, "Lerna")
 				return
@@ -203,7 +204,7 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun getRecommendations(modelName: String, number: Int?, blacklistItems: List<String>?, rules: List<QueryRules>?): List<Any> {
-		if (disabled) {
+		if (disabled || actionMLDisabled) {
 			return listOf()
 		}
 		var response: List<Result> = mutableListOf()
@@ -227,7 +228,7 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun decryptRecommendationData(data: String): String {
-		if (disabled) {
+		if (disabled || actionMLDisabled) {
 			return data
 		}
 		if (!storageService.getActionMLEncryption()) {
