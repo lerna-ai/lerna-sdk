@@ -19,7 +19,6 @@ actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 	actual fun startFL(token: String, uniqueID: Long) {
 		val flConstraints = Constraints.Builder()
 			.setRequiredNetworkType(NetworkType.UNMETERED)
-			.setRequiresDeviceIdle(true)
 			.setRequiresBatteryNotLow(true)
 			.build()
 
