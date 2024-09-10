@@ -23,12 +23,13 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	private val sensors: SensorInterface = Sensors(context, modelData)
 	private var inferenceTasks: HashMap<Long, MLInference> = HashMap()
 	private val periodicRunner = PeriodicRunner()
-	private var inferencesInSession = mutableMapOf<String, MutableMap<String, FloatArray>>()
+	private var inferencesInSession = mutableMapOf<String, MutableMap<String, Pair<Float, FloatArray>>>()
 	private lateinit var mergedInput : MergeInputData
 	private var failsafe = mutableMapOf<String, String>()
 	private val sensorLogEnabled = storageService.getLog()
 	private val autoInferenceCounterDefaultValue = 4 // Get auto inference every 2 seconds with cycle of 500ms
 	private var autoInferenceCounter = autoInferenceCounterDefaultValue
+	private val confidence = storageService.getConfidenceThreshold() //do not report failures of items with low confidence
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
@@ -48,7 +49,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			sensors.start()
 			this.weights = storageService.getWeights()
 			weights?.trainingWeights?.forEach {
-				val inferenceTask = MLInference()
+				val inferenceTask = MLInference(confidence)
 				inferenceTask.setWeights(it)
 				inferenceTasks[it.mlId!!] = inferenceTask
 			}
@@ -60,12 +61,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	internal fun stop() {
+	internal fun stop(endSession: Boolean = true) {
 		Napier.d("Stop Periodic", null, "LernaService")
 		periodicRunner.stop()
 		this.weights = storageService.getWeights()
 		weights?.trainingWeights?.forEach {
-			it.mlName?.let { modelName -> ContextRunner().runBlocking(context, modelName, ::timeout) }
+			it.mlName?.let { modelName -> ContextRunner().runBlocking(context, modelName, endSession, ::timeout) }
 		}
 		modelData.clearHistory()
 	}
@@ -76,9 +77,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	internal fun addInputData(itemId: String, values: FloatArray, positionID: String, disabled: Boolean = false) {
 		if(!disabled) {
+			if (!inferencesInSession.containsKey(positionID))
+				inferencesInSession[positionID] = mutableMapOf()
 			if (!data4Inference.containsKey(positionID)) {
 				data4Inference[positionID] = mutableMapOf()
-				inferencesInSession[positionID] = mutableMapOf()
+//				inferencesInSession[positionID] = mutableMapOf()
 			}
 			data4Inference[positionID]!![itemId] = values
 		} else {
@@ -109,7 +112,23 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 					storageService.putClasses(temp)
 				}
 				if (inferencesInSession.containsKey(positionID) && inferencesInSession[positionID]!!.isNotEmpty()) {
-					sessionEnd(modelName, positionID, event, event, storageService.getABTest(), elementID)
+					if(inferencesInSession[positionID]!!.containsKey(elementID)||elementID.isEmpty()) {
+						val score = inferencesInSession[positionID]?.get(elementID)?.first
+						val report = score != null && score > confidence
+						sessionEnd(
+							modelName,
+							positionID,
+							event,
+							event,
+							storageService.getABTest(),
+							elementID,
+							report
+						)
+					} else { //in case they chose an item not in our list
+						val score = inferencesInSession[positionID]?.maxByOrNull { it.value.first }?.value?.first
+						val report = score != null && score > confidence
+						sessionEnd(modelName, positionID, "success", "failure", storageService.getABTest(), report = report)
+					}
 					inferencesInSession.remove(positionID)
 				} else {
 					Napier.d(
@@ -165,7 +184,6 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 									mergedInput.getMergedInputDataHistory(data4Inference[positionID]!!),
 									storageService.getABTest(), numElements
 								)
-								data4Inference.remove(positionID)
 							} else {
 								Napier.d(
 									"Cannot run inference without sensor and/or content data",
@@ -173,6 +191,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 									"LernaService"
 								)
 							}
+							data4Inference.remove(positionID)
 							//////////////////////////
 						}
 					} else { //if we do not have a specific prediction to make, then only for 1 item:
@@ -257,13 +276,14 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	internal fun refresh(modelName: String) {
+	internal fun refresh(modelName: String, endSession: Boolean = true) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
 			Napier.d("Stop Periodic", null, "LernaService")
 			periodicRunner.stop()
-			ContextRunner().runBlocking(context, modelName, ::timeout)
+			ContextRunner().runBlocking(context, modelName, endSession, ::timeout)
+			//ContextRunner().runBlocking(context, modelName, report, ::timeout)
 			Napier.d("Start Periodic", null, "LernaService")
 			periodicRunner.run(context, storageService.getSensorInitialDelay(), ::runPeriodic)
 		} else {
@@ -271,15 +291,19 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		}
 	}
 
-	private suspend fun timeout(modelName: String) {
-		inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
-			sessionEnd(modelName, it, "success", "failure", storageService.getABTest()) //it shouldn't matter what we predicted as long as it is different?
+	private suspend fun timeout(modelName: String, endSession: Boolean = true) {
+		if (endSession) {
+			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
+				val score = inferencesInSession[it]?.maxByOrNull { item -> item.value.first }?.value?.first
+				val report = score != null && score > confidence
+				sessionEnd(modelName, it, "success", "failure", storageService.getABTest(), report = report) //it shouldn't matter what we predicted as long as it is different?
+			}
 		}
 		inferencesInSession.clear()
 		data4Inference.clear()
 	}
 
-	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementID: String = "") {
+	private suspend fun sessionEnd(modelName: String, positionID: String, predictValue: String, successValue: String, ABTest: Boolean = false, elementID: String = "", report: Boolean = true) {
 		var sessionId = storageService.getSessionID()
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
@@ -287,7 +311,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 			ContextRunner().run(
 				context,
 				mergedInput.historyToCsv(
-					inferencesInSession[positionID]!!.entries.first().value,
+					inferencesInSession[positionID]!!.maxBy { it.value.first }.value.second,
 					sessionId,
 					successValue
 				),
@@ -297,17 +321,34 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		} else if (inferencesInSession[positionID]!!.containsKey(elementID)){
 			ContextRunner().run(
 				context,
-				mergedInput.historyToCsv(inferencesInSession[positionID]!![elementID]!!, sessionId, successValue),
+				mergedInput.historyToCsv(inferencesInSession[positionID]!![elementID]!!.second, sessionId, successValue),
 				"sensorLog",
 				::commitToFile)
 		} else {
 			Napier.d("ERROR - Session $sessionId ended with wrong elementID: $elementID", null, "LernaService")
 		}
+
 		Napier.d("Session $sessionId ended", null, "LernaService")
-		if(ABTest)
-			flService.submitOutcome(weights!!.version, mlId, "$modelName-Random", predictValue, successValue, positionID)
-		else
-			flService.submitOutcome(weights!!.version, mlId, modelName, predictValue, successValue, positionID)
+		if(report) {
+			if (ABTest)
+				flService.submitOutcome(
+					weights!!.version,
+					mlId,
+					"$modelName-Random",
+					predictValue,
+					successValue,
+					positionID
+				)
+			else
+				flService.submitOutcome(
+					weights!!.version,
+					mlId,
+					modelName,
+					predictValue,
+					successValue,
+					positionID
+				)
+		}
 		sessionId++
 		storageService.putSessionID(sessionId)
 	}
@@ -377,8 +418,8 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		inference.model = if(!pickRandom) {weights.mlName!!} else {weights.mlName!!+"-Random"}
 		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScore1LineMulItems(inputData, predictionClass)
 
-		val topEntries = if(!pickRandom) {
-			scores?.toList()?.sortedBy { (_, value) -> value}
+		val topEntries = if (!pickRandom) {
+			scores?.toList()?.sortedByDescending { (_, value) -> value }
 		} else {
 			scores?.toList()
 		}
@@ -386,11 +427,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		//val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
 		val predictions  = ArrayList<String>()
 		//if(maxEntry?.key!=null)
-		for(item in topEntries?.take(if(topEntries.size>numElements) numElements else topEntries.size)!!)
-		{
+		for (item in topEntries?.take(if (topEntries.size > numElements) numElements else topEntries.size)!!) {
 			inferencesInSession[positionID]?.set(
-				item.first,
-				data4Inference[positionID]?.get(item.first)!!
+				item.first, Pair(
+					item.second,
+					data4Inference[positionID]?.get(item.first)!!
+				)
 			)
 			predictions.add(item.first)
 		}
@@ -427,17 +469,18 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		inference.model = if(!pickRandom) {weights.mlName!!} else {weights.mlName!!+"-Random"}
 		val scores = inferenceTasks[weights.mlId!!]?.predictLabelScoreMulLinesMulItems(inputDataHistory, predictionClass)
 		//val maxEntry = if(!pickRandom) {scores?.maxByOrNull { it.value }} else {scores?.entries?.elementAt(Random.nextInt(scores.size))}
-		val topEntries = if(!pickRandom) {
-			scores?.toList()?.sortedBy { (_, value) -> value}
+		val topEntries = if (!pickRandom) {
+			scores?.toList()?.sortedByDescending { (_, value) -> value }
 		} else {
 			scores?.toList()
 		}
 		val predictions  = ArrayList<String>()
-		for(item in topEntries?.take(if(topEntries.size>numElements) numElements else topEntries.size)!!)
-		{
+		for (item in topEntries?.take(if (topEntries.size > numElements) numElements else topEntries.size)!!) {
 			inferencesInSession[positionID]?.set(
-				item.first,
-				data4Inference[positionID]?.get(item.first)!!
+				item.first, Pair(
+					item.second,
+					data4Inference[positionID]?.get(item.first)!!
+				)
 			)
 			predictions.add(item.first)
 		}
@@ -459,6 +502,18 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	fun clearInputData(positionID: String) {
 		data4Inference.remove(positionID)
+	}
+
+	fun manualInference(positionID: String, elementID: String, features: FloatArray) {
+		if (!inferencesInSession.containsKey(positionID)) {
+			inferencesInSession[positionID] = mutableMapOf()
+		}
+		inferencesInSession[positionID]?.set(
+			elementID, Pair(
+				0.0f,
+				features
+			)
+		)
 	}
 
 }
