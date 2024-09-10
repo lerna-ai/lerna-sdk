@@ -19,6 +19,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	private val prefSize = "LernaSize"
 	private val prefInference = "LernaInference"
 	private val prefLastInference = "LernaLastInference"
+	private val prefConfidenceThreshold = "LernaConfidenceThreshold"
 	private val prefUserIdentifier = "LernaUserIdentifier"
 	private val preUploadDataEnabled = "LernaUploadDataEnabled"
 	private val preABTestEnabled = "LernaABTestEnabled"
@@ -133,6 +134,17 @@ class StorageImpl(context: KMMContext) : Storage {
 
 	override fun putLatestInference(lastInference: String) {
 		sharedPref.put(prefLastInference, lastInference)
+	}
+
+	override fun getConfidenceThreshold(): Float {
+		if (!sharedPref.contains(prefConfidenceThreshold)) {
+			return 0.5f
+		}
+		return sharedPref.getFloat(prefConfidenceThreshold, 0.5f)
+	}
+
+	override fun putConfidenceThreshold(confidence: Float) {
+		sharedPref.put(prefConfidenceThreshold, confidence)
 	}
 
 	override fun getTempInference(): String? {
