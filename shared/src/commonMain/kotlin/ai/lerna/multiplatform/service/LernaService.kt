@@ -90,7 +90,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 
-	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "") {
+	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "", captureOnce: Boolean = true) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
@@ -129,7 +129,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 						val report = score != null && score > confidence
 						sessionEnd(modelName, positionID, "success", "failure", storageService.getABTest(), report = report)
 					}
-					inferencesInSession.remove(positionID)
+					if(captureOnce||elementID.isEmpty())
+						inferencesInSession.remove(positionID)
+					else
+						inferencesInSession[positionID]!!.remove(elementID)
 				} else {
 					Napier.d(
 						"Wrong position or event already captured!",
@@ -293,7 +296,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun timeout(modelName: String, endSession: Boolean = true) {
 		if (endSession) {
-			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
+			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach { //should we also do that for each element left?
 				val score = inferencesInSession[it]?.maxByOrNull { item -> item.value.first }?.value?.first
 				val report = score != null && score > confidence
 				sessionEnd(modelName, it, "success", "failure", storageService.getABTest(), report = report) //it shouldn't matter what we predicted as long as it is different?
@@ -308,16 +311,18 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
 		if(elementID.isEmpty()) {
-			ContextRunner().run(
-				context,
-				mergedInput.historyToCsv(
-					inferencesInSession[positionID]!!.maxBy { it.value.first }.value.second,
-					sessionId,
-					successValue
-				),
-				"sensorLog",
-				::commitToFile
-			)
+			if(inferencesInSession[positionID]!!.isNotEmpty()) {
+				ContextRunner().run(
+					context,
+					mergedInput.historyToCsv(
+						inferencesInSession[positionID]!!.maxBy { it.value.first }.value.second,
+						sessionId,
+						successValue
+					),
+					"sensorLog",
+					::commitToFile
+				)
+			}
 		} else if (inferencesInSession[positionID]!!.containsKey(elementID)){
 			ContextRunner().run(
 				context,

@@ -31,7 +31,7 @@ class Lerna(context: KMMContext, token: String) {
 	private val storageService = StorageImpl(_context)
 	private val weightsManager = WeightsManager(token, uniqueID)
 	private val flWorker = FLWorkerInterface(_context)
-	private val lernaService = LernaService(_context, _token, uniqueID)
+	private lateinit var lernaService: LernaService
 	private lateinit var actionMLService: ActionMLService
 	private lateinit var encryptionService: EncryptionService
 	private var actionMLDisabled = true
@@ -48,6 +48,7 @@ class Lerna(context: KMMContext, token: String) {
 			runBlocking {
 				disabled = !ConfigService(_context, _token, uniqueID).updateConfig()
 			}
+			lernaService = LernaService(_context, _token, uniqueID)
 			if (disabled) {
 				Napier.d("The Lerna token cannot be validated, Library disabled", null, "Lerna")
 			}
@@ -106,9 +107,9 @@ class Lerna(context: KMMContext, token: String) {
 		}
 	}
 
-	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) {
+	fun captureEvent(modelName: String, positionID: String, successVal: String, elementID: String = "", eventTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), captureOnce: Boolean = true) {
 		if (!disabled) {
-			lernaService.captureEvent(modelName, positionID, successVal, elementID)
+			lernaService.captureEvent(modelName, positionID, successVal, elementID, captureOnce)
 			if (!actionMLDisabled && !storageService.getActionMLEncryption()) {
 				runBlocking {
 					val eventDateTime = DateTime(eventTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
@@ -144,17 +145,19 @@ class Lerna(context: KMMContext, token: String) {
 	}
 
 	fun addInputData(itemID: String, values: FloatArray, positionID: String) {
-		if (!disabled) {
-			if (values.size != inputDataSize) {
-				Napier.d("Add input data error, Incorrect input data size", null, "Lerna")
-				return
-			}
-			if (itemID.contains("|")) {
-				Napier.d("Add input data error, itemID should not contains vertical bar character (|)", null, "Lerna")
-				return
-			}
-			lernaService.addInputData(itemID, values, positionID, disabled)
+		if (values.size != inputDataSize) {
+			Napier.d("Add input data error, Incorrect input data size", null, "Lerna")
+			return
 		}
+		if (itemID.contains("|")) {
+			Napier.d(
+				"Add input data error, itemID should not contains vertical bar character (|)",
+				null,
+				"Lerna"
+			)
+			return
+		}
+		lernaService.addInputData(itemID, values, positionID, disabled)
 	}
 
 	fun triggerInference(modelName: String, positionID: String? = null, predictionClass: String? = null, numElements: Int = 1): String? {
