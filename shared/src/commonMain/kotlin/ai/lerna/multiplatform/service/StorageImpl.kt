@@ -138,7 +138,7 @@ class StorageImpl(context: KMMContext) : Storage {
 	}
 
 	override fun putConfidenceThreshold(confidence: Float) {
-		sharedPref.put(prefConfidenceThreshold, confidence)
+		sharedPref.putFloat(prefConfidenceThreshold, confidence)
 	}
 
 	override fun getTempInference(): String? {

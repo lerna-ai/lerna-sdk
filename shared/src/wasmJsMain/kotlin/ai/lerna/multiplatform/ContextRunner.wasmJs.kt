@@ -46,6 +46,13 @@ actual class ContextRunner actual constructor() {
 
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    actual fun runBlocking(context: KMMContext, modelName: String, boolVal: Boolean, runPeriodic: KSuspendFunction2<String, Boolean, Unit>) {
+        GlobalScope.promise {
+            runPeriodic(modelName, boolVal)
+        }
+    }
+
 
     @OptIn(DelicateCoroutinesApi::class)
     actual fun runBlocking(
