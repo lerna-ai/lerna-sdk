@@ -1,7 +1,10 @@
 package ai.lerna.multiplatform.service.actionML.dto
 
-import com.soywiz.klock.DateFormat
-import com.soywiz.klock.DateTime
+import korlibs.time.DateFormat
+import korlibs.time.DateTime
+//ToDo: This should be used in the next version of korlibs
+import korlibs.time.fromString
+import korlibs.time.toString
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

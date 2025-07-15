@@ -7,8 +7,10 @@ import ai.lerna.multiplatform.service.dto.GlobalTrainingWeightsItem
 import ai.lerna.multiplatform.service.dto.TrainingInferenceItem
 import ai.lerna.multiplatform.utils.DateUtil
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 
@@ -33,6 +35,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 
 	private suspend fun commitToFile(record: String, filesPrefix: String) {
+		Napier.d("commitToFile()", null, "LernaService")
 		fileUtil.commitToFile(storageService.getSessionID(), filesPrefix, record)
 	}
 
@@ -90,11 +93,11 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 
-	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "") {
+	internal fun captureEvent(modelName: String, positionID: String, event: String, elementID: String = "", captureOnce: Boolean = true) {
 		if ((weights?.version
 				?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 		) {
-			runBlocking {
+			CoroutineScope(Dispatchers.Default).launch {
 				val classes = storageService.getClasses()
 				if (classes != null) {
 					if (classes.containsKey(modelName)) {
@@ -129,7 +132,10 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 						val report = score != null && score > confidence
 						sessionEnd(modelName, positionID, "success", "failure", storageService.getABTest(), report = report)
 					}
-					inferencesInSession.remove(positionID)
+					if(captureOnce||elementID.isEmpty())
+						inferencesInSession.remove(positionID)
+					else
+						inferencesInSession[positionID]!!.remove(elementID)
 				} else {
 					Napier.d(
 						"Wrong position or event already captured!",
@@ -144,12 +150,12 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 	}
 
 	//if predictionClass == null, choose best class
-	internal fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false, numElements: Int = 1) : String? {
+	internal suspend fun triggerInference(modelName: String, positionID: String?, predictionClass: String?, disabled: Boolean = false, numElements: Int = 1) : String? {
 		if(!disabled) {
 			if ((weights?.version
 					?: 0) > 0 && weights?.trainingWeights?.find { it.mlName == modelName } != null
 			) { if(predictionClass==null || inferenceTasks[weights?.trainingWeights?.find { it.mlName == modelName }?.mlId]?.thetaClass!!.containsKey(predictionClass)) {
-				runBlocking {
+				//CoroutineScope(Dispatchers.Default).launch {
 					//if we have a specific prediction to make (e.g., like, comment, ...)
 					if (predictionClass != null) {
 						//then we must have a position for the output of this position, i.e., object metadata
@@ -216,7 +222,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 							)
 						}
 					}
-				}
+				//}
 				return storageService.getTempInference() //make sure that every path writes the tempInference
 			} else {
 				Napier.d("No prediction class $predictionClass for $modelName", null, "LernaService")
@@ -293,7 +299,7 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 
 	private suspend fun timeout(modelName: String, endSession: Boolean = true) {
 		if (endSession) {
-			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach {
+			inferencesInSession.filter { it.value.isNotEmpty() }.keys.forEach { //should we also do that for each element left?
 				val score = inferencesInSession[it]?.maxByOrNull { item -> item.value.first }?.value?.first
 				val report = score != null && score > confidence
 				sessionEnd(modelName, it, "success", "failure", storageService.getABTest(), report = report) //it shouldn't matter what we predicted as long as it is different?
@@ -308,16 +314,18 @@ class LernaService(private val context: KMMContext, _token: String, uniqueID: Lo
 		val mlId = weights?.trainingWeights?.firstOrNull  { w -> w.mlName == modelName }?.mlId ?: -1
 		//here we can add the ml_id for the file prefix to support different data for different mls
 		if(elementID.isEmpty()) {
-			ContextRunner().run(
-				context,
-				mergedInput.historyToCsv(
-					inferencesInSession[positionID]!!.maxBy { it.value.first }.value.second,
-					sessionId,
-					successValue
-				),
-				"sensorLog",
-				::commitToFile
-			)
+			if(inferencesInSession[positionID]!!.isNotEmpty()) {
+				ContextRunner().run(
+					context,
+					mergedInput.historyToCsv(
+						inferencesInSession[positionID]!!.maxBy { it.value.first }.value.second,
+						sessionId,
+						successValue
+					),
+					"sensorLog",
+					::commitToFile
+				)
+			}
 		} else if (inferencesInSession[positionID]!!.containsKey(elementID)){
 			ContextRunner().run(
 				context,

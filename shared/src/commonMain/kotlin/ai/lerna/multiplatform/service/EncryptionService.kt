@@ -1,10 +1,10 @@
 package ai.lerna.multiplatform.service
 
-import com.soywiz.krypto.AES.Companion.decryptAesEcb
-import com.soywiz.krypto.AES.Companion.encryptAesEcb
-import com.soywiz.krypto.Padding
-import com.soywiz.krypto.encoding.Hex
-import com.soywiz.korio.lang.toByteArray
+import korlibs.crypto.AES.Companion.decryptAesEcb
+import korlibs.crypto.AES.Companion.encryptAesEcb
+import korlibs.crypto.Padding
+import korlibs.encoding.Hex
+import korlibs.io.lang.toByteArray
 
 class EncryptionService(key: String) {
 	private	val encryptionKey = key.toByteArray()

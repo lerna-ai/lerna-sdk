@@ -44,7 +44,7 @@ In order to integrate the Lerna SDK as a Library include the library file to you
 
 To include the Lerna library, download the latest `.aar` file and place it in the libs folder of your project.
 
-Update your repositories configuration on the `build.gradle` file by adding `flatDir{dirs 'libs'}` line as follows:
+Update your repositories configuration on the `settings.gradle` file by adding `flatDir{dirs 'libs'}` line as follows:
 
 ```bash
     repositories {
@@ -70,17 +70,17 @@ dependencies {
 	...
     implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
     implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-network:$ktorVersion")
-    implementation("io.ktor:ktor-network-tls:$ktorVersion")
+    implementation("io.ktor:ktor-client-core:2.3.0")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.0")
+    implementation("io.ktor:ktor-client-cio:2.3.0")
+    implementation("io.ktor:ktor-network:2.3.0")
+    implementation("io.ktor:ktor-network-tls:2.3.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
     implementation("io.github.aakira:napier:2.6.1")
-    implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
-    runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("com.soywiz.korlibs.korio:korio:3.4.0")
+    runtimeOnly("io.ktor:ktor-utils:2.3.0")
+    implementation("io.ktor:ktor-client-okhttp:2.3.0")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }

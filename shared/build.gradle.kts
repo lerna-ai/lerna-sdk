@@ -1,134 +1,179 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("com.android.library")
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
     id("maven-publish")
 }
 
+/*tasks{
+    withType<Kotlin2JsCompile> {
+        kotlinOptions.freeCompilerArgs += listOf("-Xskip-prerelease-check", "-Xexpect-actual-classes")
+    }
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "21"
+        kotlinOptions.freeCompilerArgs += listOf("-Xexpect-actual-classes")
+    }
+}*/
+
 group = "ai.lerna.multiplatform"
-version = "0.0.8"
+version = "0.0.7"
 
 kotlin {
+
+    tasks.register("testClasses")
+
     androidTarget {
         publishLibraryVariants("release", "debug")
         withSourcesJar(publish = false)
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach {
-        it.binaries.framework {
-            baseName = "shared"
-            embedBitcode("disable")
+
+    wasmJs {
+        outputModuleName = "composeLerna"
+        browser {
+            commonWebpackConfig {
+                outputFileName = "composeLerna.js"
+
+            }
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        binaries.executable()
+    }
+
+    val iosTarget: (String, KotlinNativeTarget.() -> Unit) -> KotlinNativeTarget = when {
+        System.getenv("SDK_NAME")?.startsWith("iphoneos") == true -> ::iosArm64
+        System.getenv("NATIVE_ARCH")?.startsWith("arm") == true -> ::iosSimulatorArm64
+        else -> ::iosX64
+    }
+    iosTarget("ios") {
+        binaries {
+            framework {
+                baseName = "shared"
+//		export(project(":advancedml"))
+//		embedBitcode("disable")
+            }
         }
     }
+
+//    listOf(
+//        iosX64(),
+//        iosArm64(),
+//        iosSimulatorArm64()
+//	tvosArm64(),
+//        tvosX64(),
+//        tvosSimulatorArm64()
+//    ).forEach {
+//        it.binaries.framework {
+//            baseName = "shared"
+//            embedBitcode("disable")
+//        }
+//    }
+
+
+    applyDefaultHierarchyTemplate()
 
     sourceSets {
-        val ktorVersion = "2.3.0"
-        val korioVersion = "3.4.0"
-        val coroutinesVersion = "1.6.4"
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
-                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-                implementation("io.ktor:ktor-network:$ktorVersion")
-                implementation("io.ktor:ktor-network-tls:$ktorVersion")
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                implementation("io.github.aakira:napier:2.6.1")
-                implementation("com.soywiz.korlibs.korio:korio:$korioVersion")
-                implementation("com.soywiz.korlibs.krypto:krypto:$korioVersion")
-                runtimeOnly("io.ktor:ktor-utils:$ktorVersion")
-            }
+        commonMain.dependencies {
+            implementation(project(":advancedml"))
+            implementation(libs.korge)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multik.core)
+            implementation(libs.multik.kotlin)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kotlin.stdlib.common)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.napier)
+            runtimeOnly(libs.ktor.utils)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(kotlin("test"))
         }
-        val androidMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("androidx.work:work-runtime-ktx:2.8.1")
-                implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
-            }
+
+        androidMain.dependencies {
+            implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.androidx.runtime)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.network)
+            implementation(libs.ktor.network.tls)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.work.runtime.ktx)
+            implementation(libs.androidx.concurrent.futures.ktx)
         }
         val androidUnitTest by getting {
-            val junitVersion = "4.13.2"
             dependencies {
-                implementation("junit:junit:$junitVersion")
-                implementation("androidx.test:core:1.5.0")
-                implementation("androidx.test.ext:junit:1.1.5")
-                implementation("org.robolectric:robolectric:4.10")
-                implementation("org.testng:testng:7.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+                implementation(libs.junit)
+                implementation(libs.androidx.core)
+                implementation(libs.androidx.junit)
+                implementation(libs.robolectric)
+                implementation(libs.testng)
+                implementation(libs.kotlinx.coroutines.android)
             }
         }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by creating {
-            dependsOn(commonMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
-            dependencies {
-                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
-            }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.network)
+            implementation(libs.ktor.network.tls)
+            implementation(libs.ktor.client.darwin)
         }
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting
-        val iosTest by creating {
-            dependsOn(commonTest)
-            iosX64Test.dependsOn(this)
-            iosArm64Test.dependsOn(this)
-            iosSimulatorArm64Test.dependsOn(this)
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinx.browser)
+        }
+        wasmJsTest.dependencies {
+            implementation(libs.kotlinx.browser)
         }
     }
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+}
 
-    publishing {
-        repositories {
-            maven {
-                if (project.hasProperty("repoURL")) {
-                        println(project.properties["repoURL"])
-                }
-                // Release Repo
-                //url = uri("https://lerna-ai-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/release/")
-                // Development Repo
-                url = uri("https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/")
-                credentials {
-                    username = "aws"
-                    // to generate password run `aws codeartifact get-authorization-token --region=us-east-1 --domain lerna-dev --query authorizationToken --output text`
-                    password = "update-password-here"
-                }
+publishing {
+    repositories {
+        maven {
+            if (project.hasProperty("repoURL")) {
+                println(project.properties["repoURL"])
+            }
+            // Release Repo
+            //url = uri("https://lerna-ai-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/release/")
+            // Development Repo
+            url = uri("https://lerna-dev-470158444867.d.codeartifact.us-east-1.amazonaws.com/maven/lerna-dev/")
+            credentials {
+                username = "aws"
+                // to generate password run `aws codeartifact get-authorization-token --region=us-east-1 --domain lerna-dev --query authorizationToken --output text`
+                password = "update-password-here"
             }
         }
-        publications {
-            withType<MavenPublication> {
-                pom {
-                    packaging = "aar"
-                    name.set("Lerna MultiPlatform SDK")
-                    description.set("A multiplatform native implementation of Lerna SDK")
-                    url.set("https://lerna.ai")
-                    licenses {
-                        license {
-                            name.set("The Lerna license")
-                            url.set("https://lerna.ai/library/license")
-                        }
+    }
+    publications {
+        withType<MavenPublication> {
+            pom {
+                packaging = "aar"
+                name.set("Lerna MultiPlatform SDK")
+                description.set("A multiplatform native implementation of Lerna SDK")
+                url.set("https://lerna.ai")
+                licenses {
+                    license {
+                        name.set("The Lerna license")
+                        url.set("https://lerna.ai/library/license")
                     }
-                    organization {
-                        name.set("Lerna Inc")
-                        url.set("https://lerna.ai/")
-                    }
+                }
+                organization {
+                    name.set("Lerna Inc")
+                    url.set("https://lerna.ai/")
                 }
             }
         }
@@ -138,12 +183,12 @@ kotlin {
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "ai.lerna.multiplatform"
-    compileSdk = 33
+    compileSdk = 35
     defaultConfig {
         minSdk = 23
     }
     compileOptions {
-        targetCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildTypes {
         getByName("release") {
@@ -157,6 +202,20 @@ android {
         }
     }
 }
-dependencies {
-    androidTestImplementation(project(mapOf("path" to ":lerna-kmm-sdk")))
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
+
+val packForXcode by tasks.registering(Sync::class, fun Sync.() {
+    group = "build"
+    val mode = System.getenv("CONFIGURATION") ?: "DEBUG"
+    val framework = kotlin.targets.getByName<KotlinNativeTarget>("ios").binaries.getFramework(mode)
+    inputs.property("mode", mode)
+    dependsOn(framework.linkTaskProvider)
+    val targetDir = File(project.layout.buildDirectory.get().asFile, "xcode-frameworks")
+    from({ framework.outputDirectory })
+    into(targetDir)
+})
+tasks.getByName("build").dependsOn(packForXcode)

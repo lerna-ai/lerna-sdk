@@ -12,9 +12,8 @@ import ai.lerna.multiplatform.service.WeightsManager
 import ai.lerna.multiplatform.service.dto.GlobalTrainingWeights
 import ai.lerna.multiplatform.service.dto.MpcResponse
 import ai.lerna.multiplatform.utils.LogAwsUploaderImpl
-import com.soywiz.korio.file.std.tempVfs
+import korlibs.io.file.std.applicationDataVfs
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.multik.ndarray.data.D2Array
 
 class FLWorker(_token: String, _uniqueID: Long) {
@@ -82,7 +81,7 @@ class FLWorker(_token: String, _uniqueID: Long) {
 					uniqueID,
 					storage.getUploadPrefix(),
 					"mldata.csv",
-					tempVfs["mldata.csv"].readString())
+					applicationDataVfs["mldata.csv"].readString())
 		}
 		ml.loadData("mldata.csv")
 		storage.putSessionID(0)

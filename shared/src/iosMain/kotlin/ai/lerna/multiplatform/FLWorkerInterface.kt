@@ -12,6 +12,7 @@ import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSDate
 import platform.Foundation.dateWithTimeIntervalSinceNow
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual class FLWorkerInterface actual constructor(_context: KMMContext) {
 
 	// To SDK developer - put it somewhere with constants of your SDK
