@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://lerna.ai/">
-    <img src="https://dev.lerna.ai/img/Lerna.png" width="200" alt="Lerna AI">
+    <img src="https://my.lerna.ai/img/Lerna.png" width="200" alt="Lerna AI">
   </a>
   <p align="center">
     Lerna Multiplatform SDK Usage Documentation
