@@ -1,10 +1,16 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.android.library")
     id("maven-publish")
 }
-
+tasks {
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "17"
+    }
+}
 group = "ai.lerna.multiplatform"
 version = "0.0.8"
 
@@ -31,8 +37,8 @@ kotlin {
         val coroutinesVersion = "1.6.4"
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
-                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.3")
+                implementation("org.jetbrains.kotlinx:multik-core:0.2.1")
+                implementation("org.jetbrains.kotlinx:multik-kotlin:0.2.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
@@ -143,6 +149,7 @@ android {
         minSdk = 23
     }
     compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildTypes {
